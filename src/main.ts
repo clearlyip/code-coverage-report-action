@@ -22,9 +22,10 @@ async function run(): Promise<void> {
     case 'pull_request': {
       const {GITHUB_BASE_REF = ''} = process.env
       const coverage = await downloadArtifacts(GITHUB_BASE_REF)
-      const baseCoverage = await parseCoverage(
-        `${coverage.downloadPath}/${filename}`
-      )
+      const baseCoverage =
+        coverage !== null
+          ? await parseCoverage(`${coverage.downloadPath}/${filename}`)
+          : null
       const headCoverage = await parseCoverage(filename)
 
       if (headCoverage === null) {

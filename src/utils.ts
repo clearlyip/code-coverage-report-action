@@ -46,19 +46,23 @@ export async function parseXML<T>(filename: string): Promise<T | null> {
  *
  * @param {string} name
  * @param {string} p
- * @returns {Promise<artifact.DownloadResponse>}
+ * @returns {Promise<artifact.DownloadResponse|null>}
  */
 export async function downloadArtifacts(
   name: string,
   p = 'artifacts'
-): Promise<artifact.DownloadResponse> {
+): Promise<artifact.DownloadResponse | null> {
   const artifactClient = artifact.create()
   const artifactName = formatArtifactName(name)
   const options = {
     createArtifactFolder: false
   }
 
-  return await artifactClient.downloadArtifact(artifactName, p, options)
+  try {
+    return await artifactClient.downloadArtifact(artifactName, p, options)
+  } catch (err) {
+    return null
+  }
 }
 
 /**

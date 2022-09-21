@@ -11499,7 +11499,9 @@ function run() {
             case 'pull_request': {
                 const { GITHUB_BASE_REF = '' } = process.env;
                 const coverage = yield (0, utils_1.downloadArtifacts)(GITHUB_BASE_REF);
-                const baseCoverage = yield (0, utils_1.parseCoverage)(`${coverage.downloadPath}/${filename}`);
+                const baseCoverage = coverage !== null
+                    ? yield (0, utils_1.parseCoverage)(`${coverage.downloadPath}/${filename}`)
+                    : null;
                 const headCoverage = yield (0, utils_1.parseCoverage)(filename);
                 if (headCoverage === null) {
                     core.setFailed(`Unable to process ${filename}`);
@@ -11890,7 +11892,7 @@ exports.parseXML = parseXML;
  *
  * @param {string} name
  * @param {string} p
- * @returns {Promise<artifact.DownloadResponse>}
+ * @returns {Promise<artifact.DownloadResponse|null>}
  */
 function downloadArtifacts(name, p = 'artifacts') {
     return __awaiter(this, void 0, void 0, function* () {
@@ -11899,7 +11901,12 @@ function downloadArtifacts(name, p = 'artifacts') {
         const options = {
             createArtifactFolder: false
         };
-        return yield artifactClient.downloadArtifact(artifactName, p, options);
+        try {
+            return yield artifactClient.downloadArtifact(artifactName, p, options);
+        }
+        catch (err) {
+            return null;
+        }
     });
 }
 exports.downloadArtifacts = downloadArtifacts;
