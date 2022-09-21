@@ -11577,7 +11577,7 @@ function generateMarkdown(headCoverage, baseCoverage = null) {
             ...map
         ])
             .addBreak()
-            .addRaw(`<i>Minimum allowed coverage is</i><code>${overallFailThreshold}%</code>, this run produced </i><code>\`${headCoverage.coverage}%</code>`);
+            .addRaw(`<i>Minimum allowed coverage is</i><code>${overallFailThreshold}%</code>, this run produced </i><code>${headCoverage.coverage}%</code>`);
         //If this is run after write the buffer is empty
         core.info(`Writing results`);
         yield (0, promises_1.writeFile)('code-coverage-results.md', summary.stringify());
