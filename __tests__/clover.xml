@@ -30,7 +30,7 @@
       <line num="96" type="stmt" count="34"/>
       <line num="126" type="method" name="getInitialApplicationMetadata" visibility="public" complexity="1" crap="2" count="0"/>
       <line num="129" type="stmt" count="0"/>
-      <metrics loc="142" ncloc="84" classes="1" methods="7" coveredmethods="3" conditionals="0" coveredconditionals="0" statements="18" coveredstatements="11" elements="25" coveredelements="14"/>
+      <metrics loc="142" ncloc="84" classes="1" methods="7" coveredmethods="2" conditionals="0" coveredconditionals="0" statements="18" coveredstatements="11" elements="25" coveredelements="14"/>
     </file>
     <file name="/usr/local/app/app/Applications/Clusterpbx.php">
       <class name="App\Applications\Clusterpbx" namespace="global">
