@@ -11582,8 +11582,8 @@ function generateMarkdown(headCoverage, baseCoverage = null) {
             process.env.GITHUB_STEP_SUMMARY !== '') {
             yield summary.write();
         }
-        core.info(`Writing results${process.cwd()}`);
-        yield (0, promises_1.writeFile)('code-coverage-results.md', summary.stringify());
+        core.info(`Writing results: ${__dirname}/code-coverage-results.md`);
+        yield (0, promises_1.writeFile)(`${__dirname}/code-coverage-results.md`, summary.stringify());
     });
 }
 run();
