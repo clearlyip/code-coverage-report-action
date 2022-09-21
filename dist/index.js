@@ -11579,13 +11579,13 @@ function generateMarkdown(headCoverage, baseCoverage = null) {
             .addBreak()
             .addRaw(`<i>Minimum allowed coverage is</i><code>${overallFailThreshold}%</code>, this run produced </i><code>\`${headCoverage.coverage}%</code>`);
         //If this is run after write the buffer is empty
-        const markdown = summary.stringify();
+        core.info(`Writing results`);
+        yield (0, promises_1.writeFile)('code-coverage-results.md', summary.stringify());
         if (process.env.GITHUB_STEP_SUMMARY &&
             process.env.GITHUB_STEP_SUMMARY !== '') {
+            core.info(`Writing summary`);
             yield summary.write();
         }
-        core.info(`Writing results`);
-        yield (0, promises_1.writeFile)('code-coverage-results.md', markdown);
     });
 }
 run();

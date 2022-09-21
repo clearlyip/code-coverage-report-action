@@ -137,17 +137,16 @@ async function generateMarkdown(
     )
 
   //If this is run after write the buffer is empty
-  const markdown = summary.stringify()
+  core.info(`Writing results`)
+  await writeFile('code-coverage-results.md', summary.stringify())
 
   if (
     process.env.GITHUB_STEP_SUMMARY &&
     process.env.GITHUB_STEP_SUMMARY !== ''
   ) {
+    core.info(`Writing summary`)
     await summary.write()
   }
-
-  core.info(`Writing results`)
-  await writeFile('code-coverage-results.md', markdown)
 }
 
 run()
