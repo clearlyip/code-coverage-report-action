@@ -136,6 +136,8 @@ async function generateMarkdown(
       `_Minimum allowed coverage is \`${overallFailThreshold}%\`, this run produced \`${headCoverage.coverage}%\`_`
     )
 
+  const markdown = summary.stringify()
+
   if (
     process.env.GITHUB_STEP_SUMMARY &&
     process.env.GITHUB_STEP_SUMMARY !== ''
@@ -143,8 +145,8 @@ async function generateMarkdown(
     await summary.write()
   }
 
-  core.info(`Writing results: ${__dirname}/../code-coverage-results.md`)
-  await writeFile(`${__dirname}/../code-coverage-results.md`, 'comment')
+  core.info(`Writing results`)
+  await writeFile('code-coverage-results.md', markdown)
 }
 
 run()

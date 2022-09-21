@@ -11578,12 +11578,13 @@ function generateMarkdown(headCoverage, baseCoverage = null) {
         ])
             .addBreak()
             .addRaw(`_Minimum allowed coverage is \`${overallFailThreshold}%\`, this run produced \`${headCoverage.coverage}%\`_`);
+        const markdown = summary.stringify();
         if (process.env.GITHUB_STEP_SUMMARY &&
             process.env.GITHUB_STEP_SUMMARY !== '') {
             yield summary.write();
         }
-        core.info(`Writing results: ${__dirname}/../code-coverage-results.md`);
-        yield (0, promises_1.writeFile)(`${__dirname}/../code-coverage-results.md`, 'comment');
+        core.info(`Writing results`);
+        yield (0, promises_1.writeFile)('code-coverage-results.md', markdown);
     });
 }
 run();
