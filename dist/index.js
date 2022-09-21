@@ -11577,7 +11577,8 @@ function generateMarkdown(headCoverage, baseCoverage = null) {
             ...map
         ])
             .addBreak()
-            .addRaw(`_Minimum allowed coverage is \`${overallFailThreshold}%\`, this run produced \`${headCoverage.coverage}%\`_`);
+            .addRaw(`__Minimum allowed coverage is \`${overallFailThreshold}%\`, this run produced \`${headCoverage.coverage}%\`__`);
+        //If this is run after write the buffer is empty
         const markdown = summary.stringify();
         if (process.env.GITHUB_STEP_SUMMARY &&
             process.env.GITHUB_STEP_SUMMARY !== '') {

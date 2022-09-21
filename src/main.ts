@@ -133,9 +133,10 @@ async function generateMarkdown(
     ])
     .addBreak()
     .addRaw(
-      `_Minimum allowed coverage is \`${overallFailThreshold}%\`, this run produced \`${headCoverage.coverage}%\`_`
+      `__Minimum allowed coverage is \`${overallFailThreshold}%\`, this run produced \`${headCoverage.coverage}%\`__`
     )
 
+  //If this is run after write the buffer is empty
   const markdown = summary.stringify()
 
   if (
