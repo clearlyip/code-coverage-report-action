@@ -143,8 +143,11 @@ async function generateMarkdown(
     await summary.write()
   }
 
-  core.info(`Writing results: ${__dirname}/code-coverage-results.md`)
-  await writeFile(`${__dirname}/code-coverage-results.md`, summary.stringify())
+  core.info(`Writing results: ${__dirname}/../code-coverage-results.md`)
+  await writeFile(
+    `${__dirname}/../code-coverage-results.md`,
+    summary.stringify()
+  )
 }
 
 run()
