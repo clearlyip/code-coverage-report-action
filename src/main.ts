@@ -143,6 +143,7 @@ async function generateMarkdown(
     await summary.write()
   }
 
+  core.info('Writing results')
   await writeFile('code-coverage-results.md', summary.stringify())
 }
 
