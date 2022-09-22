@@ -4,9 +4,10 @@
   "description": "",
   "main": "lib/main.js",
   "scripts": {
-    "format": "prettier --write '**/*.ts'",
-    "format-check": "prettier --check '**/*.ts'",
+    "format": "prettier --write 'src/**/*.ts'",
+    "format:check": "prettier --check 'src/**/*.ts'",
     "lint": "eslint src/**/*.ts",
+    "lint:fix": "eslint --fix src/**/*.ts",
     "package": "ncc build src/main.ts --source-map --license licenses.txt",
     "watch": "ncc build src/main.ts --watch",
     "test": "jest",
