@@ -16,7 +16,7 @@ jobs:
           fail_on_negative_difference: true
       - name: Add Coverage PR Comment
         uses: marocchino/sticky-pull-request-comment@v2
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' && (success() || failure())
         with:
           recreate: true
           path: code-coverage-results.md
