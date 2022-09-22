@@ -25,8 +25,8 @@ export default async function parse(clover: Clover): Promise<Coverage> {
   return {
     files: Object.entries(files).reduce((previous, [hash, file]) => {
       file.relative = file.absolute.replace(regExp, '')
-      return {...previous, [hash]: file}
-    }, files),
+      return {...previous, [createHash(file.relative)]: file}
+    }, {}),
     coverage: processCoverageMetrics(metrics),
     timestamp: parseInt(timestamp),
     basePath

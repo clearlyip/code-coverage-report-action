@@ -1,0 +1,20 @@
+on:
+  schedule:
+    # * is a special character in YAML so you have to quote this string
+    - cron:  '0 0 1 * *'
+
+jobs:
+  cron: # make sure the action works on a clean machine without building
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 16
+      - run: npm ci
+      - run: npm run test >> "${GITHUB_STEP_SUMMARY}"
+      - uses: ./
+        id: code_coverage_report_action
+        with:
+          filename: 'coverage/clover.xml'
+          fail_on_negative_difference: true

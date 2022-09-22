@@ -63,13 +63,23 @@ export async function downloadArtifacts(
   name: string,
   base = 'artifacts'
 ): Promise<string | null> {
-  const {token} = getInputs()
+  const {token, artifactDownloadWorkflowNames} = getInputs()
   const client = github.getOctokit(token)
+  const artifactWorkflowNames =
+    artifactDownloadWorkflowNames !== null
+      ? artifactDownloadWorkflowNames
+      : [github.context.job]
+  const artifactName = formatArtifactName(name)
 
   const {GITHUB_BASE_REF = '', GITHUB_REPOSITORY = ''} = process.env
 
   const [owner, repo] = GITHUB_REPOSITORY.split('/')
 
+  core.info(
+    `Looking for artifact "${artifactName}" in the following worflows: ${artifactWorkflowNames.join(
+      ','
+    )}`
+  )
   for await (const runs of client.paginate.iterator(
     client.rest.actions.listWorkflowRunsForRepo,
     {
@@ -80,7 +90,19 @@ export async function downloadArtifacts(
     }
   )) {
     for await (const run of runs.data) {
-      if (run.name !== github.context.job) {
+      if (!run.name) {
+        core.debug(`${run.id} had no workflow name, skipping`)
+        continue
+      }
+
+      if (!inArray(run.name, artifactWorkflowNames)) {
+        core.debug(
+          `${
+            run.name
+          } did not match the following worflows: ${artifactWorkflowNames.join(
+            ','
+          )}`
+        )
         continue
       }
 
@@ -90,6 +112,7 @@ export async function downloadArtifacts(
         run_id: run.id
       })
       if (artifacts.data.artifacts.length === 0) {
+        core.debug(`No Artifacts in workflow ${run.id}`)
         continue
       }
       for await (const art of artifacts.data.artifacts) {
@@ -97,10 +120,13 @@ export async function downloadArtifacts(
           continue
         }
 
-        if (art.name !== formatArtifactName(GITHUB_BASE_REF)) {
+        if (art.name !== artifactName) {
           continue
         }
 
+        core.info(
+          `Downloading the artifact "${art.name}" from workflow ${run.name}:${run.id}`
+        )
         const zip = await client.rest.actions.downloadArtifact({
           owner,
           repo,
@@ -109,14 +135,23 @@ export async function downloadArtifacts(
         })
 
         const dir = path.join(__dirname, base)
+
+        core.debug(`Making dir ${dir}`)
         await mkdir(dir, {recursive: true})
 
+        core.debug(`Extracting Artifact to ${dir}`)
         const adm = new AdmZip(Buffer.from(zip.data as string))
         adm.extractAllTo(dir, true)
         return dir
       }
     }
   }
+
+  core.warning(
+    `No artifacts found for the following workspaces: ${artifactWorkflowNames.join(
+      ','
+    )}`
+  )
   return null
 }
 
@@ -138,6 +173,9 @@ export async function uploadArtifacts(
     continueOnError: false
   }
 
+  core.info(
+    `Uploading Artifacts to ${artifactName} on workflow named ${github.context.job}`
+  )
   return await artifactClient.uploadArtifact(
     artifactName,
     files,
@@ -166,8 +204,10 @@ export async function parseCoverage(
         const xml = await parseXML<Cobertura | Clover>(filename)
 
         if (instanceOfCobertura(xml)) {
+          core.info(`Detected a Cobertura File at ${filename}`)
           return await parseCobertura(xml)
         } else if (instanceOfClover(xml)) {
+          core.info(`Detected a Clover File at ${filename}`)
           return await parseClover(xml)
         }
       }
@@ -195,21 +235,38 @@ export function escapeRegExp(string: string): string {
   return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') // $& means the whole matched string
 }
 
+/**
+ * Colorize Percentage By Threshold
+ * @param percentage
+ * @param thresholdMax
+ * @param thresholdMin
+ * @returns
+ */
 export function colorizePercentageByThreshold(
   percentage: number | null,
-  threshold = 0,
-  equalColor = 'grey'
+  thresholdMax = 0,
+  thresholdMin: number | null = null
 ): string {
   if (percentage === null) {
     return 'N/A'
   }
-  if (percentage > threshold) {
-    return `$\\textcolor{green}{\\text{${percentage.toString()}}}$%`
-  } else if (percentage < threshold) {
-    return `$\\textcolor{red}{\\text{${percentage.toString()}}}$%`
+  if (thresholdMin === null) {
+    if (percentage > thresholdMax) {
+      return `🟢 ${percentage.toString()}%`
+    } else if (percentage < thresholdMax) {
+      return `🔴 ${percentage.toString()}%`
+    }
+  } else {
+    if (percentage < thresholdMin) {
+      return `🔴 ${percentage.toString()}%`
+    } else if (percentage >= thresholdMin && percentage <= thresholdMax) {
+      return `🟠 ${percentage.toString()}%`
+    } else if (percentage > thresholdMax) {
+      return `🟢 ${percentage.toString()}%`
+    }
   }
 
-  return `$\\textcolor{${equalColor}}{\\text{${percentage.toString()}}}$%`
+  return `⚪ ${percentage.toString()}%`
 }
 
 /**
@@ -253,29 +310,57 @@ export function determineCommonBasePath(
   )
 }
 
+let inputs: Inputs
+/**
+ * Get Formatted Inputs
+ *
+ * @returns {Inputs}
+ */
 export function getInputs(): Inputs {
+  if (inputs) {
+    return inputs
+  }
+
   const token = core.getInput('github_token', {required: true})
   const filename = core.getInput('filename')
   const markdownFilename = core.getInput('markdown_filename')
   const badge = core.getInput('badge') === 'true' ? true : false
-  const overallFailThreshold = parseInt(core.getInput('overall_fail_threshold'))
-  const coverageColorRedMin = parseInt(core.getInput('coverage_color_red_min'))
-  const coverageColorOrangeMax = parseInt(
-    core.getInput('coverage_color_orange_max')
+  const overallCoverageFailThreshold = parseInt(
+    core.getInput('overall_coverage_fail_threshold')
+  )
+  const fileCoverageErrorMin = parseInt(
+    core.getInput('file_coverage_error_min')
+  )
+  const fileCoverageWarningMax = parseInt(
+    core.getInput('file_coverage_warning_max')
   )
   const failOnNegativeDifference =
     core.getInput('fail_on_negative_difference') === 'true' ? true : false
 
-  return {
+  const artifactName = core.getInput('artifact_name')
+
+  const tempArtifactDownloadWorkflowNames = core.getInput(
+    'artifact_download_workflow_names'
+  )
+  const artifactDownloadWorkflowNames =
+    tempArtifactDownloadWorkflowNames !== ''
+      ? tempArtifactDownloadWorkflowNames.split(',').map(n => n.trim())
+      : null
+
+  inputs = {
     token,
     filename,
     badge,
-    overallFailThreshold,
-    coverageColorRedMin,
-    coverageColorOrangeMax,
+    overallCoverageFailThreshold,
+    fileCoverageErrorMin,
+    fileCoverageWarningMax,
     failOnNegativeDifference,
-    markdownFilename
+    markdownFilename,
+    artifactDownloadWorkflowNames,
+    artifactName
   }
+
+  return inputs
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -294,9 +379,17 @@ function instanceOfClover(object: any): object is Clover {
  * @returns {string}
  */
 export function formatArtifactName(name: string): string {
-  return `coverage-${name}`.replace(/\//g, '-')
+  const {artifactName} = getInputs()
+  return `${artifactName}`.replace('%name%', name).replace(/\//g, '-')
 }
 
+/**
+ * In Array functionality
+ *
+ * @param {string} needle
+ * @param {string[]} haystack
+ * @returns {boolean}
+ */
 function inArray(needle: string, haystack: string[]): boolean {
   const length = haystack.length
   for (let i = 0; i < length; i++) {
