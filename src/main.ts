@@ -159,6 +159,7 @@ async function generateMarkdown(
   //If this is run after write the buffer is empty
   core.info(`Writing results`)
   await writeFile('code-coverage-results.md', summary.stringify())
+  core.setOutput('file', 'code-coverage-results.md')
 
   if (
     process.env.GITHUB_STEP_SUMMARY &&
