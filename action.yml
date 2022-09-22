@@ -17,22 +17,30 @@ inputs:
     description: 'Include a coverage badge in the output using shields.io - true / false (default).'
     required: false
     default: 'false'
-  overall_fail_threshold:
+  overall_coverage_fail_threshold:
     description: 'Fail if overall coverage below lower threshold - true / false (default).'
     required: false
     default: '0'
-  coverage_color_red_min:
+  file_coverage_error_min:
     description: 'Threshold used to determine when coverages less than this value should be marked red'
     required: false
     default: '50'
-  coverage_color_orange_max:
-    description: 'Threshold used to determine when coverages less than this value should be marked orange'
+  file_coverage_warning_max:
+    description: 'Threshold used to determine when coverages less than this value should be marked orange. Above this will be marked green'
     required: false
     default: '75'
   fail_on_negative_difference:
     description: 'Fail if any difference is a negative value (Coverage was reduced)'
     required: false
     default: 'false'
+  artifact_download_workflow_names:
+    description: 'Comma Separated list of workflow names to look for artifacts in. If left empty will only look at the current workflow'
+    required: false
+  artifact_name:
+    description: 'Artifact name. Use %name% as a placeholder'
+    required: false
+    default: 'coverage-%name%'
+
 runs:
   using: 'node16'
   main: 'dist/index.js'

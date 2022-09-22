@@ -66,24 +66,33 @@ async function generateMarkdown(
   baseCoverage: Coverage | null = null
 ): Promise<void> {
   const {
-    overallFailThreshold,
+    overallCoverageFailThreshold,
     failOnNegativeDifference,
-    coverageColorRedMin,
-    coverageColorOrangeMax,
+    fileCoverageErrorMin,
+    fileCoverageWarningMax,
     badge,
     markdownFilename
   } = getInputs()
+  //console.log(headCoverage)
+  console.log('Getting Markdown')
   const map = Object.entries(headCoverage.files).map(([hash, file]) => {
     if (baseCoverage === null) {
       return [
         file.relative,
-        `${colorizePercentageByThreshold(file.coverage, 50, 'green')}`
+        `${colorizePercentageByThreshold(
+          file.coverage,
+          fileCoverageWarningMax,
+          fileCoverageErrorMin
+        )}`
       ]
     }
 
+    console.log(`Running ${file.relative}[${hash}]`)
     const baseCoveragePercentage = baseCoverage.files[hash]
       ? baseCoverage.files[hash].coverage
       : null
+
+    //console.log(baseCoverage.files[hash] ?? file.relative)
 
     const differencePercentage = baseCoverage.files[hash]
       ? headCoverage.files[hash].coverage - baseCoverage.files[hash].coverage
@@ -101,27 +110,35 @@ async function generateMarkdown(
 
     return [
       file.relative,
-      `${colorizePercentageByThreshold(baseCoveragePercentage, 50, 'green')}`,
-      `${colorizePercentageByThreshold(file.coverage, 50, 'green')}`,
+      `${colorizePercentageByThreshold(
+        baseCoveragePercentage,
+        fileCoverageWarningMax,
+        fileCoverageErrorMin
+      )}`,
+      `${colorizePercentageByThreshold(
+        file.coverage,
+        fileCoverageWarningMax,
+        fileCoverageErrorMin
+      )}`,
       colorizePercentageByThreshold(differencePercentage)
     ]
   })
 
-  if (overallFailThreshold > headCoverage.coverage) {
+  if (overallCoverageFailThreshold > headCoverage.coverage) {
     core.setFailed(
-      `FAIL: Overall coverage of ${headCoverage.coverage.toString()}% below minimum threshold of ${overallFailThreshold.toString()}%`
+      `FAIL: Overall coverage of ${headCoverage.coverage.toString()}% below minimum threshold of ${overallCoverageFailThreshold.toString()}%`
     )
   }
 
   let color = 'grey'
-  if (headCoverage.coverage < coverageColorRedMin) {
+  if (headCoverage.coverage < fileCoverageErrorMin) {
     color = 'red'
   } else if (
-    headCoverage.coverage > coverageColorRedMin &&
-    headCoverage.coverage < coverageColorOrangeMax
+    headCoverage.coverage > fileCoverageErrorMin &&
+    headCoverage.coverage < fileCoverageWarningMax
   ) {
-    color = 'yellow'
-  } else if (headCoverage.coverage > coverageColorOrangeMax) {
+    color = 'orange'
+  } else if (headCoverage.coverage > fileCoverageWarningMax) {
     color = 'green'
   }
 
@@ -152,21 +169,17 @@ async function generateMarkdown(
     .addTable([headers, ...map])
     .addBreak()
     .addRaw(
-      `<i>Minimum allowed coverage is</i> <code>${overallFailThreshold}%</code>, this run produced</i> <code>${headCoverage.coverage}%</code>`
+      `<i>Minimum allowed coverage is</i> <code>${overallCoverageFailThreshold}%</code>, this run produced</i> <code>${headCoverage.coverage}%</code>`
     )
 
   //If this is run after write the buffer is empty
   core.info(`Writing results to ${markdownFilename}.md`)
   await writeFile(`${markdownFilename}.md`, summary.stringify())
   core.setOutput('file', `${markdownFilename}.md`)
+  core.setOutput('coverage', headCoverage.coverage)
 
-  if (
-    process.env.GITHUB_STEP_SUMMARY &&
-    process.env.GITHUB_STEP_SUMMARY !== ''
-  ) {
-    core.info(`Writing job summary`)
-    await summary.write()
-  }
+  core.info(`Writing job summary`)
+  await summary.write()
 }
 
 run()

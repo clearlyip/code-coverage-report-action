@@ -15,11 +15,13 @@ export interface Inputs {
   token: string
   filename: string
   badge: boolean
-  overallFailThreshold: number
-  coverageColorRedMin: number
-  coverageColorOrangeMax: number
+  overallCoverageFailThreshold: number
+  fileCoverageErrorMin: number
+  fileCoverageWarningMax: number
   failOnNegativeDifference: boolean
   markdownFilename: string
+  artifactDownloadWorkflowNames: string[] | null
+  artifactName: string
 }
 
 export interface Files {

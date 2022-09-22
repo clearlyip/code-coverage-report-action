@@ -21,7 +21,7 @@ export default async function parse(cobertura: Cobertura): Promise<Coverage> {
     files: cobertura.coverage.packages.package.reduce(
       (previous, {'@_name': name, '@_line-rate': lineRate}: Package) => ({
         ...previous,
-        [createHash(name)]: {
+        [createHash(name.replace(r, ''))]: {
           relative: name.replace(r, ''),
           absolute: name,
           coverage: roundPercentage(parseFloat(lineRate) * 100)

@@ -6,7 +6,7 @@ on: # rebuild any PRs and main branch changes
       - main
 
 jobs:
-  run: # make sure the action works on a clean machine without building
+  ci: # make sure the action works on a clean machine without building
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -14,14 +14,15 @@ jobs:
         with:
           node-version: 16
       - run: npm ci
-      - run: npm run format:check
+      - run: npm run format:check >> "${GITHUB_STEP_SUMMARY}"
       - run: npm run lint
-      - run: npm run test
+      - run: npm run test >> "${GITHUB_STEP_SUMMARY}"
       - uses: ./
         id: code_coverage_report_action
         with:
           filename: 'coverage/clover.xml'
           fail_on_negative_difference: true
+          artifact_download_workflow_names: 'ci,cron'
       - name: Add Coverage PR Comment
         uses: marocchino/sticky-pull-request-comment@v2
         if: steps.code_coverage_report_action.outputs.file != '' && github.event_name == 'pull_request' && (success() || failure())

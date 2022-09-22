@@ -13,8 +13,8 @@
     "test": "jest",
     "run": "INPUT_FILENAME=__tests__/cob.xml ts-node src/main.ts",
     "all": "npm run format && npm run lint && npm run package && npm test",
-    "act": "act --artifact-server-path /tmp/artifacts -s GITHUB_TOKEN",
-    "act:pr": "act pull_request --artifact-server-path /tmp/artifacts -s GITHUB_TOKEN -e __tests__/pull-request.json",
+    "act": "act --artifact-server-path /tmp/artifacts -s GITHUB_TOKEN --env GITHUB_STEP_SUMMARY=/dev/stdout",
+    "act:pr": "act pull_request --artifact-server-path /tmp/artifacts -s GITHUB_TOKEN --env GITHUB_STEP_SUMMARY=/dev/stdout -e __tests__/pull-request.json",
     "gen:types": "ts-node generateTypes.ts"
   },
   "repository": {

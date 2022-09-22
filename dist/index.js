@@ -24230,17 +24230,21 @@ function run() {
 }
 function generateMarkdown(headCoverage, baseCoverage = null) {
     return __awaiter(this, void 0, void 0, function* () {
-        const { overallFailThreshold, failOnNegativeDifference, coverageColorRedMin, coverageColorOrangeMax, badge, markdownFilename } = (0, utils_1.getInputs)();
+        const { overallCoverageFailThreshold, failOnNegativeDifference, fileCoverageErrorMin, fileCoverageWarningMax, badge, markdownFilename } = (0, utils_1.getInputs)();
+        //console.log(headCoverage)
+        console.log('Getting Markdown');
         const map = Object.entries(headCoverage.files).map(([hash, file]) => {
             if (baseCoverage === null) {
                 return [
                     file.relative,
-                    `${(0, utils_1.colorizePercentageByThreshold)(file.coverage, 50, 'green')}`
+                    `${(0, utils_1.colorizePercentageByThreshold)(file.coverage, fileCoverageWarningMax, fileCoverageErrorMin)}`
                 ];
             }
+            console.log(`Running ${file.relative}[${hash}]`);
             const baseCoveragePercentage = baseCoverage.files[hash]
                 ? baseCoverage.files[hash].coverage
                 : null;
+            //console.log(baseCoverage.files[hash] ?? file.relative)
             const differencePercentage = baseCoverage.files[hash]
                 ? headCoverage.files[hash].coverage - baseCoverage.files[hash].coverage
                 : null;
@@ -24251,23 +24255,23 @@ function generateMarkdown(headCoverage, baseCoverage = null) {
             }
             return [
                 file.relative,
-                `${(0, utils_1.colorizePercentageByThreshold)(baseCoveragePercentage, 50, 'green')}`,
-                `${(0, utils_1.colorizePercentageByThreshold)(file.coverage, 50, 'green')}`,
+                `${(0, utils_1.colorizePercentageByThreshold)(baseCoveragePercentage, fileCoverageWarningMax, fileCoverageErrorMin)}`,
+                `${(0, utils_1.colorizePercentageByThreshold)(file.coverage, fileCoverageWarningMax, fileCoverageErrorMin)}`,
                 (0, utils_1.colorizePercentageByThreshold)(differencePercentage)
             ];
         });
-        if (overallFailThreshold > headCoverage.coverage) {
-            core.setFailed(`FAIL: Overall coverage of ${headCoverage.coverage.toString()}% below minimum threshold of ${overallFailThreshold.toString()}%`);
+        if (overallCoverageFailThreshold > headCoverage.coverage) {
+            core.setFailed(`FAIL: Overall coverage of ${headCoverage.coverage.toString()}% below minimum threshold of ${overallCoverageFailThreshold.toString()}%`);
         }
         let color = 'grey';
-        if (headCoverage.coverage < coverageColorRedMin) {
+        if (headCoverage.coverage < fileCoverageErrorMin) {
             color = 'red';
         }
-        else if (headCoverage.coverage > coverageColorRedMin &&
-            headCoverage.coverage < coverageColorOrangeMax) {
-            color = 'yellow';
+        else if (headCoverage.coverage > fileCoverageErrorMin &&
+            headCoverage.coverage < fileCoverageWarningMax) {
+            color = 'orange';
         }
-        else if (headCoverage.coverage > coverageColorOrangeMax) {
+        else if (headCoverage.coverage > fileCoverageWarningMax) {
             color = 'green';
         }
         const summary = core.summary.addHeading('Code Coverage Report');
@@ -24288,16 +24292,14 @@ function generateMarkdown(headCoverage, baseCoverage = null) {
         summary
             .addTable([headers, ...map])
             .addBreak()
-            .addRaw(`<i>Minimum allowed coverage is</i> <code>${overallFailThreshold}%</code>, this run produced</i> <code>${headCoverage.coverage}%</code>`);
+            .addRaw(`<i>Minimum allowed coverage is</i> <code>${overallCoverageFailThreshold}%</code>, this run produced</i> <code>${headCoverage.coverage}%</code>`);
         //If this is run after write the buffer is empty
         core.info(`Writing results to ${markdownFilename}.md`);
         yield (0, promises_1.writeFile)(`${markdownFilename}.md`, summary.stringify());
         core.setOutput('file', `${markdownFilename}.md`);
-        if (process.env.GITHUB_STEP_SUMMARY &&
-            process.env.GITHUB_STEP_SUMMARY !== '') {
-            core.info(`Writing job summary`);
-            yield summary.write();
-        }
+        core.setOutput('coverage', headCoverage.coverage);
+        core.info(`Writing job summary`);
+        yield summary.write();
     });
 }
 run();
@@ -24375,8 +24377,8 @@ function parse(clover) {
         return {
             files: Object.entries(files).reduce((previous, [hash, file]) => {
                 file.relative = file.absolute.replace(regExp, '');
-                return Object.assign(Object.assign({}, previous), { [hash]: file });
-            }, files),
+                return Object.assign(Object.assign({}, previous), { [(0, utils_1.createHash)(file.relative)]: file });
+            }, {}),
             coverage: processCoverageMetrics(metrics),
             timestamp: parseInt(timestamp),
             basePath
@@ -24535,7 +24537,7 @@ function parse(cobertura) {
         const basePath = `${(0, utils_1.determineCommonBasePath)(fileList)}`;
         const r = new RegExp(`^${(0, utils_1.escapeRegExp)(`${basePath}/`)}`);
         return {
-            files: cobertura.coverage.packages.package.reduce((previous, { '@_name': name, '@_line-rate': lineRate }) => (Object.assign(Object.assign({}, previous), { [(0, utils_1.createHash)(name)]: {
+            files: cobertura.coverage.packages.package.reduce((previous, { '@_name': name, '@_line-rate': lineRate }) => (Object.assign(Object.assign({}, previous), { [(0, utils_1.createHash)(name.replace(r, ''))]: {
                     relative: name.replace(r, ''),
                     absolute: name,
                     coverage: (0, utils_1.roundPercentage)(parseFloat(lineRate) * 100)
@@ -24687,10 +24689,15 @@ exports.parseXML = parseXML;
 function downloadArtifacts(name, base = 'artifacts') {
     var e_1, _a, e_2, _b, e_3, _c;
     return __awaiter(this, void 0, void 0, function* () {
-        const { token } = getInputs();
+        const { token, artifactDownloadWorkflowNames } = getInputs();
         const client = github.getOctokit(token);
+        const artifactWorkflowNames = artifactDownloadWorkflowNames !== null
+            ? artifactDownloadWorkflowNames
+            : [github.context.job];
+        const artifactName = formatArtifactName(name);
         const { GITHUB_BASE_REF = '', GITHUB_REPOSITORY = '' } = process.env;
         const [owner, repo] = GITHUB_REPOSITORY.split('/');
+        core.info(`Looking for artifact "${artifactName}" in the following worflows: ${artifactWorkflowNames.join(',')}`);
         try {
             for (var _d = __asyncValues(client.paginate.iterator(client.rest.actions.listWorkflowRunsForRepo, {
                 owner,
@@ -24702,7 +24709,12 @@ function downloadArtifacts(name, base = 'artifacts') {
                 try {
                     for (var _f = (e_2 = void 0, __asyncValues(runs.data)), _g; _g = yield _f.next(), !_g.done;) {
                         const run = _g.value;
-                        if (run.name !== github.context.job) {
+                        if (!run.name) {
+                            core.debug(`${run.id} had no workflow name, skipping`);
+                            continue;
+                        }
+                        if (!inArray(run.name, artifactWorkflowNames)) {
+                            core.debug(`${run.name} did not match the following worflows: ${artifactWorkflowNames.join(',')}`);
                             continue;
                         }
                         const artifacts = yield client.rest.actions.listWorkflowRunArtifacts({
@@ -24711,6 +24723,7 @@ function downloadArtifacts(name, base = 'artifacts') {
                             run_id: run.id
                         });
                         if (artifacts.data.artifacts.length === 0) {
+                            core.debug(`No Artifacts in workflow ${run.id}`);
                             continue;
                         }
                         try {
@@ -24719,9 +24732,10 @@ function downloadArtifacts(name, base = 'artifacts') {
                                 if (art.expired) {
                                     continue;
                                 }
-                                if (art.name !== formatArtifactName(GITHUB_BASE_REF)) {
+                                if (art.name !== artifactName) {
                                     continue;
                                 }
+                                core.info(`Downloading the artifact "${art.name}" from workflow ${run.name}:${run.id}`);
                                 const zip = yield client.rest.actions.downloadArtifact({
                                     owner,
                                     repo,
@@ -24729,7 +24743,9 @@ function downloadArtifacts(name, base = 'artifacts') {
                                     archive_format: 'zip'
                                 });
                                 const dir = path_1.default.join(__dirname, base);
+                                core.debug(`Making dir ${dir}`);
                                 yield mkdir(dir, { recursive: true });
+                                core.debug(`Extracting Artifact to ${dir}`);
                                 const adm = new adm_zip_1.default(Buffer.from(zip.data));
                                 adm.extractAllTo(dir, true);
                                 return dir;
@@ -24760,6 +24776,7 @@ function downloadArtifacts(name, base = 'artifacts') {
             }
             finally { if (e_1) throw e_1.error; }
         }
+        core.warning(`No artifacts found for the following workspaces: ${artifactWorkflowNames.join(',')}`);
         return null;
     });
 }
@@ -24778,6 +24795,7 @@ function uploadArtifacts(files, name) {
         const options = {
             continueOnError: false
         };
+        core.info(`Uploading Artifacts to ${artifactName} on workflow named ${github.context.job}`);
         return yield artifactClient.uploadArtifact(artifactName, files, rootDirectory, options);
     });
 }
@@ -24798,9 +24816,11 @@ function parseCoverage(filename) {
                 {
                     const xml = yield parseXML(filename);
                     if (instanceOfCobertura(xml)) {
+                        core.info(`Detected a Cobertura File at ${filename}`);
                         return yield (0, cobertura_1.parse)(xml);
                     }
                     else if (instanceOfClover(xml)) {
+                        core.info(`Detected a Clover File at ${filename}`);
                         return yield (0, clover_1.parse)(xml);
                     }
                 }
@@ -24828,17 +24848,37 @@ function escapeRegExp(string) {
     return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
 }
 exports.escapeRegExp = escapeRegExp;
-function colorizePercentageByThreshold(percentage, threshold = 0, equalColor = 'grey') {
+/**
+ * Colorize Percentage By Threshold
+ * @param percentage
+ * @param thresholdMax
+ * @param thresholdMin
+ * @returns
+ */
+function colorizePercentageByThreshold(percentage, thresholdMax = 0, thresholdMin = null) {
     if (percentage === null) {
         return 'N/A';
     }
-    if (percentage > threshold) {
-        return `$\\textcolor{green}{\\text{${percentage.toString()}}}$%`;
+    if (thresholdMin === null) {
+        if (percentage > thresholdMax) {
+            return `🟢 ${percentage.toString()}%`;
+        }
+        else if (percentage < thresholdMax) {
+            return `🔴 ${percentage.toString()}%`;
+        }
     }
-    else if (percentage < threshold) {
-        return `$\\textcolor{red}{\\text{${percentage.toString()}}}$%`;
+    else {
+        if (percentage < thresholdMin) {
+            return `🔴 ${percentage.toString()}%`;
+        }
+        else if (percentage >= thresholdMin && percentage <= thresholdMax) {
+            return `🟠 ${percentage.toString()}%`;
+        }
+        else if (percentage > thresholdMax) {
+            return `🟢 ${percentage.toString()}%`;
+        }
     }
-    return `$\\textcolor{${equalColor}}{\\text{${percentage.toString()}}}$%`;
+    return `⚪ ${percentage.toString()}%`;
 }
 exports.colorizePercentageByThreshold = colorizePercentageByThreshold;
 /**
@@ -24875,25 +24915,42 @@ function determineCommonBasePath(files, separator = '/') {
         .join(separator));
 }
 exports.determineCommonBasePath = determineCommonBasePath;
+let inputs;
+/**
+ * Get Formatted Inputs
+ *
+ * @returns {Inputs}
+ */
 function getInputs() {
+    if (inputs) {
+        return inputs;
+    }
     const token = core.getInput('github_token', { required: true });
     const filename = core.getInput('filename');
     const markdownFilename = core.getInput('markdown_filename');
     const badge = core.getInput('badge') === 'true' ? true : false;
-    const overallFailThreshold = parseInt(core.getInput('overall_fail_threshold'));
-    const coverageColorRedMin = parseInt(core.getInput('coverage_color_red_min'));
-    const coverageColorOrangeMax = parseInt(core.getInput('coverage_color_orange_max'));
+    const overallCoverageFailThreshold = parseInt(core.getInput('overall_coverage_fail_threshold'));
+    const fileCoverageErrorMin = parseInt(core.getInput('file_coverage_error_min'));
+    const fileCoverageWarningMax = parseInt(core.getInput('file_coverage_warning_max'));
     const failOnNegativeDifference = core.getInput('fail_on_negative_difference') === 'true' ? true : false;
-    return {
+    const artifactName = core.getInput('artifact_name');
+    const tempArtifactDownloadWorkflowNames = core.getInput('artifact_download_workflow_names');
+    const artifactDownloadWorkflowNames = tempArtifactDownloadWorkflowNames !== ''
+        ? tempArtifactDownloadWorkflowNames.split(',').map(n => n.trim())
+        : null;
+    inputs = {
         token,
         filename,
         badge,
-        overallFailThreshold,
-        coverageColorRedMin,
-        coverageColorOrangeMax,
+        overallCoverageFailThreshold,
+        fileCoverageErrorMin,
+        fileCoverageWarningMax,
         failOnNegativeDifference,
-        markdownFilename
+        markdownFilename,
+        artifactDownloadWorkflowNames,
+        artifactName
     };
+    return inputs;
 }
 exports.getInputs = getInputs;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -24910,9 +24967,17 @@ function instanceOfClover(object) {
  * @returns {string}
  */
 function formatArtifactName(name) {
-    return `coverage-${name}`.replace(/\//g, '-');
+    const { artifactName } = getInputs();
+    return `${artifactName}`.replace('%name%', name).replace(/\//g, '-');
 }
 exports.formatArtifactName = formatArtifactName;
+/**
+ * In Array functionality
+ *
+ * @param {string} needle
+ * @param {string[]} haystack
+ * @returns {boolean}
+ */
 function inArray(needle, haystack) {
     const length = haystack.length;
     for (let i = 0; i < length; i++) {
