@@ -12,6 +12,7 @@ export interface CoverageFile {
 }
 
 export interface Inputs {
+  token: string
   filename: string
   badge: boolean
   overallFailThreshold: number

@@ -2,6 +2,10 @@ name: 'Your name here'
 description: 'Provide a description here'
 author: 'Your name or organization here'
 inputs:
+  github_token:
+    description: GitHub token
+    required: false
+    default: ${{ github.token }}
   filename:
     description: 'A comma separated list of code coverage files to analyse. Also supports using glob patterns to match multiple files.'
     required: true

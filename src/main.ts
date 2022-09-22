@@ -9,6 +9,7 @@ import {
 } from './utils'
 import {Coverage} from './interfaces'
 import {writeFile} from 'fs/promises'
+import path from 'path'
 
 async function run(): Promise<void> {
   const filename = core.getInput('filename')
@@ -21,10 +22,10 @@ async function run(): Promise<void> {
   switch (process.env.GITHUB_EVENT_NAME) {
     case 'pull_request': {
       const {GITHUB_BASE_REF = ''} = process.env
-      const coverage = await downloadArtifacts(GITHUB_BASE_REF)
+      const artifactPath = await downloadArtifacts(GITHUB_BASE_REF)
       const baseCoverage =
-        coverage !== null
-          ? await parseCoverage(`${coverage.downloadPath}/${filename}`)
+        artifactPath !== null
+          ? await parseCoverage(path.join(artifactPath, filename))
           : null
       const headCoverage = await parseCoverage(filename)
 
@@ -83,7 +84,7 @@ async function generateMarkdown(
       differencePercentage < 0
     ) {
       core.setFailed(
-        `${headCoverage.files[hash].relative} coverage difference was negative`
+        `${headCoverage.files[hash].relative} coverage difference was ${differencePercentage}%`
       )
     }
 
