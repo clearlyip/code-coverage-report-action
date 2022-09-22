@@ -70,7 +70,8 @@ async function generateMarkdown(
     failOnNegativeDifference,
     coverageColorRedMin,
     coverageColorOrangeMax,
-    badge
+    badge,
+    markdownFilename
   } = getInputs()
   const map = Object.entries(headCoverage.files).map(([hash, file]) => {
     if (baseCoverage === null) {
@@ -80,15 +81,13 @@ async function generateMarkdown(
       ]
     }
 
-    const baseCoveragePercentage =
-      baseCoverage.files[hash] !== null
-        ? baseCoverage.files[hash].coverage
-        : null
+    const baseCoveragePercentage = baseCoverage.files[hash]
+      ? baseCoverage.files[hash].coverage
+      : null
 
-    const differencePercentage =
-      baseCoverage.files[hash] !== null
-        ? headCoverage.files[hash].coverage - baseCoverage.files[hash].coverage
-        : null
+    const differencePercentage = baseCoverage.files[hash]
+      ? headCoverage.files[hash].coverage - baseCoverage.files[hash].coverage
+      : null
 
     if (
       failOnNegativeDifference &&
@@ -157,15 +156,15 @@ async function generateMarkdown(
     )
 
   //If this is run after write the buffer is empty
-  core.info(`Writing results`)
-  await writeFile('code-coverage-results.md', summary.stringify())
-  core.setOutput('file', 'code-coverage-results.md')
+  core.info(`Writing results to ${markdownFilename}.md`)
+  await writeFile(`${markdownFilename}.md`, summary.stringify())
+  core.setOutput('file', `${markdownFilename}.md`)
 
   if (
     process.env.GITHUB_STEP_SUMMARY &&
     process.env.GITHUB_STEP_SUMMARY !== ''
   ) {
-    core.info(`Writing summary`)
+    core.info(`Writing job summary`)
     await summary.write()
   }
 }

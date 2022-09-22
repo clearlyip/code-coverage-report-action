@@ -39,7 +39,16 @@ export async function parseXML<T>(filename: string): Promise<T | null> {
   const contents = await readFile(filename, 'binary')
 
   return new XMLParser({
-    ignoreAttributes: false
+    ignoreAttributes: false,
+    isArray: (name, jpath, isLeafNode, isAttribute) => {
+      if (isAttribute) {
+        return false
+      }
+      return inArray(jpath, [
+        'coverage.project.package',
+        'coverage.project.package.file'
+      ])
+    }
   }).parse(contents)
 }
 
@@ -70,7 +79,7 @@ export async function downloadArtifacts(
       status: 'success'
     }
   )) {
-    for (const run of runs.data) {
+    for await (const run of runs.data) {
       if (run.name !== github.context.job) {
         continue
       }
@@ -83,7 +92,7 @@ export async function downloadArtifacts(
       if (artifacts.data.artifacts.length === 0) {
         continue
       }
-      for (const art of artifacts.data.artifacts) {
+      for await (const art of artifacts.data.artifacts) {
         if (art.expired) {
           continue
         }
@@ -247,6 +256,7 @@ export function determineCommonBasePath(
 export function getInputs(): Inputs {
   const token = core.getInput('github_token', {required: true})
   const filename = core.getInput('filename')
+  const markdownFilename = core.getInput('markdown_filename')
   const badge = core.getInput('badge') === 'true' ? true : false
   const overallFailThreshold = parseInt(core.getInput('overall_fail_threshold'))
   const coverageColorRedMin = parseInt(core.getInput('coverage_color_red_min'))
@@ -263,7 +273,8 @@ export function getInputs(): Inputs {
     overallFailThreshold,
     coverageColorRedMin,
     coverageColorOrangeMax,
-    failOnNegativeDifference
+    failOnNegativeDifference,
+    markdownFilename
   }
 }
 
@@ -282,6 +293,14 @@ function instanceOfClover(object: any): object is Clover {
  * @param {string} name
  * @returns {string}
  */
-function formatArtifactName(name: string): string {
+export function formatArtifactName(name: string): string {
   return `coverage-${name}`.replace(/\//g, '-')
+}
+
+function inArray(needle: string, haystack: string[]): boolean {
+  const length = haystack.length
+  for (let i = 0; i < length; i++) {
+    if (haystack[i] === needle) return true
+  }
+  return false
 }

@@ -2,13 +2,17 @@ name: 'Your name here'
 description: 'Provide a description here'
 author: 'Your name or organization here'
 inputs:
+  filename:
+    description: 'Code Coverage file to process'
+    required: true
   github_token:
     description: GitHub token
     required: false
     default: ${{ github.token }}
-  filename:
-    description: 'A comma separated list of code coverage files to analyse. Also supports using glob patterns to match multiple files.'
-    required: true
+  markdown_filename:
+    description: 'Include a coverage badge in the output using shields.io - true / false (default).'
+    required: false
+    default: 'code-coverage-results'
   badge:
     description: 'Include a coverage badge in the output using shields.io - true / false (default).'
     required: false

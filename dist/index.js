@@ -6512,13 +6512,13 @@ exports.request = request;
 
 /***/ }),
 
-/***/ 761:
+/***/ 6761:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-const Utils = __nccwpck_require__(182);
+const Utils = __nccwpck_require__(5182);
 const pth = __nccwpck_require__(1017);
-const ZipEntry = __nccwpck_require__(57);
-const ZipFile = __nccwpck_require__(744);
+const ZipEntry = __nccwpck_require__(4057);
+const ZipFile = __nccwpck_require__(7744);
 
 const get_Bool = (val, def) => (typeof val === "boolean" ? val : def);
 const get_Str = (val, def) => (typeof val === "string" ? val : def);
@@ -7302,10 +7302,10 @@ module.exports = function (/**String*/ input, /** object */ options) {
 
 /***/ }),
 
-/***/ 32:
+/***/ 4622:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-var Utils = __nccwpck_require__(182),
+var Utils = __nccwpck_require__(5182),
     Constants = Utils.Constants;
 
 /* The central directory file header */
@@ -7647,19 +7647,19 @@ module.exports = function () {
 
 /***/ }),
 
-/***/ 958:
+/***/ 4958:
 /***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
-exports.EntryHeader = __nccwpck_require__(32);
-exports.MainHeader = __nccwpck_require__(408);
+exports.EntryHeader = __nccwpck_require__(4622);
+exports.MainHeader = __nccwpck_require__(4408);
 
 
 /***/ }),
 
-/***/ 408:
+/***/ 4408:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-var Utils = __nccwpck_require__(182),
+var Utils = __nccwpck_require__(5182),
     Constants = Utils.Constants;
 
 /* The entries in the end of central directory */
@@ -7792,7 +7792,7 @@ module.exports = function () {
 
 /***/ }),
 
-/***/ 686:
+/***/ 7686:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
 module.exports = function (/*Buffer*/ inbuf) {
@@ -7832,17 +7832,17 @@ module.exports = function (/*Buffer*/ inbuf) {
 
 /***/ }),
 
-/***/ 928:
+/***/ 3928:
 /***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
-exports.Deflater = __nccwpck_require__(686);
-exports.Inflater = __nccwpck_require__(153);
-exports.ZipCrypto = __nccwpck_require__(228);
+exports.Deflater = __nccwpck_require__(7686);
+exports.Inflater = __nccwpck_require__(2153);
+exports.ZipCrypto = __nccwpck_require__(3228);
 
 
 /***/ }),
 
-/***/ 153:
+/***/ 2153:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
 module.exports = function (/*Buffer*/ inbuf) {
@@ -7880,7 +7880,7 @@ module.exports = function (/*Buffer*/ inbuf) {
 
 /***/ }),
 
-/***/ 228:
+/***/ 3228:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
 "use strict";
@@ -8058,7 +8058,7 @@ module.exports = { decrypt, encrypt, _salter };
 
 /***/ }),
 
-/***/ 522:
+/***/ 4522:
 /***/ ((module) => {
 
 module.exports = {
@@ -8207,7 +8207,7 @@ module.exports = {
 
 /***/ }),
 
-/***/ 255:
+/***/ 1255:
 /***/ ((module) => {
 
 module.exports = {
@@ -8249,10 +8249,10 @@ module.exports = {
 
 /***/ }),
 
-/***/ 321:
+/***/ 8321:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-const fs = (__nccwpck_require__(895).require)();
+const fs = (__nccwpck_require__(2895).require)();
 const pth = __nccwpck_require__(1017);
 
 fs.existsSync = fs.existsSync || pth.existsSync;
@@ -8335,13 +8335,13 @@ module.exports = function (/*String*/ path) {
 
 /***/ }),
 
-/***/ 895:
+/***/ 2895:
 /***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
 exports.require = function () {
     if (typeof process === "object" && process.versions && process.versions["electron"]) {
         try {
-            const originalFs = __nccwpck_require__(941);
+            const originalFs = __nccwpck_require__(2941);
             if (Object.keys(originalFs).length > 0) {
                 return originalFs;
             }
@@ -8353,23 +8353,23 @@ exports.require = function () {
 
 /***/ }),
 
-/***/ 182:
+/***/ 5182:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-module.exports = __nccwpck_require__(291);
-module.exports.Constants = __nccwpck_require__(522);
-module.exports.Errors = __nccwpck_require__(255);
-module.exports.FileAttr = __nccwpck_require__(321);
+module.exports = __nccwpck_require__(1291);
+module.exports.Constants = __nccwpck_require__(4522);
+module.exports.Errors = __nccwpck_require__(1255);
+module.exports.FileAttr = __nccwpck_require__(8321);
 
 
 /***/ }),
 
-/***/ 291:
+/***/ 1291:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-const fsystem = (__nccwpck_require__(895).require)();
+const fsystem = (__nccwpck_require__(2895).require)();
 const pth = __nccwpck_require__(1017);
-const Constants = __nccwpck_require__(522);
+const Constants = __nccwpck_require__(4522);
 const isWin = typeof process === "object" && "win32" === process.platform;
 
 const is_Obj = (obj) => obj && typeof obj === "object";
@@ -8617,13 +8617,13 @@ Utils.crcTable = crcTable;
 
 /***/ }),
 
-/***/ 57:
+/***/ 4057:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-var Utils = __nccwpck_require__(182),
-    Headers = __nccwpck_require__(958),
+var Utils = __nccwpck_require__(5182),
+    Headers = __nccwpck_require__(4958),
     Constants = Utils.Constants,
-    Methods = __nccwpck_require__(928);
+    Methods = __nccwpck_require__(3928);
 
 module.exports = function (/*Buffer*/ input) {
     var _entryHeader = new Headers.EntryHeader(),
@@ -8957,12 +8957,12 @@ module.exports = function (/*Buffer*/ input) {
 
 /***/ }),
 
-/***/ 744:
+/***/ 7744:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-const ZipEntry = __nccwpck_require__(57);
-const Headers = __nccwpck_require__(958);
-const Utils = __nccwpck_require__(182);
+const ZipEntry = __nccwpck_require__(4057);
+const Headers = __nccwpck_require__(4958);
+const Utils = __nccwpck_require__(5182);
 
 module.exports = function (/*Buffer|null*/ inBuffer, /** object */ options) {
     var entryList = [],
@@ -24230,7 +24230,7 @@ function run() {
 }
 function generateMarkdown(headCoverage, baseCoverage = null) {
     return __awaiter(this, void 0, void 0, function* () {
-        const { overallFailThreshold, failOnNegativeDifference, coverageColorRedMin, coverageColorOrangeMax, badge } = (0, utils_1.getInputs)();
+        const { overallFailThreshold, failOnNegativeDifference, coverageColorRedMin, coverageColorOrangeMax, badge, markdownFilename } = (0, utils_1.getInputs)();
         const map = Object.entries(headCoverage.files).map(([hash, file]) => {
             if (baseCoverage === null) {
                 return [
@@ -24238,10 +24238,10 @@ function generateMarkdown(headCoverage, baseCoverage = null) {
                     `${(0, utils_1.colorizePercentageByThreshold)(file.coverage, 50, 'green')}`
                 ];
             }
-            const baseCoveragePercentage = baseCoverage.files[hash] !== null
+            const baseCoveragePercentage = baseCoverage.files[hash]
                 ? baseCoverage.files[hash].coverage
                 : null;
-            const differencePercentage = baseCoverage.files[hash] !== null
+            const differencePercentage = baseCoverage.files[hash]
                 ? headCoverage.files[hash].coverage - baseCoverage.files[hash].coverage
                 : null;
             if (failOnNegativeDifference &&
@@ -24290,12 +24290,12 @@ function generateMarkdown(headCoverage, baseCoverage = null) {
             .addBreak()
             .addRaw(`<i>Minimum allowed coverage is</i> <code>${overallFailThreshold}%</code>, this run produced</i> <code>${headCoverage.coverage}%</code>`);
         //If this is run after write the buffer is empty
-        core.info(`Writing results`);
-        yield (0, promises_1.writeFile)('code-coverage-results.md', summary.stringify());
-        core.setOutput('file', 'code-coverage-results.md');
+        core.info(`Writing results to ${markdownFilename}.md`);
+        yield (0, promises_1.writeFile)(`${markdownFilename}.md`, summary.stringify());
+        core.setOutput('file', `${markdownFilename}.md`);
         if (process.env.GITHUB_STEP_SUMMARY &&
             process.env.GITHUB_STEP_SUMMARY !== '') {
-            core.info(`Writing summary`);
+            core.info(`Writing job summary`);
             yield summary.write();
         }
     });
@@ -24350,22 +24350,33 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __asyncValues = (this && this.__asyncValues) || function (o) {
+    if (!Symbol.asyncIterator) throw new TypeError("Symbol.asyncIterator is not defined.");
+    var m = o[Symbol.asyncIterator], i;
+    return m ? m.call(o) : (o = typeof __values === "function" ? __values(o) : o[Symbol.iterator](), i = {}, verb("next"), verb("throw"), verb("return"), i[Symbol.asyncIterator] = function () { return this; }, i);
+    function verb(n) { i[n] = o[n] && function (v) { return new Promise(function (resolve, reject) { v = o[n](v), settle(resolve, reject, v.done, v.value); }); }; }
+    function settle(resolve, reject, d, v) { Promise.resolve(v).then(function(v) { resolve({ value: v, done: d }); }, reject); }
+};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const utils_1 = __nccwpck_require__(1314);
 function parse(clover) {
     return __awaiter(this, void 0, void 0, function* () {
-        const fileList = clover.coverage.project.file.map(({ '@_name': name }) => {
-            return name;
-        });
-        const basePath = `${(0, utils_1.determineCommonBasePath)(fileList)}`;
-        const r = new RegExp(`^${(0, utils_1.escapeRegExp)(`${basePath}/`)}`);
         const { metrics, '@_timestamp': timestamp } = clover.coverage.project;
+        let files = {};
+        if (clover.coverage.project.package) {
+            files = yield parsePackages(clover.coverage.project.package);
+        }
+        if (clover.coverage.project.file) {
+            files = yield parseFiles(clover.coverage.project.file);
+        }
+        const fileList = Object.values(files).map(file => file.absolute);
+        const basePath = `${(0, utils_1.determineCommonBasePath)(fileList)}`;
+        const regExp = new RegExp(`^${(0, utils_1.escapeRegExp)(`${basePath}/`)}`);
         return {
-            files: clover.coverage.project.file.reduce((previous, { '@_name': name, metrics: fileMetrics }) => (Object.assign(Object.assign({}, previous), { [(0, utils_1.createHash)(name)]: {
-                    relative: name.replace(r, ''),
-                    absolute: name,
-                    coverage: processCoverageMetrics(fileMetrics)
-                } })), {}),
+            files: Object.entries(files).reduce((previous, [hash, file]) => {
+                file.relative = file.absolute.replace(regExp, '');
+                return Object.assign(Object.assign({}, previous), { [hash]: file });
+            }, files),
             coverage: processCoverageMetrics(metrics),
             timestamp: parseInt(timestamp),
             basePath
@@ -24373,6 +24384,52 @@ function parse(clover) {
     });
 }
 exports["default"] = parse;
+/**
+ * Parse Packages
+ *
+ * @param {Package[]} packages
+ * @returns {Promise<Files>}
+ */
+function parsePackages(packages) {
+    var packages_1, packages_1_1;
+    var e_1, _a;
+    return __awaiter(this, void 0, void 0, function* () {
+        let allFiles = {};
+        try {
+            for (packages_1 = __asyncValues(packages); packages_1_1 = yield packages_1.next(), !packages_1_1.done;) {
+                const p = packages_1_1.value;
+                if (!p.file) {
+                    continue;
+                }
+                const files = yield parseFiles(p.file);
+                allFiles = Object.assign(Object.assign({}, allFiles), files);
+            }
+        }
+        catch (e_1_1) { e_1 = { error: e_1_1 }; }
+        finally {
+            try {
+                if (packages_1_1 && !packages_1_1.done && (_a = packages_1.return)) yield _a.call(packages_1);
+            }
+            finally { if (e_1) throw e_1.error; }
+        }
+        return allFiles;
+    });
+}
+/**
+ * Process into an object
+ *
+ * @param {File[]} files
+ * @returns {Promise<Files>}
+ */
+function parseFiles(files) {
+    return __awaiter(this, void 0, void 0, function* () {
+        return files.reduce((previous, { '@_name': name, metrics: fileMetrics, '@_path': path }) => (Object.assign(Object.assign({}, previous), { [(0, utils_1.createHash)(path !== null && path !== void 0 ? path : name)]: {
+                relative: path !== null && path !== void 0 ? path : name,
+                absolute: path !== null && path !== void 0 ? path : name,
+                coverage: processCoverageMetrics(fileMetrics)
+            } })), {});
+    });
+}
 /**
  * Process Coverage Metrics from Clover
  *
@@ -24565,7 +24622,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.getInputs = exports.determineCommonBasePath = exports.colorizePercentageByThreshold = exports.escapeRegExp = exports.roundPercentage = exports.createHash = exports.parseCoverage = exports.uploadArtifacts = exports.downloadArtifacts = exports.parseXML = exports.checkFileExists = void 0;
+exports.formatArtifactName = exports.getInputs = exports.determineCommonBasePath = exports.colorizePercentageByThreshold = exports.escapeRegExp = exports.roundPercentage = exports.createHash = exports.parseCoverage = exports.uploadArtifacts = exports.downloadArtifacts = exports.parseXML = exports.checkFileExists = void 0;
 const fs_1 = __nccwpck_require__(7147);
 const fast_xml_parser_1 = __nccwpck_require__(2603);
 const artifact = __importStar(__nccwpck_require__(2605));
@@ -24575,7 +24632,7 @@ const clover_1 = __nccwpck_require__(3524);
 const cobertura_1 = __nccwpck_require__(529);
 const path_1 = __importDefault(__nccwpck_require__(1017));
 const crypto_1 = __importDefault(__nccwpck_require__(6113));
-const adm_zip_1 = __importDefault(__nccwpck_require__(761));
+const adm_zip_1 = __importDefault(__nccwpck_require__(6761));
 const { access, readFile, mkdir } = fs_1.promises;
 /**
  * Check if a file exists
@@ -24606,7 +24663,16 @@ function parseXML(filename) {
         }
         const contents = yield readFile(filename, 'binary');
         return new fast_xml_parser_1.XMLParser({
-            ignoreAttributes: false
+            ignoreAttributes: false,
+            isArray: (name, jpath, isLeafNode, isAttribute) => {
+                if (isAttribute) {
+                    return false;
+                }
+                return inArray(jpath, [
+                    'coverage.project.package',
+                    'coverage.project.package.file'
+                ]);
+            }
         }).parse(contents);
     });
 }
@@ -24619,58 +24685,78 @@ exports.parseXML = parseXML;
  * @returns {Promise<string|null>}
  */
 function downloadArtifacts(name, base = 'artifacts') {
-    var e_1, _a;
+    var e_1, _a, e_2, _b, e_3, _c;
     return __awaiter(this, void 0, void 0, function* () {
         const { token } = getInputs();
         const client = github.getOctokit(token);
         const { GITHUB_BASE_REF = '', GITHUB_REPOSITORY = '' } = process.env;
         const [owner, repo] = GITHUB_REPOSITORY.split('/');
         try {
-            for (var _b = __asyncValues(client.paginate.iterator(client.rest.actions.listWorkflowRunsForRepo, {
+            for (var _d = __asyncValues(client.paginate.iterator(client.rest.actions.listWorkflowRunsForRepo, {
                 owner,
                 repo,
                 branch: GITHUB_BASE_REF,
                 status: 'success'
-            })), _c; _c = yield _b.next(), !_c.done;) {
-                const runs = _c.value;
-                for (const run of runs.data) {
-                    if (run.name !== github.context.job) {
-                        continue;
-                    }
-                    const artifacts = yield client.rest.actions.listWorkflowRunArtifacts({
-                        owner,
-                        repo,
-                        run_id: run.id
-                    });
-                    if (artifacts.data.artifacts.length === 0) {
-                        continue;
-                    }
-                    for (const art of artifacts.data.artifacts) {
-                        if (art.expired) {
+            })), _e; _e = yield _d.next(), !_e.done;) {
+                const runs = _e.value;
+                try {
+                    for (var _f = (e_2 = void 0, __asyncValues(runs.data)), _g; _g = yield _f.next(), !_g.done;) {
+                        const run = _g.value;
+                        if (run.name !== github.context.job) {
                             continue;
                         }
-                        if (art.name !== formatArtifactName(GITHUB_BASE_REF)) {
-                            continue;
-                        }
-                        const zip = yield client.rest.actions.downloadArtifact({
+                        const artifacts = yield client.rest.actions.listWorkflowRunArtifacts({
                             owner,
                             repo,
-                            artifact_id: art.id,
-                            archive_format: 'zip'
+                            run_id: run.id
                         });
-                        const dir = path_1.default.join(__dirname, base);
-                        yield mkdir(dir, { recursive: true });
-                        const adm = new adm_zip_1.default(Buffer.from(zip.data));
-                        adm.extractAllTo(dir, true);
-                        return dir;
+                        if (artifacts.data.artifacts.length === 0) {
+                            continue;
+                        }
+                        try {
+                            for (var _h = (e_3 = void 0, __asyncValues(artifacts.data.artifacts)), _j; _j = yield _h.next(), !_j.done;) {
+                                const art = _j.value;
+                                if (art.expired) {
+                                    continue;
+                                }
+                                if (art.name !== formatArtifactName(GITHUB_BASE_REF)) {
+                                    continue;
+                                }
+                                const zip = yield client.rest.actions.downloadArtifact({
+                                    owner,
+                                    repo,
+                                    artifact_id: art.id,
+                                    archive_format: 'zip'
+                                });
+                                const dir = path_1.default.join(__dirname, base);
+                                yield mkdir(dir, { recursive: true });
+                                const adm = new adm_zip_1.default(Buffer.from(zip.data));
+                                adm.extractAllTo(dir, true);
+                                return dir;
+                            }
+                        }
+                        catch (e_3_1) { e_3 = { error: e_3_1 }; }
+                        finally {
+                            try {
+                                if (_j && !_j.done && (_c = _h.return)) yield _c.call(_h);
+                            }
+                            finally { if (e_3) throw e_3.error; }
+                        }
                     }
+                }
+                catch (e_2_1) { e_2 = { error: e_2_1 }; }
+                finally {
+                    try {
+                        if (_g && !_g.done && (_b = _f.return)) yield _b.call(_f);
+                    }
+                    finally { if (e_2) throw e_2.error; }
                 }
             }
         }
         catch (e_1_1) { e_1 = { error: e_1_1 }; }
         finally {
             try {
-                if (_c && !_c.done && (_a = _b.return)) yield _a.call(_b);
+                if (_e && !_e.done && (_a = _d.return)) yield _a.call(_d);
             }
             finally { if (e_1) throw e_1.error; }
         }
@@ -24792,6 +24878,7 @@ exports.determineCommonBasePath = determineCommonBasePath;
 function getInputs() {
     const token = core.getInput('github_token', { required: true });
     const filename = core.getInput('filename');
+    const markdownFilename = core.getInput('markdown_filename');
     const badge = core.getInput('badge') === 'true' ? true : false;
     const overallFailThreshold = parseInt(core.getInput('overall_fail_threshold'));
     const coverageColorRedMin = parseInt(core.getInput('coverage_color_red_min'));
@@ -24804,7 +24891,8 @@ function getInputs() {
         overallFailThreshold,
         coverageColorRedMin,
         coverageColorOrangeMax,
-        failOnNegativeDifference
+        failOnNegativeDifference,
+        markdownFilename
     };
 }
 exports.getInputs = getInputs;
@@ -24824,11 +24912,20 @@ function instanceOfClover(object) {
 function formatArtifactName(name) {
     return `coverage-${name}`.replace(/\//g, '-');
 }
+exports.formatArtifactName = formatArtifactName;
+function inArray(needle, haystack) {
+    const length = haystack.length;
+    for (let i = 0; i < length; i++) {
+        if (haystack[i] === needle)
+            return true;
+    }
+    return false;
+}
 
 
 /***/ }),
 
-/***/ 941:
+/***/ 2941:
 /***/ ((module) => {
 
 module.exports = eval("require")("original-fs");

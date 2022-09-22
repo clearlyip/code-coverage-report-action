@@ -1,5 +1,5 @@
-import {Clover, File, FileMetrics} from '../types'
-import {Coverage} from '../../../interfaces'
+import {Clover, File, FileMetrics, Package} from '../types'
+import {Coverage, Files} from '../../../interfaces'
 import {
   determineCommonBasePath,
   roundPercentage,
@@ -8,31 +8,71 @@ import {
 } from '../../../utils'
 
 export default async function parse(clover: Clover): Promise<Coverage> {
-  const fileList = clover.coverage.project.file.map(({'@_name': name}) => {
-    return name
-  })
-
-  const basePath = `${determineCommonBasePath(fileList)}`
-  const r = new RegExp(`^${escapeRegExp(`${basePath}/`)}`)
-
   const {metrics, '@_timestamp': timestamp} = clover.coverage.project
 
+  let files: Files = {}
+  if (clover.coverage.project.package) {
+    files = await parsePackages(clover.coverage.project.package)
+  }
+  if (clover.coverage.project.file) {
+    files = await parseFiles(clover.coverage.project.file)
+  }
+
+  const fileList = Object.values(files).map(file => file.absolute)
+  const basePath = `${determineCommonBasePath(fileList)}`
+  const regExp = new RegExp(`^${escapeRegExp(`${basePath}/`)}`)
+
   return {
-    files: clover.coverage.project.file.reduce(
-      (previous, {'@_name': name, metrics: fileMetrics}: File) => ({
-        ...previous,
-        [createHash(name)]: {
-          relative: name.replace(r, ''),
-          absolute: name,
-          coverage: processCoverageMetrics(fileMetrics)
-        }
-      }),
-      {}
-    ),
+    files: Object.entries(files).reduce((previous, [hash, file]) => {
+      file.relative = file.absolute.replace(regExp, '')
+      return {...previous, [hash]: file}
+    }, files),
     coverage: processCoverageMetrics(metrics),
     timestamp: parseInt(timestamp),
     basePath
   }
+}
+
+/**
+ * Parse Packages
+ *
+ * @param {Package[]} packages
+ * @returns {Promise<Files>}
+ */
+async function parsePackages(packages: Package[]): Promise<Files> {
+  let allFiles: Files = {}
+  for await (const p of packages) {
+    if (!p.file) {
+      continue
+    }
+    const files = await parseFiles(p.file)
+
+    allFiles = {...allFiles, ...files}
+  }
+  return allFiles
+}
+
+/**
+ * Process into an object
+ *
+ * @param {File[]} files
+ * @returns {Promise<Files>}
+ */
+async function parseFiles(files: File[]): Promise<Files> {
+  return files.reduce(
+    (
+      previous,
+      {'@_name': name, metrics: fileMetrics, '@_path': path}: File
+    ) => ({
+      ...previous,
+      [createHash(path ?? name)]: {
+        relative: path ?? name,
+        absolute: path ?? name,
+        coverage: processCoverageMetrics(fileMetrics)
+      }
+    }),
+    {}
+  )
 }
 
 /**

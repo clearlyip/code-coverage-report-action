@@ -1,5 +1,5 @@
 export interface Coverage {
-  files: {[key: string]: CoverageFile}
+  files: Files
   coverage: number
   timestamp: number
   basePath: string
@@ -19,4 +19,9 @@ export interface Inputs {
   coverageColorRedMin: number
   coverageColorOrangeMax: number
   failOnNegativeDifference: boolean
+  markdownFilename: string
+}
+
+export interface Files {
+  [key: string]: CoverageFile
 }

@@ -16,3 +16,15 @@ jobs:
       - run: npm ci
       - run: npm run format:check
       - run: npm run lint
+      - run: npm run test
+      - uses: ./
+        id: code_coverage_report_action
+        with:
+          filename: 'coverage/clover.xml'
+          fail_on_negative_difference: true
+      - name: Add Coverage PR Comment
+        uses: marocchino/sticky-pull-request-comment@v2
+        if: steps.code_coverage_report_action.outputs.file != '' && github.event_name == 'pull_request' && (success() || failure())
+        with:
+          recreate: true
+          path: code-coverage-results.md
