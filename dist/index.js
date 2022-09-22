@@ -24232,7 +24232,16 @@ function generateMarkdown(headCoverage, baseCoverage = null) {
     return __awaiter(this, void 0, void 0, function* () {
         const { overallFailThreshold, failOnNegativeDifference, coverageColorRedMin, coverageColorOrangeMax, badge } = (0, utils_1.getInputs)();
         const map = Object.entries(headCoverage.files).map(([hash, file]) => {
-            const differencePercentage = baseCoverage !== null && baseCoverage.files[hash] !== null
+            if (baseCoverage === null) {
+                return [
+                    file.relative,
+                    `${(0, utils_1.colorizePercentageByThreshold)(file.coverage, 50, 'green')}`
+                ];
+            }
+            const baseCoveragePercentage = baseCoverage.files[hash] !== null
+                ? baseCoverage.files[hash].coverage
+                : null;
+            const differencePercentage = baseCoverage.files[hash] !== null
                 ? headCoverage.files[hash].coverage - baseCoverage.files[hash].coverage
                 : null;
             if (failOnNegativeDifference &&
@@ -24243,6 +24252,7 @@ function generateMarkdown(headCoverage, baseCoverage = null) {
             return [
                 file.relative,
                 `${(0, utils_1.colorizePercentageByThreshold)(file.coverage, 50, 'green')}`,
+                `${(0, utils_1.colorizePercentageByThreshold)(baseCoveragePercentage, 50, 'green')}`,
                 (0, utils_1.colorizePercentageByThreshold)(differencePercentage)
             ];
         });
@@ -24261,18 +24271,22 @@ function generateMarkdown(headCoverage, baseCoverage = null) {
             color = 'green';
         }
         const summary = core.summary.addHeading('Code Coverage Report');
+        const headers = baseCoverage === null
+            ? [
+                { data: 'Package', header: true },
+                { data: 'Coverage', header: true }
+            ]
+            : [
+                { data: 'Package', header: true },
+                { data: 'Coverage', header: true },
+                { data: 'Coverage', header: true },
+                { data: 'Difference', header: true }
+            ];
         if (badge) {
             summary.addImage(`https://img.shields.io/badge/${encodeURIComponent(`Code Coverage-${headCoverage.coverage}%-${color}`)}?style=flat`, 'Code Coverage');
         }
         summary
-            .addTable([
-            [
-                { data: 'Package', header: true },
-                { data: 'Coverage', header: true },
-                { data: 'Difference', header: true }
-            ],
-            ...map
-        ])
+            .addTable([headers, ...map])
             .addBreak()
             .addRaw(`<i>Minimum allowed coverage is</i> <code>${overallFailThreshold}%</code>, this run produced</i> <code>${headCoverage.coverage}%</code>`);
         //If this is run after write the buffer is empty

@@ -73,8 +73,20 @@ async function generateMarkdown(
     badge
   } = getInputs()
   const map = Object.entries(headCoverage.files).map(([hash, file]) => {
+    if (baseCoverage === null) {
+      return [
+        file.relative,
+        `${colorizePercentageByThreshold(file.coverage, 50, 'green')}`
+      ]
+    }
+
+    const baseCoveragePercentage =
+      baseCoverage.files[hash] !== null
+        ? baseCoverage.files[hash].coverage
+        : null
+
     const differencePercentage =
-      baseCoverage !== null && baseCoverage.files[hash] !== null
+      baseCoverage.files[hash] !== null
         ? headCoverage.files[hash].coverage - baseCoverage.files[hash].coverage
         : null
 
@@ -91,6 +103,7 @@ async function generateMarkdown(
     return [
       file.relative,
       `${colorizePercentageByThreshold(file.coverage, 50, 'green')}`,
+      `${colorizePercentageByThreshold(baseCoveragePercentage, 50, 'green')}`,
       colorizePercentageByThreshold(differencePercentage)
     ]
   })
@@ -115,6 +128,19 @@ async function generateMarkdown(
 
   const summary = core.summary.addHeading('Code Coverage Report')
 
+  const headers =
+    baseCoverage === null
+      ? [
+          {data: 'Package', header: true},
+          {data: 'Coverage', header: true}
+        ]
+      : [
+          {data: 'Package', header: true},
+          {data: 'Coverage', header: true},
+          {data: 'Coverage', header: true},
+          {data: 'Difference', header: true}
+        ]
+
   if (badge) {
     summary.addImage(
       `https://img.shields.io/badge/${encodeURIComponent(
@@ -124,14 +150,7 @@ async function generateMarkdown(
     )
   }
   summary
-    .addTable([
-      [
-        {data: 'Package', header: true},
-        {data: 'Coverage', header: true},
-        {data: 'Difference', header: true}
-      ],
-      ...map
-    ])
+    .addTable([headers, ...map])
     .addBreak()
     .addRaw(
       `<i>Minimum allowed coverage is</i> <code>${overallFailThreshold}%</code>, this run produced</i> <code>${headCoverage.coverage}%</code>`
