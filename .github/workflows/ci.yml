@@ -1,4 +1,4 @@
-name: 'run'
+name: 'ci'
 on: # rebuild any PRs and main branch changes
   pull_request:
   push:
@@ -10,12 +10,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - uses: ./
+      - uses: actions/setup-node@v3
         with:
-          filename: '__tests__/clover.xml'
+          node-version: 16
+      - run: npm ci
+      - run: npm run format:check
+      - run: npm run lint
+      - run: npm run test
+      - uses: ./
+        id: code_coverage_report_action
+        with:
+          filename: 'coverage/clover.xml'
+          fail_on_negative_difference: true
       - name: Add Coverage PR Comment
         uses: marocchino/sticky-pull-request-comment@v2
-        if: github.event_name == 'pull_request'
+        if: steps.code_coverage_report_action.outputs.file != '' && github.event_name == 'pull_request' && (success() || failure())
         with:
           recreate: true
           path: code-coverage-results.md

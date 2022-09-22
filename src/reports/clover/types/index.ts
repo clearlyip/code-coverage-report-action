@@ -14,7 +14,8 @@ export interface Coverage {
 }
 
 export interface Project {
-  file: File[]
+  file?: File[]
+  package?: Package[]
   metrics: FileMetrics
   '@_timestamp': string
 }
@@ -24,6 +25,13 @@ export interface File {
   line?: Line[]
   metrics: FileMetrics
   '@_name': string
+  '@_path'?: string
+}
+
+export interface Package {
+  '@_name': string
+  metrics: FileMetrics
+  file?: File[]
 }
 
 export interface Class {

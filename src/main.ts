@@ -9,6 +9,7 @@ import {
 } from './utils'
 import {Coverage} from './interfaces'
 import {writeFile} from 'fs/promises'
+import path from 'path'
 
 async function run(): Promise<void> {
   const filename = core.getInput('filename')
@@ -21,10 +22,10 @@ async function run(): Promise<void> {
   switch (process.env.GITHUB_EVENT_NAME) {
     case 'pull_request': {
       const {GITHUB_BASE_REF = ''} = process.env
-      const coverage = await downloadArtifacts(GITHUB_BASE_REF)
+      const artifactPath = await downloadArtifacts(GITHUB_BASE_REF)
       const baseCoverage =
-        coverage !== null
-          ? await parseCoverage(`${coverage.downloadPath}/${filename}`)
+        artifactPath !== null
+          ? await parseCoverage(path.join(artifactPath, filename))
           : null
       const headCoverage = await parseCoverage(filename)
 
@@ -69,13 +70,24 @@ async function generateMarkdown(
     failOnNegativeDifference,
     coverageColorRedMin,
     coverageColorOrangeMax,
-    badge
+    badge,
+    markdownFilename
   } = getInputs()
   const map = Object.entries(headCoverage.files).map(([hash, file]) => {
-    const differencePercentage =
-      baseCoverage !== null && baseCoverage.files[hash] !== null
-        ? headCoverage.files[hash].coverage - baseCoverage.files[hash].coverage
-        : null
+    if (baseCoverage === null) {
+      return [
+        file.relative,
+        `${colorizePercentageByThreshold(file.coverage, 50, 'green')}`
+      ]
+    }
+
+    const baseCoveragePercentage = baseCoverage.files[hash]
+      ? baseCoverage.files[hash].coverage
+      : null
+
+    const differencePercentage = baseCoverage.files[hash]
+      ? headCoverage.files[hash].coverage - baseCoverage.files[hash].coverage
+      : null
 
     if (
       failOnNegativeDifference &&
@@ -83,12 +95,13 @@ async function generateMarkdown(
       differencePercentage < 0
     ) {
       core.setFailed(
-        `${headCoverage.files[hash].relative} coverage difference was negative`
+        `${headCoverage.files[hash].relative} coverage difference was ${differencePercentage}%`
       )
     }
 
     return [
       file.relative,
+      `${colorizePercentageByThreshold(baseCoveragePercentage, 50, 'green')}`,
       `${colorizePercentageByThreshold(file.coverage, 50, 'green')}`,
       colorizePercentageByThreshold(differencePercentage)
     ]
@@ -114,6 +127,19 @@ async function generateMarkdown(
 
   const summary = core.summary.addHeading('Code Coverage Report')
 
+  const headers =
+    baseCoverage === null
+      ? [
+          {data: 'Package', header: true},
+          {data: 'Coverage', header: true}
+        ]
+      : [
+          {data: 'Package', header: true},
+          {data: 'Base Coverage', header: true},
+          {data: 'New Coverage', header: true},
+          {data: 'Difference', header: true}
+        ]
+
   if (badge) {
     summary.addImage(
       `https://img.shields.io/badge/${encodeURIComponent(
@@ -123,28 +149,22 @@ async function generateMarkdown(
     )
   }
   summary
-    .addTable([
-      [
-        {data: 'Package', header: true},
-        {data: 'Coverage', header: true},
-        {data: 'Difference', header: true}
-      ],
-      ...map
-    ])
+    .addTable([headers, ...map])
     .addBreak()
     .addRaw(
-      `<i>Minimum allowed coverage is</i><code>${overallFailThreshold}%</code>, this run produced </i><code>${headCoverage.coverage}%</code>`
+      `<i>Minimum allowed coverage is</i> <code>${overallFailThreshold}%</code>, this run produced</i> <code>${headCoverage.coverage}%</code>`
     )
 
   //If this is run after write the buffer is empty
-  core.info(`Writing results`)
-  await writeFile('code-coverage-results.md', summary.stringify())
+  core.info(`Writing results to ${markdownFilename}.md`)
+  await writeFile(`${markdownFilename}.md`, summary.stringify())
+  core.setOutput('file', `${markdownFilename}.md`)
 
   if (
     process.env.GITHUB_STEP_SUMMARY &&
     process.env.GITHUB_STEP_SUMMARY !== ''
   ) {
-    core.info(`Writing summary`)
+    core.info(`Writing job summary`)
     await summary.write()
   }
 }

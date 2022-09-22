@@ -2,6 +2,7 @@
   "recommendations": [
     "dbaeumer.vscode-eslint",
     "pflannery.vscode-versionlens",
-    "eamodio.gitlens"
+    "eamodio.gitlens",
+    "ryanluker.vscode-coverage-gutters"
   ]
 }

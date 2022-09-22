@@ -13,5 +13,9 @@
     "source.fixAll.eslint": true
   },
   "eslint.workingDirectories": ["./app"],
-  "eslint.format.enable": true
+  "eslint.format.enable": true,
+  "coverage-gutters.showLineCoverage": true,
+  "coverage-gutters.showRulerCoverage": true,
+  "coverage-gutters.coverageBaseDir": "coverage/**",
+  "coverage-gutters.coverageFileNames": ["clover.xml"]
 }

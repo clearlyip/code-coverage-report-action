@@ -4,16 +4,17 @@
   "description": "",
   "main": "lib/main.js",
   "scripts": {
-    "format": "prettier --write '**/*.ts'",
-    "format-check": "prettier --check '**/*.ts'",
+    "format": "prettier --write 'src/**/*.ts'",
+    "format:check": "prettier --check 'src/**/*.ts'",
     "lint": "eslint src/**/*.ts",
+    "lint:fix": "eslint --fix src/**/*.ts",
     "package": "ncc build src/main.ts --source-map --license licenses.txt",
     "watch": "ncc build src/main.ts --watch",
     "test": "jest",
     "run": "INPUT_FILENAME=__tests__/cob.xml ts-node src/main.ts",
     "all": "npm run format && npm run lint && npm run package && npm test",
-    "act": "act --artifact-server-path /tmp/artifacts",
-    "act:pr": "act pull_request --artifact-server-path /tmp/artifacts -e __tests__/pull-request.json",
+    "act": "act --artifact-server-path /tmp/artifacts -s GITHUB_TOKEN",
+    "act:pr": "act pull_request --artifact-server-path /tmp/artifacts -s GITHUB_TOKEN -e __tests__/pull-request.json",
     "gen:types": "ts-node generateTypes.ts"
   },
   "repository": {
@@ -31,6 +32,7 @@
     "@actions/artifact": "^1.1.0",
     "@actions/core": "^1.9.1",
     "@actions/github": "^5.0.3",
+    "adm-zip": "^0.5.9",
     "fast-xml-parser": "^4.0.10",
     "json-difference": "^1.8.2",
     "markdown-table": "^2.0.0",
@@ -38,6 +40,7 @@
     "ts-node": "^10.9.1"
   },
   "devDependencies": {
+    "@types/adm-zip": "^0.5.0",
     "@types/markdown-table": "^2.0.0",
     "@types/node": "^16.11.59",
     "@typescript-eslint/parser": "^5.38.0",

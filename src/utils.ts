@@ -2,13 +2,15 @@ import {promises as fs, constants as fsConstants} from 'fs'
 import {XMLParser} from 'fast-xml-parser'
 import * as artifact from '@actions/artifact'
 import * as core from '@actions/core'
+import * as github from '@actions/github'
 import {Clover, parse as parseClover} from './reports/clover'
 import {Cobertura, parse as parseCobertura} from './reports/cobertura'
 import path from 'path'
 import {Coverage, Inputs} from './interfaces'
 import crypto from 'crypto'
+import AdmZip from 'adm-zip'
 
-const {access, readFile} = fs
+const {access, readFile, mkdir} = fs
 
 /**
  * Check if a file exists
@@ -37,7 +39,16 @@ export async function parseXML<T>(filename: string): Promise<T | null> {
   const contents = await readFile(filename, 'binary')
 
   return new XMLParser({
-    ignoreAttributes: false
+    ignoreAttributes: false,
+    isArray: (name, jpath, isLeafNode, isAttribute) => {
+      if (isAttribute) {
+        return false
+      }
+      return inArray(jpath, [
+        'coverage.project.package',
+        'coverage.project.package.file'
+      ])
+    }
   }).parse(contents)
 }
 
@@ -45,24 +56,68 @@ export async function parseXML<T>(filename: string): Promise<T | null> {
  * Download Artifacts
  *
  * @param {string} name
- * @param {string} p
- * @returns {Promise<artifact.DownloadResponse|null>}
+ * @param {string} base
+ * @returns {Promise<string|null>}
  */
 export async function downloadArtifacts(
   name: string,
-  p = 'artifacts'
-): Promise<artifact.DownloadResponse | null> {
-  const artifactClient = artifact.create()
-  const artifactName = formatArtifactName(name)
-  const options = {
-    createArtifactFolder: false
-  }
+  base = 'artifacts'
+): Promise<string | null> {
+  const {token} = getInputs()
+  const client = github.getOctokit(token)
 
-  try {
-    return await artifactClient.downloadArtifact(artifactName, p, options)
-  } catch (err) {
-    return null
+  const {GITHUB_BASE_REF = '', GITHUB_REPOSITORY = ''} = process.env
+
+  const [owner, repo] = GITHUB_REPOSITORY.split('/')
+
+  for await (const runs of client.paginate.iterator(
+    client.rest.actions.listWorkflowRunsForRepo,
+    {
+      owner,
+      repo,
+      branch: GITHUB_BASE_REF,
+      status: 'success'
+    }
+  )) {
+    for await (const run of runs.data) {
+      if (run.name !== github.context.job) {
+        continue
+      }
+
+      const artifacts = await client.rest.actions.listWorkflowRunArtifacts({
+        owner,
+        repo,
+        run_id: run.id
+      })
+      if (artifacts.data.artifacts.length === 0) {
+        continue
+      }
+      for await (const art of artifacts.data.artifacts) {
+        if (art.expired) {
+          continue
+        }
+
+        if (art.name !== formatArtifactName(GITHUB_BASE_REF)) {
+          continue
+        }
+
+        const zip = await client.rest.actions.downloadArtifact({
+          owner,
+          repo,
+          artifact_id: art.id,
+          archive_format: 'zip'
+        })
+
+        const dir = path.join(__dirname, base)
+        await mkdir(dir, {recursive: true})
+
+        const adm = new AdmZip(Buffer.from(zip.data as string))
+        adm.extractAllTo(dir, true)
+        return dir
+      }
+    }
   }
+  return null
 }
 
 /**
@@ -199,7 +254,9 @@ export function determineCommonBasePath(
 }
 
 export function getInputs(): Inputs {
+  const token = core.getInput('github_token', {required: true})
   const filename = core.getInput('filename')
+  const markdownFilename = core.getInput('markdown_filename')
   const badge = core.getInput('badge') === 'true' ? true : false
   const overallFailThreshold = parseInt(core.getInput('overall_fail_threshold'))
   const coverageColorRedMin = parseInt(core.getInput('coverage_color_red_min'))
@@ -210,12 +267,14 @@ export function getInputs(): Inputs {
     core.getInput('fail_on_negative_difference') === 'true' ? true : false
 
   return {
+    token,
     filename,
     badge,
     overallFailThreshold,
     coverageColorRedMin,
     coverageColorOrangeMax,
-    failOnNegativeDifference
+    failOnNegativeDifference,
+    markdownFilename
   }
 }
 
@@ -234,6 +293,14 @@ function instanceOfClover(object: any): object is Clover {
  * @param {string} name
  * @returns {string}
  */
-function formatArtifactName(name: string): string {
+export function formatArtifactName(name: string): string {
   return `coverage-${name}`.replace(/\//g, '-')
+}
+
+function inArray(needle: string, haystack: string[]): boolean {
+  const length = haystack.length
+  for (let i = 0; i < length; i++) {
+    if (haystack[i] === needle) return true
+  }
+  return false
 }
