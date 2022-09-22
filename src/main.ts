@@ -102,8 +102,8 @@ async function generateMarkdown(
 
     return [
       file.relative,
-      `${colorizePercentageByThreshold(file.coverage, 50, 'green')}`,
       `${colorizePercentageByThreshold(baseCoveragePercentage, 50, 'green')}`,
+      `${colorizePercentageByThreshold(file.coverage, 50, 'green')}`,
       colorizePercentageByThreshold(differencePercentage)
     ]
   })
@@ -136,8 +136,8 @@ async function generateMarkdown(
         ]
       : [
           {data: 'Package', header: true},
-          {data: 'Coverage', header: true},
-          {data: 'Coverage', header: true},
+          {data: 'Base Coverage', header: true},
+          {data: 'New Coverage', header: true},
           {data: 'Difference', header: true}
         ]
 

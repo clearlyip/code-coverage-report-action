@@ -24251,8 +24251,8 @@ function generateMarkdown(headCoverage, baseCoverage = null) {
             }
             return [
                 file.relative,
-                `${(0, utils_1.colorizePercentageByThreshold)(file.coverage, 50, 'green')}`,
                 `${(0, utils_1.colorizePercentageByThreshold)(baseCoveragePercentage, 50, 'green')}`,
+                `${(0, utils_1.colorizePercentageByThreshold)(file.coverage, 50, 'green')}`,
                 (0, utils_1.colorizePercentageByThreshold)(differencePercentage)
             ];
         });
@@ -24278,8 +24278,8 @@ function generateMarkdown(headCoverage, baseCoverage = null) {
             ]
             : [
                 { data: 'Package', header: true },
-                { data: 'Coverage', header: true },
-                { data: 'Coverage', header: true },
+                { data: 'Base Coverage', header: true },
+                { data: 'New Coverage', header: true },
                 { data: 'Difference', header: true }
             ];
         if (badge) {
