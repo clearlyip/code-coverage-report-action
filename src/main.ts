@@ -78,8 +78,6 @@ async function generateMarkdown(
     badge,
     markdownFilename
   } = getInputs()
-  //console.log(headCoverage)
-  console.log('Getting Markdown')
   const map = Object.entries(headCoverage.files).map(([hash, file]) => {
     if (baseCoverage === null) {
       return [
@@ -92,12 +90,9 @@ async function generateMarkdown(
       ]
     }
 
-    console.log(`Running ${file.relative}[${hash}]`)
     const baseCoveragePercentage = baseCoverage.files[hash]
       ? baseCoverage.files[hash].coverage
       : null
-
-    //console.log(baseCoverage.files[hash] ?? file.relative)
 
     const differencePercentage = baseCoverage.files[hash]
       ? headCoverage.files[hash].coverage - baseCoverage.files[hash].coverage
