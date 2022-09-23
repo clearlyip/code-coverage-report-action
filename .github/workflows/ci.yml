@@ -1,12 +1,14 @@
 name: 'ci'
-on: # rebuild any PRs and main branch changes
+on:
   pull_request:
+    branches:
+      - main
   push:
     branches:
       - main
 
 jobs:
-  ci: # make sure the action works on a clean machine without building
+  ci:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
