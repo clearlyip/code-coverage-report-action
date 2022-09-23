@@ -24237,8 +24237,6 @@ function run() {
 function generateMarkdown(headCoverage, baseCoverage = null) {
     return __awaiter(this, void 0, void 0, function* () {
         const { overallCoverageFailThreshold, failOnNegativeDifference, fileCoverageErrorMin, fileCoverageWarningMax, badge, markdownFilename } = (0, utils_1.getInputs)();
-        //console.log(headCoverage)
-        console.log('Getting Markdown');
         const map = Object.entries(headCoverage.files).map(([hash, file]) => {
             if (baseCoverage === null) {
                 return [
@@ -24246,11 +24244,9 @@ function generateMarkdown(headCoverage, baseCoverage = null) {
                     `${(0, utils_1.colorizePercentageByThreshold)(file.coverage, fileCoverageWarningMax, fileCoverageErrorMin)}`
                 ];
             }
-            console.log(`Running ${file.relative}[${hash}]`);
             const baseCoveragePercentage = baseCoverage.files[hash]
                 ? baseCoverage.files[hash].coverage
                 : null;
-            //console.log(baseCoverage.files[hash] ?? file.relative)
             const differencePercentage = baseCoverage.files[hash]
                 ? headCoverage.files[hash].coverage - baseCoverage.files[hash].coverage
                 : null;
@@ -24932,14 +24928,17 @@ function getInputs() {
         return inputs;
     }
     const token = core.getInput('github_token', { required: true });
-    const filename = core.getInput('filename');
-    const markdownFilename = core.getInput('markdown_filename');
+    const filename = core.getInput('filename', { required: true });
+    const markdownFilename = core.getInput('markdown_filename') || 'code-coverage-results';
     const badge = core.getInput('badge') === 'true' ? true : false;
-    const overallCoverageFailThreshold = parseInt(core.getInput('overall_coverage_fail_threshold'));
-    const fileCoverageErrorMin = parseInt(core.getInput('file_coverage_error_min'));
-    const fileCoverageWarningMax = parseInt(core.getInput('file_coverage_warning_max'));
+    const overallCoverageFailThreshold = parseInt(core.getInput('overall_coverage_fail_threshold') || '0');
+    const fileCoverageErrorMin = parseInt(core.getInput('file_coverage_error_min') || '50');
+    const fileCoverageWarningMax = parseInt(core.getInput('file_coverage_warning_max') || '75');
     const failOnNegativeDifference = core.getInput('fail_on_negative_difference') === 'true' ? true : false;
-    const artifactName = core.getInput('artifact_name');
+    const artifactName = core.getInput('artifact_name') || 'coverage-%name%';
+    if (!artifactName.includes('%name%')) {
+        throw new Error('artifact_name is missing %name% variable');
+    }
     const tempArtifactDownloadWorkflowNames = core.getInput('artifact_download_workflow_names');
     const artifactDownloadWorkflowNames = tempArtifactDownloadWorkflowNames !== ''
         ? tempArtifactDownloadWorkflowNames.split(',').map(n => n.trim())
