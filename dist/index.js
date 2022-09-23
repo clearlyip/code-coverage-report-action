@@ -24187,44 +24187,50 @@ const promises_1 = __nccwpck_require__(3292);
 const path_1 = __importDefault(__nccwpck_require__(1017));
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
-        const filename = core.getInput('filename');
-        if (!(yield (0, utils_1.checkFileExists)(filename))) {
-            core.setFailed(`Unable to access ${filename}`);
-            return;
-        }
-        switch (process.env.GITHUB_EVENT_NAME) {
-            case 'pull_request': {
-                const { GITHUB_BASE_REF = '' } = process.env;
-                const artifactPath = yield (0, utils_1.downloadArtifacts)(GITHUB_BASE_REF);
-                const baseCoverage = artifactPath !== null
-                    ? yield (0, utils_1.parseCoverage)(path_1.default.join(artifactPath, filename))
-                    : null;
-                const headCoverage = yield (0, utils_1.parseCoverage)(filename);
-                if (headCoverage === null) {
-                    core.setFailed(`Unable to process ${filename}`);
-                    return;
-                }
-                //Base doesnt have an artifact
-                if (baseCoverage === null) {
-                    core.warning(`${GITHUB_BASE_REF} is missing ${filename}. See documentation on how to add this`);
-                    yield generateMarkdown(headCoverage);
-                    return;
-                }
-                yield generateMarkdown(headCoverage, baseCoverage);
-                break;
+        try {
+            const filename = core.getInput('filename');
+            if (!(yield (0, utils_1.checkFileExists)(filename))) {
+                core.setFailed(`Unable to access ${filename}`);
+                return;
             }
-            case 'push':
-            case 'schedule':
-            case 'workflow_dispatch':
-                {
-                    const { GITHUB_REF_NAME = '' } = process.env;
-                    core.info(`Uploading ${filename}`);
-                    yield (0, utils_1.uploadArtifacts)([filename], GITHUB_REF_NAME);
-                    core.info(`Complete`);
+            switch (process.env.GITHUB_EVENT_NAME) {
+                case 'pull_request': {
+                    const { GITHUB_BASE_REF = '' } = process.env;
+                    const artifactPath = yield (0, utils_1.downloadArtifacts)(GITHUB_BASE_REF);
+                    const baseCoverage = artifactPath !== null
+                        ? yield (0, utils_1.parseCoverage)(path_1.default.join(artifactPath, filename))
+                        : null;
+                    const headCoverage = yield (0, utils_1.parseCoverage)(filename);
+                    if (headCoverage === null) {
+                        core.setFailed(`Unable to process ${filename}`);
+                        return;
+                    }
+                    //Base doesnt have an artifact
+                    if (baseCoverage === null) {
+                        core.warning(`${GITHUB_BASE_REF} is missing ${filename}. See documentation on how to add this`);
+                        yield generateMarkdown(headCoverage);
+                        return;
+                    }
+                    yield generateMarkdown(headCoverage, baseCoverage);
+                    break;
                 }
-                break;
-            default:
-            //TODO: return something here
+                case 'push':
+                case 'schedule':
+                case 'workflow_dispatch':
+                    {
+                        const { GITHUB_REF_NAME = '' } = process.env;
+                        core.info(`Uploading ${filename}`);
+                        yield (0, utils_1.uploadArtifacts)([filename], GITHUB_REF_NAME);
+                        core.info(`Complete`);
+                    }
+                    break;
+                default:
+                //TODO: return something here
+            }
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        }
+        catch (err) {
+            core.setFailed(err.message);
         }
     });
 }
