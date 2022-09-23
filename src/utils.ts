@@ -322,22 +322,26 @@ export function getInputs(): Inputs {
   }
 
   const token = core.getInput('github_token', {required: true})
-  const filename = core.getInput('filename')
-  const markdownFilename = core.getInput('markdown_filename')
+  const filename = core.getInput('filename', {required: true})
+  const markdownFilename =
+    core.getInput('markdown_filename') || 'code-coverage-results'
   const badge = core.getInput('badge') === 'true' ? true : false
   const overallCoverageFailThreshold = parseInt(
-    core.getInput('overall_coverage_fail_threshold')
+    core.getInput('overall_coverage_fail_threshold') || '0'
   )
   const fileCoverageErrorMin = parseInt(
-    core.getInput('file_coverage_error_min')
+    core.getInput('file_coverage_error_min') || '50'
   )
   const fileCoverageWarningMax = parseInt(
-    core.getInput('file_coverage_warning_max')
+    core.getInput('file_coverage_warning_max') || '75'
   )
   const failOnNegativeDifference =
     core.getInput('fail_on_negative_difference') === 'true' ? true : false
 
-  const artifactName = core.getInput('artifact_name')
+  const artifactName = core.getInput('artifact_name') || 'coverage-%name%'
+  if (!artifactName.includes('%name%')) {
+    throw new Error('artifact_name is missing %name% variable')
+  }
 
   const tempArtifactDownloadWorkflowNames = core.getInput(
     'artifact_download_workflow_names'

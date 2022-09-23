@@ -5,12 +5,32 @@ import {
   roundPercentage,
   determineCommonBasePath,
   escapeRegExp,
-  colorizePercentageByThreshold
+  colorizePercentageByThreshold,
+  getInputs
 } from '../src/utils'
-import {expect, test} from '@jest/globals'
+import {
+  expect,
+  test,
+  beforeEach,
+  afterEach,
+  describe,
+  jest
+} from '@jest/globals'
+
+const env = process.env
+
+beforeEach(() => {
+  jest.resetModules()
+  process.env = {...env}
+})
+
+afterEach(() => {
+  process.env = env
+})
 
 test('formats the artifact name', async () => {
-  process.env.INPUT_GITHUB_TOKEN = 'abc'
+  process.env.INPUT_GITHUB_TOKEN = 'token'
+  process.env.INPUT_FILENAME = 'filename.xml'
   process.env.INPUT_ARTIFACT_NAME = 'coverage-%name%'
   const name = formatArtifactName('bar')
   expect(name).toBe('coverage-bar')
@@ -52,5 +72,43 @@ test('escaping regular expression input', () => {
 })
 
 test('colorize percentage by threshold', () => {
-  //colorizePercentageByThreshold
+  const shouldBeNA = colorizePercentageByThreshold(null)
+  expect(shouldBeNA).toBe('N/A')
+
+  const shouldBeGrey = colorizePercentageByThreshold(0)
+  expect(shouldBeGrey).toBe('⚪ 0%')
+
+  const shouldBeRed = colorizePercentageByThreshold(20, 50)
+  expect(shouldBeRed).toBe('🔴 20%')
+
+  const shouldBeGreen = colorizePercentageByThreshold(70, 50)
+  expect(shouldBeGreen).toBe('🟢 70%')
+
+  const shouldBeRedA = colorizePercentageByThreshold(20, 75, 30)
+  expect(shouldBeRedA).toBe('🔴 20%')
+
+  const shouldBeOrangeA = colorizePercentageByThreshold(40, 75, 30)
+  expect(shouldBeOrangeA).toBe('🟠 40%')
+
+  const shouldBeGreenA = colorizePercentageByThreshold(80, 75, 30)
+  expect(shouldBeGreenA).toBe('🟢 80%')
+})
+
+test('getInputs', () => {
+  process.env.INPUT_GITHUB_TOKEN = 'token'
+  process.env.INPUT_FILENAME = 'filename.xml'
+
+  const f = getInputs()
+  expect(f).toStrictEqual({
+    token: 'token',
+    filename: 'filename.xml',
+    badge: false,
+    overallCoverageFailThreshold: 0,
+    fileCoverageErrorMin: 50,
+    fileCoverageWarningMax: 75,
+    failOnNegativeDifference: false,
+    markdownFilename: 'code-coverage-results',
+    artifactDownloadWorkflowNames: null,
+    artifactName: 'coverage-%name%'
+  })
 })

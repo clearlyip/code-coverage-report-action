@@ -3,14 +3,14 @@ description: 'Provides code coverage report in a workflow summary and as a markd
 author: 'Andrew Nagy'
 inputs:
   filename:
-    description: 'Code Coverage file to process'
+    description: 'Code Coverage file to process (with extension)'
     required: true
   github_token:
-    description: GitHub token
+    description: 'GitHub token. This is sometimes needed on private repositories'
     required: false
     default: ${{ github.token }}
   markdown_filename:
-    description: 'Include a coverage badge in the output using shields.io - true / false (default).'
+    description: 'The filename (without extension) for the resulting markdown file. Default is code-coverage-results.'
     required: false
     default: 'code-coverage-results'
   badge:
@@ -37,7 +37,7 @@ inputs:
     description: 'Comma Separated list of workflow names to look for artifacts in. If left empty will only look at the current workflow'
     required: false
   artifact_name:
-    description: 'Artifact name. Use %name% as a placeholder'
+    description: 'Artifact name. Use %name% as a placeholder (must be included!)'
     required: false
     default: 'coverage-%name%'
 
