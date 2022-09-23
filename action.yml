@@ -1,6 +1,6 @@
-name: 'Your name here'
-description: 'Provide a description here'
-author: 'Your name or organization here'
+name: 'Code Coverage Report'
+description: 'Provides code coverage report in a workflow summary and as a markdown file that can be used in later steps'
+author: 'Andrew Nagy'
 inputs:
   filename:
     description: 'Code Coverage file to process'

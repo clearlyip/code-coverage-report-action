@@ -12,52 +12,57 @@ import {writeFile} from 'fs/promises'
 import path from 'path'
 
 async function run(): Promise<void> {
-  const filename = core.getInput('filename')
+  try {
+    const filename = core.getInput('filename')
 
-  if (!(await checkFileExists(filename))) {
-    core.setFailed(`Unable to access ${filename}`)
-    return
-  }
-
-  switch (process.env.GITHUB_EVENT_NAME) {
-    case 'pull_request': {
-      const {GITHUB_BASE_REF = ''} = process.env
-      const artifactPath = await downloadArtifacts(GITHUB_BASE_REF)
-      const baseCoverage =
-        artifactPath !== null
-          ? await parseCoverage(path.join(artifactPath, filename))
-          : null
-      const headCoverage = await parseCoverage(filename)
-
-      if (headCoverage === null) {
-        core.setFailed(`Unable to process ${filename}`)
-        return
-      }
-
-      //Base doesnt have an artifact
-      if (baseCoverage === null) {
-        core.warning(
-          `${GITHUB_BASE_REF} is missing ${filename}. See documentation on how to add this`
-        )
-        await generateMarkdown(headCoverage)
-        return
-      }
-
-      await generateMarkdown(headCoverage, baseCoverage)
-      break
+    if (!(await checkFileExists(filename))) {
+      core.setFailed(`Unable to access ${filename}`)
+      return
     }
-    case 'push':
-    case 'schedule':
-    case 'workflow_dispatch':
-      {
-        const {GITHUB_REF_NAME = ''} = process.env
-        core.info(`Uploading ${filename}`)
-        await uploadArtifacts([filename], GITHUB_REF_NAME)
-        core.info(`Complete`)
+
+    switch (process.env.GITHUB_EVENT_NAME) {
+      case 'pull_request': {
+        const {GITHUB_BASE_REF = ''} = process.env
+        const artifactPath = await downloadArtifacts(GITHUB_BASE_REF)
+        const baseCoverage =
+          artifactPath !== null
+            ? await parseCoverage(path.join(artifactPath, filename))
+            : null
+        const headCoverage = await parseCoverage(filename)
+
+        if (headCoverage === null) {
+          core.setFailed(`Unable to process ${filename}`)
+          return
+        }
+
+        //Base doesnt have an artifact
+        if (baseCoverage === null) {
+          core.warning(
+            `${GITHUB_BASE_REF} is missing ${filename}. See documentation on how to add this`
+          )
+          await generateMarkdown(headCoverage)
+          return
+        }
+
+        await generateMarkdown(headCoverage, baseCoverage)
+        break
       }
-      break
-    default:
-    //TODO: return something here
+      case 'push':
+      case 'schedule':
+      case 'workflow_dispatch':
+        {
+          const {GITHUB_REF_NAME = ''} = process.env
+          core.info(`Uploading ${filename}`)
+          await uploadArtifacts([filename], GITHUB_REF_NAME)
+          core.info(`Complete`)
+        }
+        break
+      default:
+      //TODO: return something here
+    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } catch (err: any) {
+    core.setFailed(err.message)
   }
 }
 
