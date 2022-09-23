@@ -1,10 +1,10 @@
+name: 'cron'
 on:
   schedule:
-    # * is a special character in YAML so you have to quote this string
     - cron:  '0 0 1 * *'
 
 jobs:
-  cron: # make sure the action works on a clean machine without building
+  cron:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
