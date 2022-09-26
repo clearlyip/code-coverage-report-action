@@ -1,8 +1,9 @@
 name: 'Code Coverage Report Difference'
 description: 'Provides code coverage reports with the ability to see differences in a pull requests utilizing markdown files.'
 author: 'ClearlyIP'
-icon: file-text
-color: blue
+branding:
+  icon: 'file-text'  
+  color: 'blue'
 inputs:
   filename:
     description: 'Code Coverage file to process (with extension)'
@@ -42,7 +43,11 @@ inputs:
     description: 'Artifact name. Use %name% as a placeholder (must be included!)'
     required: false
     default: 'coverage-%name%'
-
+outputs:
+  file:
+    description: 'The generated markdown file path'
+  coverage:
+    description: 'The overall coverage of the project as a percentage'
 runs:
   using: 'node16'
   main: 'dist/index.js'
