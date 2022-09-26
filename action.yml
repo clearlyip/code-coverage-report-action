@@ -1,5 +1,5 @@
-name: 'Code Coverage Report'
-description: 'Provides code coverage report in a workflow summary and as a markdown file that can be used in later steps'
+name: 'Code Coverage Report Difference'
+description: 'Provides code coverage report in a workflow summary and as a markdown file that can be used in later steps. Also provides the ability to see differences between branches in a pull request utilizing GitHub artifacts.'
 author: 'Andrew Nagy'
 inputs:
   filename:
