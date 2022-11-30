@@ -5,6 +5,7 @@ import {
   downloadArtifacts,
   getInputs,
   parseCoverage,
+  roundPercentage,
   uploadArtifacts
 } from './utils'
 import {Coverage} from './interfaces'
@@ -94,8 +95,8 @@ async function generateMarkdown(
       ? baseCoverage.files[hash].coverage
       : null
 
-    const differencePercentage = baseCoverage.files[hash]
-      ? headCoverage.files[hash].coverage - baseCoverage.files[hash].coverage
+    const differencePercentage = baseCoveragePercentage
+      ? roundPercentage(file.coverage - baseCoveragePercentage)
       : null
 
     if (

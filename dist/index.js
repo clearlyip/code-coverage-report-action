@@ -24247,8 +24247,8 @@ function generateMarkdown(headCoverage, baseCoverage = null) {
             const baseCoveragePercentage = baseCoverage.files[hash]
                 ? baseCoverage.files[hash].coverage
                 : null;
-            const differencePercentage = baseCoverage.files[hash]
-                ? headCoverage.files[hash].coverage - baseCoverage.files[hash].coverage
+            const differencePercentage = baseCoveragePercentage
+                ? (0, utils_1.roundPercentage)(file.coverage - baseCoveragePercentage)
                 : null;
             if (failOnNegativeDifference &&
                 differencePercentage !== null &&
