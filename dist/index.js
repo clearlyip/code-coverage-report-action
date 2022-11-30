@@ -2324,7 +2324,6 @@ const file_command_1 = __nccwpck_require__(717);
 const utils_1 = __nccwpck_require__(5278);
 const os = __importStar(__nccwpck_require__(2037));
 const path = __importStar(__nccwpck_require__(1017));
-const uuid_1 = __nccwpck_require__(5840);
 const oidc_utils_1 = __nccwpck_require__(8041);
 /**
  * The code to exit an action
@@ -2354,20 +2353,9 @@ function exportVariable(name, val) {
     process.env[name] = convertedVal;
     const filePath = process.env['GITHUB_ENV'] || '';
     if (filePath) {
-        const delimiter = `ghadelimiter_${uuid_1.v4()}`;
-        // These should realistically never happen, but just in case someone finds a way to exploit uuid generation let's not allow keys or values that contain the delimiter.
-        if (name.includes(delimiter)) {
-            throw new Error(`Unexpected input: name should not contain the delimiter "${delimiter}"`);
-        }
-        if (convertedVal.includes(delimiter)) {
-            throw new Error(`Unexpected input: value should not contain the delimiter "${delimiter}"`);
-        }
-        const commandValue = `${name}<<${delimiter}${os.EOL}${convertedVal}${os.EOL}${delimiter}`;
-        file_command_1.issueCommand('ENV', commandValue);
+        return file_command_1.issueFileCommand('ENV', file_command_1.prepareKeyValueMessage(name, val));
     }
-    else {
-        command_1.issueCommand('set-env', { name }, convertedVal);
-    }
+    command_1.issueCommand('set-env', { name }, convertedVal);
 }
 exports.exportVariable = exportVariable;
 /**
@@ -2385,7 +2373,7 @@ exports.setSecret = setSecret;
 function addPath(inputPath) {
     const filePath = process.env['GITHUB_PATH'] || '';
     if (filePath) {
-        file_command_1.issueCommand('PATH', inputPath);
+        file_command_1.issueFileCommand('PATH', inputPath);
     }
     else {
         command_1.issueCommand('add-path', {}, inputPath);
@@ -2425,7 +2413,10 @@ function getMultilineInput(name, options) {
     const inputs = getInput(name, options)
         .split('\n')
         .filter(x => x !== '');
-    return inputs;
+    if (options && options.trimWhitespace === false) {
+        return inputs;
+    }
+    return inputs.map(input => input.trim());
 }
 exports.getMultilineInput = getMultilineInput;
 /**
@@ -2458,8 +2449,12 @@ exports.getBooleanInput = getBooleanInput;
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function setOutput(name, value) {
+    const filePath = process.env['GITHUB_OUTPUT'] || '';
+    if (filePath) {
+        return file_command_1.issueFileCommand('OUTPUT', file_command_1.prepareKeyValueMessage(name, value));
+    }
     process.stdout.write(os.EOL);
-    command_1.issueCommand('set-output', { name }, value);
+    command_1.issueCommand('set-output', { name }, utils_1.toCommandValue(value));
 }
 exports.setOutput = setOutput;
 /**
@@ -2588,7 +2583,11 @@ exports.group = group;
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function saveState(name, value) {
-    command_1.issueCommand('save-state', { name }, value);
+    const filePath = process.env['GITHUB_STATE'] || '';
+    if (filePath) {
+        return file_command_1.issueFileCommand('STATE', file_command_1.prepareKeyValueMessage(name, value));
+    }
+    command_1.issueCommand('save-state', { name }, utils_1.toCommandValue(value));
 }
 exports.saveState = saveState;
 /**
@@ -2654,13 +2653,14 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.issueCommand = void 0;
+exports.prepareKeyValueMessage = exports.issueFileCommand = void 0;
 // We use any as a valid input type
 /* eslint-disable @typescript-eslint/no-explicit-any */
 const fs = __importStar(__nccwpck_require__(7147));
 const os = __importStar(__nccwpck_require__(2037));
+const uuid_1 = __nccwpck_require__(5840);
 const utils_1 = __nccwpck_require__(5278);
-function issueCommand(command, message) {
+function issueFileCommand(command, message) {
     const filePath = process.env[`GITHUB_${command}`];
     if (!filePath) {
         throw new Error(`Unable to find environment variable for file command ${command}`);
@@ -2672,7 +2672,22 @@ function issueCommand(command, message) {
         encoding: 'utf8'
     });
 }
-exports.issueCommand = issueCommand;
+exports.issueFileCommand = issueFileCommand;
+function prepareKeyValueMessage(key, value) {
+    const delimiter = `ghadelimiter_${uuid_1.v4()}`;
+    const convertedValue = utils_1.toCommandValue(value);
+    // These should realistically never happen, but just in case someone finds a
+    // way to exploit uuid generation let's not allow keys or values that contain
+    // the delimiter.
+    if (key.includes(delimiter)) {
+        throw new Error(`Unexpected input: name should not contain the delimiter "${delimiter}"`);
+    }
+    if (convertedValue.includes(delimiter)) {
+        throw new Error(`Unexpected input: value should not contain the delimiter "${delimiter}"`);
+    }
+    return `${key}<<${delimiter}${os.EOL}${convertedValue}${os.EOL}${delimiter}`;
+}
+exports.prepareKeyValueMessage = prepareKeyValueMessage;
 //# sourceMappingURL=file-command.js.map
 
 /***/ }),
@@ -3259,8 +3274,9 @@ exports.context = new Context.Context();
  * @param     token    the repo PAT or GITHUB_TOKEN
  * @param     options  other options to set
  */
-function getOctokit(token, options) {
-    return new utils_1.GitHub(utils_1.getOctokitOptions(token, options));
+function getOctokit(token, options, ...additionalPlugins) {
+    const GitHubWithPlugins = utils_1.GitHub.plugin(...additionalPlugins);
+    return new GitHubWithPlugins(utils_1.getOctokitOptions(token, options));
 }
 exports.getOctokit = getOctokit;
 //# sourceMappingURL=github.js.map
@@ -3342,7 +3358,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.getOctokitOptions = exports.GitHub = exports.context = void 0;
+exports.getOctokitOptions = exports.GitHub = exports.defaults = exports.context = void 0;
 const Context = __importStar(__nccwpck_require__(4087));
 const Utils = __importStar(__nccwpck_require__(7914));
 // octokit + plugins
@@ -3351,13 +3367,13 @@ const plugin_rest_endpoint_methods_1 = __nccwpck_require__(3044);
 const plugin_paginate_rest_1 = __nccwpck_require__(4193);
 exports.context = new Context.Context();
 const baseUrl = Utils.getApiBaseUrl();
-const defaults = {
+exports.defaults = {
     baseUrl,
     request: {
         agent: Utils.getProxyAgent(baseUrl)
     }
 };
-exports.GitHub = core_1.Octokit.plugin(plugin_rest_endpoint_methods_1.restEndpointMethods, plugin_paginate_rest_1.paginateRest).defaults(defaults);
+exports.GitHub = core_1.Octokit.plugin(plugin_rest_endpoint_methods_1.restEndpointMethods, plugin_paginate_rest_1.paginateRest).defaults(exports.defaults);
 /**
  * Convience function to correctly format Octokit Options to pass into the constructor.
  *
@@ -9421,63 +9437,67 @@ function range(a, b, str) {
 /***/ 3682:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-var register = __nccwpck_require__(4670)
-var addHook = __nccwpck_require__(5549)
-var removeHook = __nccwpck_require__(6819)
+var register = __nccwpck_require__(4670);
+var addHook = __nccwpck_require__(5549);
+var removeHook = __nccwpck_require__(6819);
 
 // bind with array of arguments: https://stackoverflow.com/a/21792913
-var bind = Function.bind
-var bindable = bind.bind(bind)
+var bind = Function.bind;
+var bindable = bind.bind(bind);
 
-function bindApi (hook, state, name) {
-  var removeHookRef = bindable(removeHook, null).apply(null, name ? [state, name] : [state])
-  hook.api = { remove: removeHookRef }
-  hook.remove = removeHookRef
-
-  ;['before', 'error', 'after', 'wrap'].forEach(function (kind) {
-    var args = name ? [state, kind, name] : [state, kind]
-    hook[kind] = hook.api[kind] = bindable(addHook, null).apply(null, args)
-  })
+function bindApi(hook, state, name) {
+  var removeHookRef = bindable(removeHook, null).apply(
+    null,
+    name ? [state, name] : [state]
+  );
+  hook.api = { remove: removeHookRef };
+  hook.remove = removeHookRef;
+  ["before", "error", "after", "wrap"].forEach(function (kind) {
+    var args = name ? [state, kind, name] : [state, kind];
+    hook[kind] = hook.api[kind] = bindable(addHook, null).apply(null, args);
+  });
 }
 
-function HookSingular () {
-  var singularHookName = 'h'
+function HookSingular() {
+  var singularHookName = "h";
   var singularHookState = {
-    registry: {}
-  }
-  var singularHook = register.bind(null, singularHookState, singularHookName)
-  bindApi(singularHook, singularHookState, singularHookName)
-  return singularHook
+    registry: {},
+  };
+  var singularHook = register.bind(null, singularHookState, singularHookName);
+  bindApi(singularHook, singularHookState, singularHookName);
+  return singularHook;
 }
 
-function HookCollection () {
+function HookCollection() {
   var state = {
-    registry: {}
-  }
+    registry: {},
+  };
 
-  var hook = register.bind(null, state)
-  bindApi(hook, state)
+  var hook = register.bind(null, state);
+  bindApi(hook, state);
 
-  return hook
+  return hook;
 }
 
-var collectionHookDeprecationMessageDisplayed = false
-function Hook () {
+var collectionHookDeprecationMessageDisplayed = false;
+function Hook() {
   if (!collectionHookDeprecationMessageDisplayed) {
-    console.warn('[before-after-hook]: "Hook()" repurposing warning, use "Hook.Collection()". Read more: https://git.io/upgrade-before-after-hook-to-1.4')
-    collectionHookDeprecationMessageDisplayed = true
+    console.warn(
+      '[before-after-hook]: "Hook()" repurposing warning, use "Hook.Collection()". Read more: https://git.io/upgrade-before-after-hook-to-1.4'
+    );
+    collectionHookDeprecationMessageDisplayed = true;
   }
-  return HookCollection()
+  return HookCollection();
 }
 
-Hook.Singular = HookSingular.bind()
-Hook.Collection = HookCollection.bind()
+Hook.Singular = HookSingular.bind();
+Hook.Collection = HookCollection.bind();
 
-module.exports = Hook
+module.exports = Hook;
 // expose constructors as a named property for TypeScript
-module.exports.Hook = Hook
-module.exports.Singular = Hook.Singular
-module.exports.Collection = Hook.Collection
+module.exports.Hook = Hook;
+module.exports.Singular = Hook.Singular;
+module.exports.Collection = Hook.Collection;
 
 
 /***/ }),
@@ -11049,12 +11069,12 @@ class OrderedObjParser{
     this.tagsNodeStack = [];
     this.docTypeEntities = {};
     this.lastEntities = {
-      "amp" : { regex: /&(amp|#38|#x26);/g, val : "&"},
       "apos" : { regex: /&(apos|#39|#x27);/g, val : "'"},
       "gt" : { regex: /&(gt|#62|#x3E);/g, val : ">"},
       "lt" : { regex: /&(lt|#60|#x3C);/g, val : "<"},
       "quot" : { regex: /&(quot|#34|#x22);/g, val : "\""},
     };
+    this.ampEntity = { regex: /&(amp|#38|#x26);/g, val : "&"};
     this.htmlEntities = {
       "space": { regex: /&(nbsp|#160);/g, val: " " },
       // "lt" : { regex: /&(lt|#60);/g, val: "<" },
@@ -11393,6 +11413,7 @@ const parseXml = function(xmlData) {
 }
 
 const replaceEntitiesValue = function(val){
+
   if(this.options.processEntities){
     for(let entityName in this.docTypeEntities){
       const entity = this.docTypeEntities[entityName];
@@ -11408,6 +11429,7 @@ const replaceEntitiesValue = function(val){
         val = val.replace( entity.regex, entity.val);
       }
     }
+    val = val.replace( this.ampEntity.regex, this.ampEntity.val);
   }
   return val;
 }
@@ -11642,6 +11664,8 @@ class XMLParser{
             throw new Error("Entity value can't have '&'")
         }else if(key.indexOf("&") !== -1 || key.indexOf(";") !== -1){
             throw new Error("An entity must be set without '&' and ';'. Eg. use '#xD' for '&#xD;'")
+        }else if(value === "&"){
+            throw new Error("An entity with value '&' is not permitted");
         }else{
             this.externalEntities[key] = value;
         }
@@ -24395,24 +24419,31 @@ exports["default"] = parse;
  * @returns {Promise<Files>}
  */
 function parsePackages(packages) {
-    var packages_1, packages_1_1;
-    var e_1, _a;
+    var _a, packages_1, packages_1_1;
+    var _b, e_1, _c, _d;
     return __awaiter(this, void 0, void 0, function* () {
         let allFiles = {};
         try {
-            for (packages_1 = __asyncValues(packages); packages_1_1 = yield packages_1.next(), !packages_1_1.done;) {
-                const p = packages_1_1.value;
-                if (!p.file) {
-                    continue;
+            for (_a = true, packages_1 = __asyncValues(packages); packages_1_1 = yield packages_1.next(), _b = packages_1_1.done, !_b;) {
+                _d = packages_1_1.value;
+                _a = false;
+                try {
+                    const p = _d;
+                    if (!p.file) {
+                        continue;
+                    }
+                    const files = yield parseFiles(p.file);
+                    allFiles = Object.assign(Object.assign({}, allFiles), files);
                 }
-                const files = yield parseFiles(p.file);
-                allFiles = Object.assign(Object.assign({}, allFiles), files);
+                finally {
+                    _a = true;
+                }
             }
         }
         catch (e_1_1) { e_1 = { error: e_1_1 }; }
         finally {
             try {
-                if (packages_1_1 && !packages_1_1.done && (_a = packages_1.return)) yield _a.call(packages_1);
+                if (!_a && !_b && (_c = packages_1.return)) yield _c.call(packages_1);
             }
             finally { if (e_1) throw e_1.error; }
         }
@@ -24689,7 +24720,7 @@ exports.parseXML = parseXML;
  * @returns {Promise<string|null>}
  */
 function downloadArtifacts(name, base = 'artifacts') {
-    var e_1, _a, e_2, _b, e_3, _c;
+    var _a, e_1, _b, _c, _d, e_2, _e, _f, _g, e_3, _h, _j;
     return __awaiter(this, void 0, void 0, function* () {
         const { token, artifactDownloadWorkflowNames } = getInputs();
         const client = github.getOctokit(token);
@@ -24701,80 +24732,101 @@ function downloadArtifacts(name, base = 'artifacts') {
         const [owner, repo] = GITHUB_REPOSITORY.split('/');
         core.info(`Looking for artifact "${artifactName}" in the following worflows: ${artifactWorkflowNames.join(',')}`);
         try {
-            for (var _d = __asyncValues(client.paginate.iterator(client.rest.actions.listWorkflowRunsForRepo, {
+            for (var _k = true, _l = __asyncValues(client.paginate.iterator(client.rest.actions.listWorkflowRunsForRepo, {
                 owner,
                 repo,
                 branch: GITHUB_BASE_REF,
                 status: 'success'
-            })), _e; _e = yield _d.next(), !_e.done;) {
-                const runs = _e.value;
+            })), _m; _m = yield _l.next(), _a = _m.done, !_a;) {
+                _c = _m.value;
+                _k = false;
                 try {
-                    for (var _f = (e_2 = void 0, __asyncValues(runs.data)), _g; _g = yield _f.next(), !_g.done;) {
-                        const run = _g.value;
-                        if (!run.name) {
-                            core.debug(`${run.id} had no workflow name, skipping`);
-                            continue;
-                        }
-                        if (!inArray(run.name, artifactWorkflowNames)) {
-                            core.debug(`${run.name} did not match the following worflows: ${artifactWorkflowNames.join(',')}`);
-                            continue;
-                        }
-                        const artifacts = yield client.rest.actions.listWorkflowRunArtifacts({
-                            owner,
-                            repo,
-                            run_id: run.id
-                        });
-                        if (artifacts.data.artifacts.length === 0) {
-                            core.debug(`No Artifacts in workflow ${run.id}`);
-                            continue;
-                        }
-                        try {
-                            for (var _h = (e_3 = void 0, __asyncValues(artifacts.data.artifacts)), _j; _j = yield _h.next(), !_j.done;) {
-                                const art = _j.value;
-                                if (art.expired) {
+                    const runs = _c;
+                    try {
+                        for (var _o = true, _p = (e_2 = void 0, __asyncValues(runs.data)), _q; _q = yield _p.next(), _d = _q.done, !_d;) {
+                            _f = _q.value;
+                            _o = false;
+                            try {
+                                const run = _f;
+                                if (!run.name) {
+                                    core.debug(`${run.id} had no workflow name, skipping`);
                                     continue;
                                 }
-                                if (art.name !== artifactName) {
+                                if (!inArray(run.name, artifactWorkflowNames)) {
+                                    core.debug(`${run.name} did not match the following worflows: ${artifactWorkflowNames.join(',')}`);
                                     continue;
                                 }
-                                core.info(`Downloading the artifact "${art.name}" from workflow ${run.name}:${run.id}`);
-                                const zip = yield client.rest.actions.downloadArtifact({
+                                const artifacts = yield client.rest.actions.listWorkflowRunArtifacts({
                                     owner,
                                     repo,
-                                    artifact_id: art.id,
-                                    archive_format: 'zip'
+                                    run_id: run.id
                                 });
-                                const dir = path_1.default.join(__dirname, base);
-                                core.debug(`Making dir ${dir}`);
-                                yield mkdir(dir, { recursive: true });
-                                core.debug(`Extracting Artifact to ${dir}`);
-                                const adm = new adm_zip_1.default(Buffer.from(zip.data));
-                                adm.extractAllTo(dir, true);
-                                return dir;
+                                if (artifacts.data.artifacts.length === 0) {
+                                    core.debug(`No Artifacts in workflow ${run.id}`);
+                                    continue;
+                                }
+                                try {
+                                    for (var _r = true, _s = (e_3 = void 0, __asyncValues(artifacts.data.artifacts)), _t; _t = yield _s.next(), _g = _t.done, !_g;) {
+                                        _j = _t.value;
+                                        _r = false;
+                                        try {
+                                            const art = _j;
+                                            if (art.expired) {
+                                                continue;
+                                            }
+                                            if (art.name !== artifactName) {
+                                                continue;
+                                            }
+                                            core.info(`Downloading the artifact "${art.name}" from workflow ${run.name}:${run.id}`);
+                                            const zip = yield client.rest.actions.downloadArtifact({
+                                                owner,
+                                                repo,
+                                                artifact_id: art.id,
+                                                archive_format: 'zip'
+                                            });
+                                            const dir = path_1.default.join(__dirname, base);
+                                            core.debug(`Making dir ${dir}`);
+                                            yield mkdir(dir, { recursive: true });
+                                            core.debug(`Extracting Artifact to ${dir}`);
+                                            const adm = new adm_zip_1.default(Buffer.from(zip.data));
+                                            adm.extractAllTo(dir, true);
+                                            return dir;
+                                        }
+                                        finally {
+                                            _r = true;
+                                        }
+                                    }
+                                }
+                                catch (e_3_1) { e_3 = { error: e_3_1 }; }
+                                finally {
+                                    try {
+                                        if (!_r && !_g && (_h = _s.return)) yield _h.call(_s);
+                                    }
+                                    finally { if (e_3) throw e_3.error; }
+                                }
+                            }
+                            finally {
+                                _o = true;
                             }
                         }
-                        catch (e_3_1) { e_3 = { error: e_3_1 }; }
-                        finally {
-                            try {
-                                if (_j && !_j.done && (_c = _h.return)) yield _c.call(_h);
-                            }
-                            finally { if (e_3) throw e_3.error; }
+                    }
+                    catch (e_2_1) { e_2 = { error: e_2_1 }; }
+                    finally {
+                        try {
+                            if (!_o && !_d && (_e = _p.return)) yield _e.call(_p);
                         }
+                        finally { if (e_2) throw e_2.error; }
                     }
                 }
-                catch (e_2_1) { e_2 = { error: e_2_1 }; }
                 finally {
-                    try {
-                        if (_g && !_g.done && (_b = _f.return)) yield _b.call(_f);
-                    }
-                    finally { if (e_2) throw e_2.error; }
+                    _k = true;
                 }
             }
         }
         catch (e_1_1) { e_1 = { error: e_1_1 }; }
         finally {
             try {
-                if (_e && !_e.done && (_a = _d.return)) yield _a.call(_d);
+                if (!_k && !_a && (_b = _l.return)) yield _b.call(_l);
             }
             finally { if (e_1) throw e_1.error; }
         }
