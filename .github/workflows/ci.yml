@@ -1,4 +1,4 @@
-name: 'ci'
+name: 'ci satya'
 on:
   pull_request:
     branches:
