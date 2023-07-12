@@ -22,6 +22,7 @@ export interface Inputs {
   markdownFilename: string
   artifactDownloadWorkflowNames: string[] | null
   artifactName: string
+  diffOverallCoverage: boolean
 }
 
 export interface Files {

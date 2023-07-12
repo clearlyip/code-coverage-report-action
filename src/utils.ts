@@ -227,8 +227,12 @@ export function createHash(data: crypto.BinaryLike): string {
  * @param {number} percentage
  * @returns {number}
  */
-export function roundPercentage(percentage: number): number {
-  return Math.round((percentage + Number.EPSILON) * 100) / 100
+export function roundPercentage(
+  percentage: number,
+  precision?: number
+): number {
+  const rounded = Math.round((percentage + Number.EPSILON) * 100) / 100
+  return precision ? Number.parseFloat(rounded.toPrecision(precision)) : rounded
 }
 
 export function escapeRegExp(string: string): string {
@@ -343,6 +347,9 @@ export function getInputs(): Inputs {
     throw new Error('artifact_name is missing %name% variable')
   }
 
+  const diffOverallCoverage =
+    core.getInput('diff_overall_coverage') === 'true' ? true : false
+
   const tempArtifactDownloadWorkflowNames = core.getInput(
     'artifact_download_workflow_names'
   )
@@ -361,7 +368,8 @@ export function getInputs(): Inputs {
     failOnNegativeDifference,
     markdownFilename,
     artifactDownloadWorkflowNames,
-    artifactName
+    artifactName,
+    diffOverallCoverage
   }
 
   return inputs
