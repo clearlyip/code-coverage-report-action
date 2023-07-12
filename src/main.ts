@@ -199,12 +199,12 @@ async function generateMarkdown(
     summary.addTable([overallResults])
   } else {
     summary
-    .addTable([headers, ...map])
-    .addBreak()
-    .addRaw(
-      `<i>Minimum allowed coverage is</i> <code>${overallCoverageFailThreshold}%</code>, this run produced</i> <code>${headCoverage.coverage}%</code>`
-    )
-
+      .addTable([headers, ...map])
+      .addBreak()
+      .addRaw(
+        `<i>Minimum allowed coverage is</i> <code>${overallCoverageFailThreshold}%</code>, this run produced</i> <code>${headCoverage.coverage}%</code>`
+      )
+  }
   //If this is run after write the buffer is empty
   core.info(`Writing results to ${markdownFilename}.md`)
   await writeFile(`${markdownFilename}.md`, summary.stringify())
