@@ -109,6 +109,7 @@ test('getInputs', () => {
     failOnNegativeDifference: false,
     markdownFilename: 'code-coverage-results',
     artifactDownloadWorkflowNames: null,
-    artifactName: 'coverage-%name%'
+    artifactName: 'coverage-%name%',
+    diffOverallCoverage: false
   })
 })
