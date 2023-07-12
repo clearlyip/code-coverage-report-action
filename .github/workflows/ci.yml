@@ -26,9 +26,11 @@ jobs:
           fail_on_negative_difference: true
           artifact_download_workflow_names: 'ci,cron'
           diff_overall_coverage: true
+          markdown_filename: code-coverage-diff
+
       - name: Add Coverage PR Comment
         uses: marocchino/sticky-pull-request-comment@v2
         if: steps.code_coverage_report_action.outputs.file != '' && github.event_name == 'pull_request' && (success() || failure())
         with:
           recreate: true
-          path: code-coverage-results.md
+          path: code-coverage-diff.md
