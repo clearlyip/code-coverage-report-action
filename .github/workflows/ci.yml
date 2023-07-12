@@ -1,11 +1,5 @@
 name: 'ci'
-on:
-  pull_request:
-    branches:
-      - main
-  push:
-    branches:
-      - main
+on: ["pull_request", "push"]
 
 jobs:
   ci:
@@ -36,5 +30,5 @@ jobs:
           path: code-coverage-diff.md
 
       - name: Publish coverage summary
+        if: steps.code_coverage_report_action.outputs.file != ''
         run: cat code-coverage-diff.md >> $GITHUB_STEP_SUMMARY
-        if: always()          
