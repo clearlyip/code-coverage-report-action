@@ -80,6 +80,8 @@ async function generateMarkdown(
     markdownFilename,
     diffOverallCoverage
   } = getInputs()
+  core.info(`diffOverallCoverage: ${diffOverallCoverage}`)
+
   const map = Object.entries(headCoverage.files).map(([hash, file]) => {
     if (baseCoverage === null) {
       return [
@@ -168,9 +170,8 @@ async function generateMarkdown(
     )
   }
 
-  core.info(`diffOverallCoverage: ${markdownFilename}`)
-
   if (diffOverallCoverage === true) {
+    core.info(`diffOverallCoverage: ${diffOverallCoverage}`)
     const overallDiffPercentage = baseCoverage
       ? roundPercentage(headCoverage.coverage - baseCoverage.coverage)
       : null
@@ -185,6 +186,7 @@ async function generateMarkdown(
       )
     }
 
+    core.info(`diffOverallCoverage: ${overallDiffPercentage}`)
     const overallResults = [
       {data: 'Base Coverage', header: true},
       {data: 'New Coverage', header: true},
@@ -198,7 +200,8 @@ async function generateMarkdown(
       }
     ]
 
-    summary.addTable([overallResults])
+    core.info(`diffOverallCoverage: ${overallResults}`)
+    summary.addTable([overallResults]).addBreak()
   }
   summary
     .addTable([headers, ...map])
