@@ -168,6 +168,8 @@ async function generateMarkdown(
     )
   }
 
+  core.info(`diffOverallCoverage: ${markdownFilename}`)
+
   if (diffOverallCoverage === true) {
     const overallDiffPercentage = baseCoverage
       ? roundPercentage(headCoverage.coverage - baseCoverage.coverage)
