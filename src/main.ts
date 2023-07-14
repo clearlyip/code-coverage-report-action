@@ -36,7 +36,7 @@ async function run(): Promise<void> {
           return
         }
 
-        //Base doesnt have an artifact
+        //Base doesn't have an artifact
         if (baseCoverage === null) {
           core.warning(
             `${GITHUB_BASE_REF} is missing ${filename}. See documentation on how to add this`
@@ -61,6 +61,7 @@ async function run(): Promise<void> {
       default:
       //TODO: return something here
     }
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (err: any) {
     core.setFailed(err.message)
@@ -77,9 +78,11 @@ async function generateMarkdown(
     fileCoverageErrorMin,
     fileCoverageWarningMax,
     badge,
-    markdownFilename
+    markdownFilename,
+    negativeDifferenceBy
   } = getInputs()
-  const map = Object.entries(headCoverage.files).map(([hash, file]) => {
+
+  const baseMap = Object.entries(headCoverage.files).map(([hash, file]) => {
     if (baseCoverage === null) {
       return [
         file.relative,
@@ -101,6 +104,7 @@ async function generateMarkdown(
 
     if (
       failOnNegativeDifference &&
+      negativeDifferenceBy === 'package' &&
       differencePercentage !== null &&
       differencePercentage < 0
     ) {
@@ -125,9 +129,34 @@ async function generateMarkdown(
     ]
   })
 
+  const map = baseMap.sort((a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0))
+
+  // Add a "summary row" showing changes in overall overage.
+  map.push(await addOverallRow(headCoverage, baseCoverage))
+
+  const overallDifferencePercentage = baseCoverage
+    ? roundPercentage(headCoverage.coverage - baseCoverage.coverage)
+    : null
+
+  core.debug(`headCoverage: ${headCoverage.coverage}`)
+  core.debug(`baseCoverage: ${baseCoverage?.coverage}`)
+  core.debug(`overallDifferencePercentage: ${overallDifferencePercentage}`)
+
+  if (
+    failOnNegativeDifference &&
+    negativeDifferenceBy === 'overall' &&
+    overallDifferencePercentage !== null &&
+    overallDifferencePercentage < 0 &&
+    baseCoverage
+  ) {
+    core.setFailed(
+      `FAIL: Overall coverage of dropped ${overallDifferencePercentage}%, from ${baseCoverage.coverage}% to ${headCoverage.coverage}%.`
+    )
+  }
+
   if (overallCoverageFailThreshold > headCoverage.coverage) {
     core.setFailed(
-      `FAIL: Overall coverage of ${headCoverage.coverage.toString()}% below minimum threshold of ${overallCoverageFailThreshold.toString()}%`
+      `FAIL: Overall coverage of ${headCoverage.coverage.toString()}% below minimum threshold of ${overallCoverageFailThreshold.toString()}%.`
     )
   }
 
@@ -162,10 +191,11 @@ async function generateMarkdown(
     summary.addImage(
       `https://img.shields.io/badge/${encodeURIComponent(
         `Code Coverage-${headCoverage.coverage}%-${color}`
-      )}?style=flat`,
+      )}?style=for-the-badge`,
       'Code Coverage'
     )
   }
+
   summary
     .addTable([headers, ...map])
     .addBreak()
@@ -181,6 +211,46 @@ async function generateMarkdown(
 
   core.info(`Writing job summary`)
   await summary.write()
+}
+
+/**
+ * Generate overall coverage row
+ */
+async function addOverallRow(
+  headCoverage: Coverage,
+  baseCoverage: Coverage | null = null
+): Promise<string[]> {
+  const {overallCoverageFailThreshold} = getInputs()
+
+  const overallDifferencePercentage = baseCoverage
+    ? roundPercentage(headCoverage.coverage - baseCoverage.coverage)
+    : null
+
+  if (baseCoverage === null) {
+    return [
+      'Overall Coverage',
+      `${colorizePercentageByThreshold(
+        headCoverage.coverage,
+        0,
+        overallCoverageFailThreshold
+      )}`
+    ]
+  }
+
+  return [
+    '<b>Overall Coverage</b>',
+    `<b>${colorizePercentageByThreshold(
+      baseCoverage.coverage,
+      0,
+      overallCoverageFailThreshold
+    )}</b>`,
+    `<b>${colorizePercentageByThreshold(
+      headCoverage.coverage,
+      0,
+      overallCoverageFailThreshold
+    )}</b>`,
+    `<b>${colorizePercentageByThreshold(overallDifferencePercentage)}</b>`
+  ]
 }
 
 run()

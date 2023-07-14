@@ -6,7 +6,9 @@ import {
   determineCommonBasePath,
   escapeRegExp,
   colorizePercentageByThreshold,
-  getInputs
+  getInputs,
+  parseXML,
+  parseCoverage
 } from '../src/utils'
 import {
   expect,
@@ -72,8 +74,8 @@ test('escaping regular expression input', () => {
 })
 
 test('colorize percentage by threshold', () => {
-  const shouldBeNA = colorizePercentageByThreshold(null)
-  expect(shouldBeNA).toBe('N/A')
+  const shouldBeZero = colorizePercentageByThreshold(null)
+  expect(shouldBeZero).toBe('⚪ 0%')
 
   const shouldBeGrey = colorizePercentageByThreshold(0)
   expect(shouldBeGrey).toBe('⚪ 0%')
@@ -94,6 +96,22 @@ test('colorize percentage by threshold', () => {
   expect(shouldBeGreenA).toBe('🟢 80%')
 })
 
+test('parse xml', async () => {
+  const ret = await parseXML(__filename)
+  expect(ret).toBeTruthy()
+
+  const ret1 = await parseXML(__filename + 'bar')
+  expect(ret1).toBeFalsy()
+})
+
+test('parse coverage', async () => {
+  const ret = await parseCoverage(__filename)
+  expect(ret).not.toBeNull
+
+  const ret1 = await parseCoverage(__filename + 'bar')
+  expect(ret1).toBeNull
+})
+
 test('getInputs', () => {
   process.env.INPUT_GITHUB_TOKEN = 'token'
   process.env.INPUT_FILENAME = 'filename.xml'
@@ -109,6 +127,8 @@ test('getInputs', () => {
     failOnNegativeDifference: false,
     markdownFilename: 'code-coverage-results',
     artifactDownloadWorkflowNames: null,
-    artifactName: 'coverage-%name%'
+    artifactName: 'coverage-%name%',
+    negativeDifferenceBy: 'package',
+    retention: undefined
   })
 })

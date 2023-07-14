@@ -5,10 +5,12 @@ import * as core from '@actions/core'
 import * as github from '@actions/github'
 import {Clover, parse as parseClover} from './reports/clover'
 import {Cobertura, parse as parseCobertura} from './reports/cobertura'
-import path from 'path'
+import path, {parse} from 'path'
+
 import {Coverage, Inputs} from './interfaces'
 import crypto from 'crypto'
 import AdmZip from 'adm-zip'
+import {stringify} from 'querystring'
 
 const {access, readFile, mkdir} = fs
 
@@ -76,7 +78,7 @@ export async function downloadArtifacts(
   const [owner, repo] = GITHUB_REPOSITORY.split('/')
 
   core.info(
-    `Looking for artifact "${artifactName}" in the following worflows: ${artifactWorkflowNames.join(
+    `Looking for artifact "${artifactName}" in the following workflows: ${artifactWorkflowNames.join(
       ','
     )}`
   )
@@ -99,7 +101,7 @@ export async function downloadArtifacts(
         core.debug(
           `${
             run.name
-          } did not match the following worflows: ${artifactWorkflowNames.join(
+          } did not match the following workflows: ${artifactWorkflowNames.join(
             ','
           )}`
         )
@@ -167,21 +169,23 @@ export async function uploadArtifacts(
 ): Promise<artifact.UploadResponse> {
   const artifactClient = artifact.create()
   const artifactName = formatArtifactName(name)
+  const {retention} = getInputs()
 
   const rootDirectory = '.'
-  const options = {
-    continueOnError: false
-  }
 
-  core.info(
-    `Uploading Artifacts to ${artifactName} on workflow named ${github.context.job}`
-  )
-  return await artifactClient.uploadArtifact(
+  const result = await artifactClient.uploadArtifact(
     artifactName,
     files,
     rootDirectory,
-    options
+    {
+      continueOnError: false,
+      retentionDays: retention
+    }
   )
+
+  core.info(`Artifact Metadata:\n${JSON.stringify(result, null, 4)}`)
+
+  return result
 }
 
 /**
@@ -248,7 +252,7 @@ export function colorizePercentageByThreshold(
   thresholdMin: number | null = null
 ): string {
   if (percentage === null) {
-    return 'N/A'
+    return '⚪ 0%'
   }
   if (thresholdMin === null) {
     if (percentage > thresholdMax) {
@@ -335,8 +339,18 @@ export function getInputs(): Inputs {
   const fileCoverageWarningMax = parseInt(
     core.getInput('file_coverage_warning_max') || '75'
   )
+
   const failOnNegativeDifference =
     core.getInput('fail_on_negative_difference') === 'true' ? true : false
+
+  const negativeDifferenceBy =
+    core.getInput('negative_difference_by') === 'overall'
+      ? 'overall'
+      : 'package'
+
+  const retentionString = core.getInput('retention_days') || undefined
+  const retentionDays =
+    retentionString == undefined ? undefined : parseInt(retentionString)
 
   const artifactName = core.getInput('artifact_name') || 'coverage-%name%'
   if (!artifactName.includes('%name%')) {
@@ -361,7 +375,9 @@ export function getInputs(): Inputs {
     failOnNegativeDifference,
     markdownFilename,
     artifactDownloadWorkflowNames,
-    artifactName
+    artifactName,
+    negativeDifferenceBy,
+    retention: retentionDays
   }
 
   return inputs
