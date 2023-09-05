@@ -2,16 +2,16 @@ name: 'cron'
 on:
   workflow_dispatch:
   schedule:
-    - cron:  '0 0 1 * *'
+    - cron: '0 0 1 * *'
 
 jobs:
   cron:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - uses: actions/setup-node@v3
         with:
-          node-version: 16
+          node-version: 20.3.1
       - run: npm ci
       - run: npm run test >> "${GITHUB_STEP_SUMMARY}"
       - uses: ./
