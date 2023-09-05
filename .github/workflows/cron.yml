@@ -17,4 +17,6 @@ jobs:
       - uses: ./
         id: code_coverage_report_action
         with:
+          badge: true
           filename: 'coverage/clover.xml'
+          retention_days: 1

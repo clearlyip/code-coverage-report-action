@@ -2,7 +2,7 @@ name: 'Code Coverage Report Difference'
 description: 'Provides code coverage reports with the ability to see differences in a pull requests utilizing markdown files.'
 author: 'ClearlyIP'
 branding:
-  icon: 'file-text'  
+  icon: 'file-text'
   color: 'blue'
 inputs:
   filename:
@@ -43,6 +43,19 @@ inputs:
     description: 'Artifact name. Use %name% as a placeholder (must be included!)'
     required: false
     default: 'coverage-%name%'
+  negative_difference_by:
+    description: 'Determines how negative difference is evaluated. Possible values are "overall" and "package" (default)'
+    required: false
+    default: 'package'
+  negative_difference_threshold:
+    description: 'The percentage drop in coverage that should be allowed, in decimal form (0.05 == 5%). The default value is 0.'
+    required: false
+    default: '0'
+  retention_days:
+    description: 'The number of days to retain uploaded artifacts. When `null` (default), the default retention period for the repository is used.'
+    required: false
+    default: null
+
 outputs:
   file:
     description: 'The generated markdown file path'
