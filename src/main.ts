@@ -96,11 +96,11 @@ async function generateMarkdown(
 
     const baseCoveragePercentage = baseCoverage.files[hash]
       ? baseCoverage.files[hash].coverage
-      : null
+      : 0
 
     const differencePercentage = baseCoveragePercentage
       ? roundPercentage(file.coverage - baseCoveragePercentage)
-      : null
+      : roundPercentage(file.coverage)
 
     if (
       failOnNegativeDifference &&
