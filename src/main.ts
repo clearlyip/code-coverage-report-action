@@ -56,6 +56,11 @@ async function run(): Promise<void> {
           core.info(`Uploading ${filename}`)
           await uploadArtifacts([filename], GITHUB_REF_NAME)
           core.info(`Complete`)
+
+          const headCoverage = await parseCoverage(filename)
+          if (headCoverage != null) {
+            await generateMarkdown(headCoverage)
+          }
         }
         break
       default:
