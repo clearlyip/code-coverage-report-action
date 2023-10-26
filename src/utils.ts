@@ -5,12 +5,11 @@ import * as core from '@actions/core'
 import * as github from '@actions/github'
 import {Clover, parse as parseClover} from './reports/clover'
 import {Cobertura, parse as parseCobertura} from './reports/cobertura'
-import path, {parse} from 'path'
+import path from 'path'
 
 import {Coverage, Inputs} from './interfaces'
 import crypto from 'crypto'
 import AdmZip from 'adm-zip'
-import {stringify} from 'querystring'
 
 const {access, readFile, mkdir} = fs
 
@@ -197,6 +196,9 @@ export async function parseCoverage(
   filename: string
 ): Promise<Coverage | null> {
   if (!(await checkFileExists(filename))) {
+    core.warning(
+      `Unable to access ${filename}. See documentation on how to add this`
+    )
     return null
   }
 
@@ -217,6 +219,7 @@ export async function parseCoverage(
       }
       break
     default:
+      core.warning(`Unable to parse ${filename}`)
   }
 
   return null
@@ -350,7 +353,7 @@ export function getInputs(): Inputs {
 
   const retentionString = core.getInput('retention_days') || undefined
   const retentionDays =
-    retentionString == undefined ? undefined : parseInt(retentionString)
+    retentionString === undefined ? undefined : parseInt(retentionString)
 
   const artifactName = core.getInput('artifact_name') || 'coverage-%name%'
   if (!artifactName.includes('%name%')) {

@@ -23,7 +23,7 @@ export default async function parse(clover: Clover): Promise<Coverage> {
   const regExp = new RegExp(`^${escapeRegExp(`${basePath}/`)}`)
 
   return {
-    files: Object.entries(files).reduce((previous, [hash, file]) => {
+    files: Object.entries(files).reduce((previous, [, file]) => {
       file.relative = file.absolute.replace(regExp, '')
       return {...previous, [createHash(file.relative)]: file}
     }, {}),

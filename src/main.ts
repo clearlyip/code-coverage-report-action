@@ -21,10 +21,14 @@ async function run(): Promise<void> {
       return
     }
 
+    core.debug(`filename: ${filename}`)
+
     switch (process.env.GITHUB_EVENT_NAME) {
       case 'pull_request': {
         const {GITHUB_BASE_REF = ''} = process.env
+        core.debug(`GITHUB_BASE_REF: ${GITHUB_BASE_REF}`)
         const artifactPath = await downloadArtifacts(GITHUB_BASE_REF)
+        core.debug(`artifactPath: ${artifactPath}`)
         const baseCoverage =
           artifactPath !== null
             ? await parseCoverage(path.join(artifactPath, filename))
@@ -55,6 +59,7 @@ async function run(): Promise<void> {
           const {GITHUB_REF_NAME = ''} = process.env
           core.info(`Uploading ${filename}`)
           await uploadArtifacts([filename], GITHUB_REF_NAME)
+          core.debug(`GITHUB_REF_NAME: ${GITHUB_REF_NAME}`)
           core.info(`Complete`)
 
           const headCoverage = await parseCoverage(filename)
