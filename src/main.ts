@@ -56,6 +56,11 @@ async function run(): Promise<void> {
           core.info(`Uploading ${filename}`)
           await uploadArtifacts([filename], GITHUB_REF_NAME)
           core.info(`Complete`)
+
+          const headCoverage = await parseCoverage(filename)
+          if (headCoverage != null) {
+            await generateMarkdown(headCoverage)
+          }
         }
         break
       default:
@@ -96,11 +101,11 @@ async function generateMarkdown(
 
     const baseCoveragePercentage = baseCoverage.files[hash]
       ? baseCoverage.files[hash].coverage
-      : null
+      : 0
 
     const differencePercentage = baseCoveragePercentage
       ? roundPercentage(file.coverage - baseCoveragePercentage)
-      : null
+      : roundPercentage(file.coverage)
 
     if (
       failOnNegativeDifference &&
