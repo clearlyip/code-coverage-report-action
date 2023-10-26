@@ -41635,18 +41635,24 @@ function run() {
                     const baseCoverage = artifactPath !== null
                         ? yield (0, utils_1.parseCoverage)(path_1.default.join(artifactPath, filename))
                         : null;
+                    core.info(`Parsing coverage file: ${filename}...`);
                     const headCoverage = yield (0, utils_1.parseCoverage)(filename);
                     if (headCoverage === null) {
                         core.setFailed(`Unable to process ${filename}`);
                         return;
                     }
+                    core.info(`Complete`);
                     //Base doesn't have an artifact
                     if (baseCoverage === null) {
                         core.warning(`${GITHUB_BASE_REF} is missing ${filename}. See documentation on how to add this`);
+                        core.info(`Generating markdown from ${headCoverage.basePath}...`);
                         yield generateMarkdown(headCoverage);
+                        core.info(`Complete`);
                         return;
                     }
+                    core.info(`Generating markdown between ${headCoverage.basePath} and ${baseCoverage.basePath}...`);
                     yield generateMarkdown(headCoverage, baseCoverage);
+                    core.info(`Complete`);
                     break;
                 }
                 case 'push':
@@ -41654,13 +41660,17 @@ function run() {
                 case 'workflow_dispatch':
                     {
                         const { GITHUB_REF_NAME = '' } = process.env;
-                        core.info(`Uploading ${filename}`);
+                        core.info(`Uploading ${filename}...`);
                         yield (0, utils_1.uploadArtifacts)([filename], GITHUB_REF_NAME);
-                        core.debug(`GITHUB_REF_NAME: ${GITHUB_REF_NAME}`);
+                        core.debug(`GITHUB_REF_NAME: ${GITHUB_REF_NAME}, filename: ${filename}`);
                         core.info(`Complete`);
+                        core.info(`Parsing coverage file: ${filename}...`);
                         const headCoverage = yield (0, utils_1.parseCoverage)(filename);
+                        core.info(`Complete`);
                         if (headCoverage != null) {
+                            core.info(`Generating markdown from ${headCoverage.basePath}...`);
                             yield generateMarkdown(headCoverage);
+                            core.info(`Complete`);
                         }
                     }
                     break;
@@ -41857,7 +41867,7 @@ function parse(clover) {
         const basePath = `${(0, utils_1.determineCommonBasePath)(fileList)}`;
         const regExp = new RegExp(`^${(0, utils_1.escapeRegExp)(`${basePath}/`)}`);
         return {
-            files: Object.entries(files).reduce((previous, [hash, file]) => {
+            files: Object.entries(files).reduce((previous, [, file]) => {
                 file.relative = file.absolute.replace(regExp, '');
                 return Object.assign(Object.assign({}, previous), { [(0, utils_1.createHash)(file.relative)]: file });
             }, {}),
@@ -42300,7 +42310,7 @@ exports.uploadArtifacts = uploadArtifacts;
 function parseCoverage(filename) {
     return __awaiter(this, void 0, void 0, function* () {
         if (!(yield checkFileExists(filename))) {
-            core.warning(`Unable to access ${filename}. See documentation on how to add this`);
+            core.warning(`Unable to access ${filename} for parsing`);
             return null;
         }
         const ext = path_1.default.extname(filename);
@@ -42431,7 +42441,7 @@ function getInputs() {
         ? 'overall'
         : 'package';
     const retentionString = core.getInput('retention_days') || undefined;
-    const retentionDays = retentionString == undefined ? undefined : parseInt(retentionString);
+    const retentionDays = retentionString === undefined ? undefined : parseInt(retentionString);
     const artifactName = core.getInput('artifact_name') || 'coverage-%name%';
     if (!artifactName.includes('%name%')) {
         throw new Error('artifact_name is missing %name% variable');

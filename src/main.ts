@@ -33,6 +33,8 @@ async function run(): Promise<void> {
           artifactPath !== null
             ? await parseCoverage(path.join(artifactPath, filename))
             : null
+
+        core.info(`Parsing coverage file: ${filename}...`)
         const headCoverage = await parseCoverage(filename)
 
         if (headCoverage === null) {
@@ -40,16 +42,26 @@ async function run(): Promise<void> {
           return
         }
 
+        core.info(`Complete`)
+
         //Base doesn't have an artifact
         if (baseCoverage === null) {
           core.warning(
             `${GITHUB_BASE_REF} is missing ${filename}. See documentation on how to add this`
           )
+
+          core.info(`Generating markdown from ${headCoverage.basePath}...`)
           await generateMarkdown(headCoverage)
+          core.info(`Complete`)
+
           return
         }
 
+        core.info(
+          `Generating markdown between ${headCoverage.basePath} and ${baseCoverage.basePath}...`
+        )
         await generateMarkdown(headCoverage, baseCoverage)
+        core.info(`Complete`)
         break
       }
       case 'push':
@@ -57,14 +69,21 @@ async function run(): Promise<void> {
       case 'workflow_dispatch':
         {
           const {GITHUB_REF_NAME = ''} = process.env
-          core.info(`Uploading ${filename}`)
+          core.info(`Uploading ${filename}...`)
           await uploadArtifacts([filename], GITHUB_REF_NAME)
-          core.debug(`GITHUB_REF_NAME: ${GITHUB_REF_NAME}`)
+          core.debug(
+            `GITHUB_REF_NAME: ${GITHUB_REF_NAME}, filename: ${filename}`
+          )
           core.info(`Complete`)
 
+          core.info(`Parsing coverage file: ${filename}...`)
           const headCoverage = await parseCoverage(filename)
+          core.info(`Complete`)
+
           if (headCoverage != null) {
+            core.info(`Generating markdown from ${headCoverage.basePath}...`)
             await generateMarkdown(headCoverage)
+            core.info(`Complete`)
           }
         }
         break

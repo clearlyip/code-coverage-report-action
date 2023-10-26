@@ -196,9 +196,7 @@ export async function parseCoverage(
   filename: string
 ): Promise<Coverage | null> {
   if (!(await checkFileExists(filename))) {
-    core.warning(
-      `Unable to access ${filename}. See documentation on how to add this`
-    )
+    core.warning(`Unable to access ${filename} for parsing`)
     return null
   }
 
