@@ -98,9 +98,9 @@ export async function downloadArtifacts(
 
       if (!inArray(run.name, artifactWorkflowNames)) {
         core.debug(
-          `${
+          `Workflow name '${
             run.name
-          } did not match the following workflows: ${artifactWorkflowNames.join(
+          }' did not match the following required workflows names: ${artifactWorkflowNames.join(
             ','
           )}`
         )

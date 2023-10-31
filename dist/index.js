@@ -6045,7 +6045,7 @@ module.exports = __toCommonJS(dist_src_exports);
 var import_universal_user_agent = __nccwpck_require__(5030);
 
 // pkg/dist-src/version.js
-var VERSION = "9.0.1";
+var VERSION = "9.0.2";
 
 // pkg/dist-src/defaults.js
 var userAgent = `octokit-endpoint.js/${VERSION} ${(0, import_universal_user_agent.getUserAgent)()}`;
@@ -6253,7 +6253,7 @@ function parseUrl(template) {
 }
 function expand(template, context) {
   var operators = ["+", "#", ".", "/", ";", "?", "&"];
-  return template.replace(
+  template = template.replace(
     /\{([^\{\}]+)\}|([^\{\}]+)/g,
     function(_, expression, literal) {
       if (expression) {
@@ -6283,6 +6283,11 @@ function expand(template, context) {
       }
     }
   );
+  if (template === "/") {
+    return template;
+  } else {
+    return template.replace(/\/$/, "");
+  }
 }
 
 // pkg/dist-src/parse.js
@@ -41600,15 +41605,6 @@ var __importStar = (this && this.__importStar) || function (mod) {
     __setModuleDefault(result, mod);
     return result;
 };
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -41617,182 +41613,176 @@ const core = __importStar(__nccwpck_require__(2186));
 const utils_1 = __nccwpck_require__(1314);
 const promises_1 = __nccwpck_require__(3292);
 const path_1 = __importDefault(__nccwpck_require__(1017));
-function run() {
-    return __awaiter(this, void 0, void 0, function* () {
-        try {
-            const filename = core.getInput('filename');
-            if (!(yield (0, utils_1.checkFileExists)(filename))) {
-                core.setFailed(`Unable to access ${filename}`);
-                return;
-            }
-            core.debug(`filename: ${filename}`);
-            switch (process.env.GITHUB_EVENT_NAME) {
-                case 'pull_request': {
-                    const { GITHUB_BASE_REF = '' } = process.env;
-                    core.debug(`GITHUB_BASE_REF: ${GITHUB_BASE_REF}`);
-                    const artifactPath = yield (0, utils_1.downloadArtifacts)(GITHUB_BASE_REF);
-                    core.debug(`artifactPath: ${artifactPath}`);
-                    const baseCoverage = artifactPath !== null
-                        ? yield (0, utils_1.parseCoverage)(path_1.default.join(artifactPath, filename))
-                        : null;
-                    core.info(`Parsing coverage file: ${filename}...`);
-                    const headCoverage = yield (0, utils_1.parseCoverage)(filename);
-                    if (headCoverage === null) {
-                        core.setFailed(`Unable to process ${filename}`);
-                        return;
-                    }
-                    core.info(`Complete`);
-                    //Base doesn't have an artifact
-                    if (baseCoverage === null) {
-                        core.warning(`${GITHUB_BASE_REF} is missing ${filename}. See documentation on how to add this`);
-                        core.info(`Generating markdown from ${headCoverage.basePath}...`);
-                        yield generateMarkdown(headCoverage);
-                        core.info(`Complete`);
-                        return;
-                    }
-                    core.info(`Generating markdown between ${headCoverage.basePath} and ${baseCoverage.basePath}...`);
-                    yield generateMarkdown(headCoverage, baseCoverage);
-                    core.info(`Complete`);
-                    break;
+async function run() {
+    try {
+        const filename = core.getInput('filename');
+        if (!(await (0, utils_1.checkFileExists)(filename))) {
+            core.setFailed(`Unable to access ${filename}`);
+            return;
+        }
+        core.debug(`filename: ${filename}`);
+        switch (process.env.GITHUB_EVENT_NAME) {
+            case 'pull_request': {
+                const { GITHUB_BASE_REF = '' } = process.env;
+                core.debug(`GITHUB_BASE_REF: ${GITHUB_BASE_REF}`);
+                const artifactPath = await (0, utils_1.downloadArtifacts)(GITHUB_BASE_REF);
+                core.debug(`artifactPath: ${artifactPath}`);
+                const baseCoverage = artifactPath !== null
+                    ? await (0, utils_1.parseCoverage)(path_1.default.join(artifactPath, filename))
+                    : null;
+                core.info(`Parsing coverage file: ${filename}...`);
+                const headCoverage = await (0, utils_1.parseCoverage)(filename);
+                if (headCoverage === null) {
+                    core.setFailed(`Unable to process ${filename}`);
+                    return;
                 }
-                case 'push':
-                case 'schedule':
-                case 'workflow_dispatch':
-                    {
-                        const { GITHUB_REF_NAME = '' } = process.env;
-                        core.info(`Uploading ${filename}...`);
-                        yield (0, utils_1.uploadArtifacts)([filename], GITHUB_REF_NAME);
-                        core.debug(`GITHUB_REF_NAME: ${GITHUB_REF_NAME}, filename: ${filename}`);
+                core.info(`Complete`);
+                //Base doesn't have an artifact
+                if (baseCoverage === null) {
+                    core.warning(`${GITHUB_BASE_REF} is missing ${filename}. See documentation on how to add this`);
+                    core.info(`Generating markdown from ${headCoverage.basePath}...`);
+                    await generateMarkdown(headCoverage);
+                    core.info(`Complete`);
+                    return;
+                }
+                core.info(`Generating markdown between ${headCoverage.basePath} and ${baseCoverage.basePath}...`);
+                await generateMarkdown(headCoverage, baseCoverage);
+                core.info(`Complete`);
+                break;
+            }
+            case 'push':
+            case 'schedule':
+            case 'workflow_dispatch':
+                {
+                    const { GITHUB_REF_NAME = '' } = process.env;
+                    core.info(`Uploading ${filename}...`);
+                    await (0, utils_1.uploadArtifacts)([filename], GITHUB_REF_NAME);
+                    core.debug(`GITHUB_REF_NAME: ${GITHUB_REF_NAME}, filename: ${filename}`);
+                    core.info(`Complete`);
+                    core.info(`Parsing coverage file: ${filename}...`);
+                    const headCoverage = await (0, utils_1.parseCoverage)(filename);
+                    core.info(`Complete`);
+                    if (headCoverage != null) {
+                        core.info(`Generating markdown from ${headCoverage.basePath}...`);
+                        await generateMarkdown(headCoverage);
                         core.info(`Complete`);
-                        core.info(`Parsing coverage file: ${filename}...`);
-                        const headCoverage = yield (0, utils_1.parseCoverage)(filename);
-                        core.info(`Complete`);
-                        if (headCoverage != null) {
-                            core.info(`Generating markdown from ${headCoverage.basePath}...`);
-                            yield generateMarkdown(headCoverage);
-                            core.info(`Complete`);
-                        }
                     }
-                    break;
-                default:
-                //TODO: return something here
-            }
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                }
+                break;
+            default:
+            //TODO: return something here
         }
-        catch (err) {
-            core.setFailed(err.message);
-        }
-    });
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    }
+    catch (err) {
+        core.setFailed(err.message);
+    }
 }
-function generateMarkdown(headCoverage, baseCoverage = null) {
-    return __awaiter(this, void 0, void 0, function* () {
-        const { overallCoverageFailThreshold, failOnNegativeDifference, fileCoverageErrorMin, fileCoverageWarningMax, badge, markdownFilename, negativeDifferenceBy } = (0, utils_1.getInputs)();
-        const baseMap = Object.entries(headCoverage.files).map(([hash, file]) => {
-            if (baseCoverage === null) {
-                return [
-                    file.relative,
-                    `${(0, utils_1.colorizePercentageByThreshold)(file.coverage, fileCoverageWarningMax, fileCoverageErrorMin)}`
-                ];
-            }
-            const baseCoveragePercentage = baseCoverage.files[hash]
-                ? baseCoverage.files[hash].coverage
-                : 0;
-            const differencePercentage = baseCoveragePercentage
-                ? (0, utils_1.roundPercentage)(file.coverage - baseCoveragePercentage)
-                : (0, utils_1.roundPercentage)(file.coverage);
-            if (failOnNegativeDifference &&
-                negativeDifferenceBy === 'package' &&
-                differencePercentage !== null &&
-                differencePercentage < 0) {
-                core.setFailed(`${headCoverage.files[hash].relative} coverage difference was ${differencePercentage}%`);
-            }
+async function generateMarkdown(headCoverage, baseCoverage = null) {
+    const { overallCoverageFailThreshold, failOnNegativeDifference, fileCoverageErrorMin, fileCoverageWarningMax, badge, markdownFilename, negativeDifferenceBy } = (0, utils_1.getInputs)();
+    const baseMap = Object.entries(headCoverage.files).map(([hash, file]) => {
+        if (baseCoverage === null) {
             return [
                 file.relative,
-                `${(0, utils_1.colorizePercentageByThreshold)(baseCoveragePercentage, fileCoverageWarningMax, fileCoverageErrorMin)}`,
-                `${(0, utils_1.colorizePercentageByThreshold)(file.coverage, fileCoverageWarningMax, fileCoverageErrorMin)}`,
-                (0, utils_1.colorizePercentageByThreshold)(differencePercentage)
+                `${(0, utils_1.colorizePercentageByThreshold)(file.coverage, fileCoverageWarningMax, fileCoverageErrorMin)}`
             ];
-        });
-        const map = baseMap.sort((a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0));
-        // Add a "summary row" showing changes in overall overage.
-        map.push(yield addOverallRow(headCoverage, baseCoverage));
-        const overallDifferencePercentage = baseCoverage
-            ? (0, utils_1.roundPercentage)(headCoverage.coverage - baseCoverage.coverage)
-            : null;
-        core.debug(`headCoverage: ${headCoverage.coverage}`);
-        core.debug(`baseCoverage: ${baseCoverage === null || baseCoverage === void 0 ? void 0 : baseCoverage.coverage}`);
-        core.debug(`overallDifferencePercentage: ${overallDifferencePercentage}`);
+        }
+        const baseCoveragePercentage = baseCoverage.files[hash]
+            ? baseCoverage.files[hash].coverage
+            : 0;
+        const differencePercentage = baseCoveragePercentage
+            ? (0, utils_1.roundPercentage)(file.coverage - baseCoveragePercentage)
+            : (0, utils_1.roundPercentage)(file.coverage);
         if (failOnNegativeDifference &&
-            negativeDifferenceBy === 'overall' &&
-            overallDifferencePercentage !== null &&
-            overallDifferencePercentage < 0 &&
-            baseCoverage) {
-            core.setFailed(`FAIL: Overall coverage of dropped ${overallDifferencePercentage}%, from ${baseCoverage.coverage}% to ${headCoverage.coverage}%.`);
+            negativeDifferenceBy === 'package' &&
+            differencePercentage !== null &&
+            differencePercentage < 0) {
+            core.setFailed(`${headCoverage.files[hash].relative} coverage difference was ${differencePercentage}%`);
         }
-        if (overallCoverageFailThreshold > headCoverage.coverage) {
-            core.setFailed(`FAIL: Overall coverage of ${headCoverage.coverage.toString()}% below minimum threshold of ${overallCoverageFailThreshold.toString()}%.`);
-        }
-        let color = 'grey';
-        if (headCoverage.coverage < fileCoverageErrorMin) {
-            color = 'red';
-        }
-        else if (headCoverage.coverage > fileCoverageErrorMin &&
-            headCoverage.coverage < fileCoverageWarningMax) {
-            color = 'orange';
-        }
-        else if (headCoverage.coverage > fileCoverageWarningMax) {
-            color = 'green';
-        }
-        const summary = core.summary.addHeading('Code Coverage Report');
-        const headers = baseCoverage === null
-            ? [
-                { data: 'Package', header: true },
-                { data: 'Coverage', header: true }
-            ]
-            : [
-                { data: 'Package', header: true },
-                { data: 'Base Coverage', header: true },
-                { data: 'New Coverage', header: true },
-                { data: 'Difference', header: true }
-            ];
-        if (badge) {
-            summary.addImage(`https://img.shields.io/badge/${encodeURIComponent(`Code Coverage-${headCoverage.coverage}%-${color}`)}?style=for-the-badge`, 'Code Coverage');
-        }
-        summary
-            .addTable([headers, ...map])
-            .addBreak()
-            .addRaw(`<i>Minimum allowed coverage is</i> <code>${overallCoverageFailThreshold}%</code>, this run produced</i> <code>${headCoverage.coverage}%</code>`);
-        //If this is run after write the buffer is empty
-        core.info(`Writing results to ${markdownFilename}.md`);
-        yield (0, promises_1.writeFile)(`${markdownFilename}.md`, summary.stringify());
-        core.setOutput('file', `${markdownFilename}.md`);
-        core.setOutput('coverage', headCoverage.coverage);
-        core.info(`Writing job summary`);
-        yield summary.write();
+        return [
+            file.relative,
+            `${(0, utils_1.colorizePercentageByThreshold)(baseCoveragePercentage, fileCoverageWarningMax, fileCoverageErrorMin)}`,
+            `${(0, utils_1.colorizePercentageByThreshold)(file.coverage, fileCoverageWarningMax, fileCoverageErrorMin)}`,
+            (0, utils_1.colorizePercentageByThreshold)(differencePercentage)
+        ];
     });
+    const map = baseMap.sort((a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0));
+    // Add a "summary row" showing changes in overall overage.
+    map.push(await addOverallRow(headCoverage, baseCoverage));
+    const overallDifferencePercentage = baseCoverage
+        ? (0, utils_1.roundPercentage)(headCoverage.coverage - baseCoverage.coverage)
+        : null;
+    core.debug(`headCoverage: ${headCoverage.coverage}`);
+    core.debug(`baseCoverage: ${baseCoverage?.coverage}`);
+    core.debug(`overallDifferencePercentage: ${overallDifferencePercentage}`);
+    if (failOnNegativeDifference &&
+        negativeDifferenceBy === 'overall' &&
+        overallDifferencePercentage !== null &&
+        overallDifferencePercentage < 0 &&
+        baseCoverage) {
+        core.setFailed(`FAIL: Overall coverage of dropped ${overallDifferencePercentage}%, from ${baseCoverage.coverage}% to ${headCoverage.coverage}%.`);
+    }
+    if (overallCoverageFailThreshold > headCoverage.coverage) {
+        core.setFailed(`FAIL: Overall coverage of ${headCoverage.coverage.toString()}% below minimum threshold of ${overallCoverageFailThreshold.toString()}%.`);
+    }
+    let color = 'grey';
+    if (headCoverage.coverage < fileCoverageErrorMin) {
+        color = 'red';
+    }
+    else if (headCoverage.coverage > fileCoverageErrorMin &&
+        headCoverage.coverage < fileCoverageWarningMax) {
+        color = 'orange';
+    }
+    else if (headCoverage.coverage > fileCoverageWarningMax) {
+        color = 'green';
+    }
+    const summary = core.summary.addHeading('Code Coverage Report');
+    const headers = baseCoverage === null
+        ? [
+            { data: 'Package', header: true },
+            { data: 'Coverage', header: true }
+        ]
+        : [
+            { data: 'Package', header: true },
+            { data: 'Base Coverage', header: true },
+            { data: 'New Coverage', header: true },
+            { data: 'Difference', header: true }
+        ];
+    if (badge) {
+        summary.addImage(`https://img.shields.io/badge/${encodeURIComponent(`Code Coverage-${headCoverage.coverage}%-${color}`)}?style=for-the-badge`, 'Code Coverage');
+    }
+    summary
+        .addTable([headers, ...map])
+        .addBreak()
+        .addRaw(`<i>Minimum allowed coverage is</i> <code>${overallCoverageFailThreshold}%</code>, this run produced</i> <code>${headCoverage.coverage}%</code>`);
+    //If this is run after write the buffer is empty
+    core.info(`Writing results to ${markdownFilename}.md`);
+    await (0, promises_1.writeFile)(`${markdownFilename}.md`, summary.stringify());
+    core.setOutput('file', `${markdownFilename}.md`);
+    core.setOutput('coverage', headCoverage.coverage);
+    core.info(`Writing job summary`);
+    await summary.write();
 }
 /**
  * Generate overall coverage row
  */
-function addOverallRow(headCoverage, baseCoverage = null) {
-    return __awaiter(this, void 0, void 0, function* () {
-        const { overallCoverageFailThreshold } = (0, utils_1.getInputs)();
-        const overallDifferencePercentage = baseCoverage
-            ? (0, utils_1.roundPercentage)(headCoverage.coverage - baseCoverage.coverage)
-            : null;
-        if (baseCoverage === null) {
-            return [
-                'Overall Coverage',
-                `${(0, utils_1.colorizePercentageByThreshold)(headCoverage.coverage, 0, overallCoverageFailThreshold)}`
-            ];
-        }
+async function addOverallRow(headCoverage, baseCoverage = null) {
+    const { overallCoverageFailThreshold } = (0, utils_1.getInputs)();
+    const overallDifferencePercentage = baseCoverage
+        ? (0, utils_1.roundPercentage)(headCoverage.coverage - baseCoverage.coverage)
+        : null;
+    if (baseCoverage === null) {
         return [
-            '<b>Overall Coverage</b>',
-            `<b>${(0, utils_1.colorizePercentageByThreshold)(baseCoverage.coverage, 0, overallCoverageFailThreshold)}</b>`,
-            `<b>${(0, utils_1.colorizePercentageByThreshold)(headCoverage.coverage, 0, overallCoverageFailThreshold)}</b>`,
-            `<b>${(0, utils_1.colorizePercentageByThreshold)(overallDifferencePercentage)}</b>`
+            'Overall Coverage',
+            `${(0, utils_1.colorizePercentageByThreshold)(headCoverage.coverage, 0, overallCoverageFailThreshold)}`
         ];
-    });
+    }
+    return [
+        '<b>Overall Coverage</b>',
+        `<b>${(0, utils_1.colorizePercentageByThreshold)(baseCoverage.coverage, 0, overallCoverageFailThreshold)}</b>`,
+        `<b>${(0, utils_1.colorizePercentageByThreshold)(headCoverage.coverage, 0, overallCoverageFailThreshold)}</b>`,
+        `<b>${(0, utils_1.colorizePercentageByThreshold)(overallDifferencePercentage)}</b>`
+    ];
 }
 run();
 
@@ -41831,51 +41821,33 @@ __exportStar(__nccwpck_require__(1385), exports);
 /***/ }),
 
 /***/ 9906:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
 "use strict";
 
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
-var __asyncValues = (this && this.__asyncValues) || function (o) {
-    if (!Symbol.asyncIterator) throw new TypeError("Symbol.asyncIterator is not defined.");
-    var m = o[Symbol.asyncIterator], i;
-    return m ? m.call(o) : (o = typeof __values === "function" ? __values(o) : o[Symbol.iterator](), i = {}, verb("next"), verb("throw"), verb("return"), i[Symbol.asyncIterator] = function () { return this; }, i);
-    function verb(n) { i[n] = o[n] && function (v) { return new Promise(function (resolve, reject) { v = o[n](v), settle(resolve, reject, v.done, v.value); }); }; }
-    function settle(resolve, reject, d, v) { Promise.resolve(v).then(function(v) { resolve({ value: v, done: d }); }, reject); }
-};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const utils_1 = __nccwpck_require__(1314);
-function parse(clover) {
-    return __awaiter(this, void 0, void 0, function* () {
-        const { metrics, '@_timestamp': timestamp } = clover.coverage.project;
-        let files = {};
-        if (clover.coverage.project.package) {
-            files = yield parsePackages(clover.coverage.project.package);
-        }
-        if (clover.coverage.project.file) {
-            files = yield parseFiles(clover.coverage.project.file);
-        }
-        const fileList = Object.values(files).map(file => file.absolute);
-        const basePath = `${(0, utils_1.determineCommonBasePath)(fileList)}`;
-        const regExp = new RegExp(`^${(0, utils_1.escapeRegExp)(`${basePath}/`)}`);
-        return {
-            files: Object.entries(files).reduce((previous, [, file]) => {
-                file.relative = file.absolute.replace(regExp, '');
-                return Object.assign(Object.assign({}, previous), { [(0, utils_1.createHash)(file.relative)]: file });
-            }, {}),
-            coverage: processCoverageMetrics(metrics),
-            timestamp: parseInt(timestamp),
-            basePath
-        };
-    });
+async function parse(clover) {
+    const { metrics, '@_timestamp': timestamp } = clover.coverage.project;
+    let files = {};
+    if (clover.coverage.project.package) {
+        files = await parsePackages(clover.coverage.project.package);
+    }
+    if (clover.coverage.project.file) {
+        files = await parseFiles(clover.coverage.project.file);
+    }
+    const fileList = Object.values(files).map(file => file.absolute);
+    const basePath = `${(0, utils_1.determineCommonBasePath)(fileList)}`;
+    const regExp = new RegExp(`^${(0, utils_1.escapeRegExp)(`${basePath}/`)}`);
+    return {
+        files: Object.entries(files).reduce((previous, [, file]) => {
+            file.relative = file.absolute.replace(regExp, '');
+            return { ...previous, [(0, utils_1.createHash)(file.relative)]: file };
+        }, {}),
+        coverage: processCoverageMetrics(metrics),
+        timestamp: parseInt(timestamp),
+        basePath
+    };
 }
 exports["default"] = parse;
 /**
@@ -41884,32 +41856,16 @@ exports["default"] = parse;
  * @param {Package[]} packages
  * @returns {Promise<Files>}
  */
-function parsePackages(packages) {
-    var _a, packages_1, packages_1_1;
-    var _b, e_1, _c, _d;
-    return __awaiter(this, void 0, void 0, function* () {
-        let allFiles = {};
-        try {
-            for (_a = true, packages_1 = __asyncValues(packages); packages_1_1 = yield packages_1.next(), _b = packages_1_1.done, !_b; _a = true) {
-                _d = packages_1_1.value;
-                _a = false;
-                const p = _d;
-                if (!p.file) {
-                    continue;
-                }
-                const files = yield parseFiles(p.file);
-                allFiles = Object.assign(Object.assign({}, allFiles), files);
-            }
+async function parsePackages(packages) {
+    let allFiles = {};
+    for await (const p of packages) {
+        if (!p.file) {
+            continue;
         }
-        catch (e_1_1) { e_1 = { error: e_1_1 }; }
-        finally {
-            try {
-                if (!_a && !_b && (_c = packages_1.return)) yield _c.call(packages_1);
-            }
-            finally { if (e_1) throw e_1.error; }
-        }
-        return allFiles;
-    });
+        const files = await parseFiles(p.file);
+        allFiles = { ...allFiles, ...files };
+    }
+    return allFiles;
 }
 /**
  * Process into an object
@@ -41917,14 +41873,15 @@ function parsePackages(packages) {
  * @param {File[]} files
  * @returns {Promise<Files>}
  */
-function parseFiles(files) {
-    return __awaiter(this, void 0, void 0, function* () {
-        return files.reduce((previous, { '@_name': name, metrics: fileMetrics, '@_path': path }) => (Object.assign(Object.assign({}, previous), { [(0, utils_1.createHash)(path !== null && path !== void 0 ? path : name)]: {
-                relative: path !== null && path !== void 0 ? path : name,
-                absolute: path !== null && path !== void 0 ? path : name,
-                coverage: processCoverageMetrics(fileMetrics)
-            } })), {});
-    });
+async function parseFiles(files) {
+    return files.reduce((previous, { '@_name': name, metrics: fileMetrics, '@_path': path }) => ({
+        ...previous,
+        [(0, utils_1.createHash)(path ?? name)]: {
+            relative: path ?? name,
+            absolute: path ?? name,
+            coverage: processCoverageMetrics(fileMetrics)
+        }
+    }), {});
 }
 /**
  * Process Coverage Metrics from Clover
@@ -42008,39 +41965,31 @@ __exportStar(__nccwpck_require__(7665), exports);
 /***/ }),
 
 /***/ 8952:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
 "use strict";
 
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const utils_1 = __nccwpck_require__(1314);
-function parse(cobertura) {
-    return __awaiter(this, void 0, void 0, function* () {
-        const fileList = cobertura.coverage.packages.package.map(({ '@_name': name }) => {
-            return name;
-        });
-        const basePath = `${(0, utils_1.determineCommonBasePath)(fileList)}`;
-        const r = new RegExp(`^${(0, utils_1.escapeRegExp)(`${basePath}/`)}`);
-        return {
-            files: cobertura.coverage.packages.package.reduce((previous, { '@_name': name, '@_line-rate': lineRate }) => (Object.assign(Object.assign({}, previous), { [(0, utils_1.createHash)(name.replace(r, ''))]: {
-                    relative: name.replace(r, ''),
-                    absolute: name,
-                    coverage: (0, utils_1.roundPercentage)(parseFloat(lineRate) * 100)
-                } })), {}),
-            coverage: (0, utils_1.roundPercentage)(parseFloat(cobertura.coverage['@_line-rate']) * 100),
-            timestamp: parseInt(cobertura.coverage['@_timestamp']),
-            basePath
-        };
+async function parse(cobertura) {
+    const fileList = cobertura.coverage.packages.package.map(({ '@_name': name }) => {
+        return name;
     });
+    const basePath = `${(0, utils_1.determineCommonBasePath)(fileList)}`;
+    const r = new RegExp(`^${(0, utils_1.escapeRegExp)(`${basePath}/`)}`);
+    return {
+        files: cobertura.coverage.packages.package.reduce((previous, { '@_name': name, '@_line-rate': lineRate }) => ({
+            ...previous,
+            [(0, utils_1.createHash)(name.replace(r, ''))]: {
+                relative: name.replace(r, ''),
+                absolute: name,
+                coverage: (0, utils_1.roundPercentage)(parseFloat(lineRate) * 100)
+            }
+        }), {}),
+        coverage: (0, utils_1.roundPercentage)(parseFloat(cobertura.coverage['@_line-rate']) * 100),
+        timestamp: parseInt(cobertura.coverage['@_timestamp']),
+        basePath
+    };
 }
 exports["default"] = parse;
 
@@ -42098,22 +42047,6 @@ var __importStar = (this && this.__importStar) || function (mod) {
     __setModuleDefault(result, mod);
     return result;
 };
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
-var __asyncValues = (this && this.__asyncValues) || function (o) {
-    if (!Symbol.asyncIterator) throw new TypeError("Symbol.asyncIterator is not defined.");
-    var m = o[Symbol.asyncIterator], i;
-    return m ? m.call(o) : (o = typeof __values === "function" ? __values(o) : o[Symbol.iterator](), i = {}, verb("next"), verb("throw"), verb("return"), i[Symbol.asyncIterator] = function () { return this; }, i);
-    function verb(n) { i[n] = o[n] && function (v) { return new Promise(function (resolve, reject) { v = o[n](v), settle(resolve, reject, v.done, v.value); }); }; }
-    function settle(resolve, reject, d, v) { Promise.resolve(v).then(function(v) { resolve({ value: v, done: d }); }, reject); }
-};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -42135,16 +42068,14 @@ const { access, readFile, mkdir } = fs_1.promises;
  * @param {string} filename
  * @returns {Promise<boolean>}
  */
-function checkFileExists(filename) {
-    return __awaiter(this, void 0, void 0, function* () {
-        try {
-            yield access(filename, fs_1.constants.F_OK);
-            return true;
-            // eslint-disable-next-line no-empty
-        }
-        catch (e) { }
-        return false;
-    });
+async function checkFileExists(filename) {
+    try {
+        await access(filename, fs_1.constants.F_OK);
+        return true;
+        // eslint-disable-next-line no-empty
+    }
+    catch (e) { }
+    return false;
 }
 exports.checkFileExists = checkFileExists;
 /**
@@ -42152,25 +42083,23 @@ exports.checkFileExists = checkFileExists;
  * @param {string} filename
  * @returns {Promise<T | null>}
  */
-function parseXML(filename) {
-    return __awaiter(this, void 0, void 0, function* () {
-        if (!(yield checkFileExists(filename))) {
-            return null;
-        }
-        const contents = yield readFile(filename, 'binary');
-        return new fast_xml_parser_1.XMLParser({
-            ignoreAttributes: false,
-            isArray: (name, jpath, isLeafNode, isAttribute) => {
-                if (isAttribute) {
-                    return false;
-                }
-                return inArray(jpath, [
-                    'coverage.project.package',
-                    'coverage.project.package.file'
-                ]);
+async function parseXML(filename) {
+    if (!(await checkFileExists(filename))) {
+        return null;
+    }
+    const contents = await readFile(filename, 'binary');
+    return new fast_xml_parser_1.XMLParser({
+        ignoreAttributes: false,
+        isArray: (name, jpath, isLeafNode, isAttribute) => {
+            if (isAttribute) {
+                return false;
             }
-        }).parse(contents);
-    });
+            return inArray(jpath, [
+                'coverage.project.package',
+                'coverage.project.package.file'
+            ]);
+        }
+    }).parse(contents);
 }
 exports.parseXML = parseXML;
 /**
@@ -42180,105 +42109,66 @@ exports.parseXML = parseXML;
  * @param {string} base
  * @returns {Promise<string|null>}
  */
-function downloadArtifacts(name, base = 'artifacts') {
-    var _a, e_1, _b, _c, _d, e_2, _e, _f, _g, e_3, _h, _j;
-    return __awaiter(this, void 0, void 0, function* () {
-        const { token, artifactDownloadWorkflowNames } = getInputs();
-        const client = github.getOctokit(token);
-        const artifactWorkflowNames = artifactDownloadWorkflowNames !== null
-            ? artifactDownloadWorkflowNames
-            : [github.context.job];
-        const artifactName = formatArtifactName(name);
-        const { GITHUB_BASE_REF = '', GITHUB_REPOSITORY = '' } = process.env;
-        const [owner, repo] = GITHUB_REPOSITORY.split('/');
-        core.info(`Looking for artifact "${artifactName}" in the following workflows: ${artifactWorkflowNames.join(',')}`);
-        try {
-            for (var _k = true, _l = __asyncValues(client.paginate.iterator(client.rest.actions.listWorkflowRunsForRepo, {
+async function downloadArtifacts(name, base = 'artifacts') {
+    const { token, artifactDownloadWorkflowNames } = getInputs();
+    const client = github.getOctokit(token);
+    const artifactWorkflowNames = artifactDownloadWorkflowNames !== null
+        ? artifactDownloadWorkflowNames
+        : [github.context.job];
+    const artifactName = formatArtifactName(name);
+    const { GITHUB_BASE_REF = '', GITHUB_REPOSITORY = '' } = process.env;
+    const [owner, repo] = GITHUB_REPOSITORY.split('/');
+    core.info(`Looking for artifact "${artifactName}" in the following workflows: ${artifactWorkflowNames.join(',')}`);
+    for await (const runs of client.paginate.iterator(client.rest.actions.listWorkflowRunsForRepo, {
+        owner,
+        repo,
+        branch: GITHUB_BASE_REF,
+        status: 'success'
+    })) {
+        for await (const run of runs.data) {
+            if (!run.name) {
+                core.debug(`${run.id} had no workflow name, skipping`);
+                continue;
+            }
+            if (!inArray(run.name, artifactWorkflowNames)) {
+                core.debug(`Workflow name '${run.name}' did not match the following required workflows names: ${artifactWorkflowNames.join(',')}`);
+                continue;
+            }
+            const artifacts = await client.rest.actions.listWorkflowRunArtifacts({
                 owner,
                 repo,
-                branch: GITHUB_BASE_REF,
-                status: 'success'
-            })), _m; _m = yield _l.next(), _a = _m.done, !_a; _k = true) {
-                _c = _m.value;
-                _k = false;
-                const runs = _c;
-                try {
-                    for (var _o = true, _p = (e_2 = void 0, __asyncValues(runs.data)), _q; _q = yield _p.next(), _d = _q.done, !_d; _o = true) {
-                        _f = _q.value;
-                        _o = false;
-                        const run = _f;
-                        if (!run.name) {
-                            core.debug(`${run.id} had no workflow name, skipping`);
-                            continue;
-                        }
-                        if (!inArray(run.name, artifactWorkflowNames)) {
-                            core.debug(`${run.name} did not match the following workflows: ${artifactWorkflowNames.join(',')}`);
-                            continue;
-                        }
-                        const artifacts = yield client.rest.actions.listWorkflowRunArtifacts({
-                            owner,
-                            repo,
-                            run_id: run.id
-                        });
-                        if (artifacts.data.artifacts.length === 0) {
-                            core.debug(`No Artifacts in workflow ${run.id}`);
-                            continue;
-                        }
-                        try {
-                            for (var _r = true, _s = (e_3 = void 0, __asyncValues(artifacts.data.artifacts)), _t; _t = yield _s.next(), _g = _t.done, !_g; _r = true) {
-                                _j = _t.value;
-                                _r = false;
-                                const art = _j;
-                                if (art.expired) {
-                                    continue;
-                                }
-                                if (art.name !== artifactName) {
-                                    continue;
-                                }
-                                core.info(`Downloading the artifact "${art.name}" from workflow ${run.name}:${run.id}`);
-                                const zip = yield client.rest.actions.downloadArtifact({
-                                    owner,
-                                    repo,
-                                    artifact_id: art.id,
-                                    archive_format: 'zip'
-                                });
-                                const dir = path_1.default.join(__dirname, base);
-                                core.debug(`Making dir ${dir}`);
-                                yield mkdir(dir, { recursive: true });
-                                core.debug(`Extracting Artifact to ${dir}`);
-                                const adm = new adm_zip_1.default(Buffer.from(zip.data));
-                                adm.extractAllTo(dir, true);
-                                return dir;
-                            }
-                        }
-                        catch (e_3_1) { e_3 = { error: e_3_1 }; }
-                        finally {
-                            try {
-                                if (!_r && !_g && (_h = _s.return)) yield _h.call(_s);
-                            }
-                            finally { if (e_3) throw e_3.error; }
-                        }
-                    }
+                run_id: run.id
+            });
+            if (artifacts.data.artifacts.length === 0) {
+                core.debug(`No Artifacts in workflow ${run.id}`);
+                continue;
+            }
+            for await (const art of artifacts.data.artifacts) {
+                if (art.expired) {
+                    continue;
                 }
-                catch (e_2_1) { e_2 = { error: e_2_1 }; }
-                finally {
-                    try {
-                        if (!_o && !_d && (_e = _p.return)) yield _e.call(_p);
-                    }
-                    finally { if (e_2) throw e_2.error; }
+                if (art.name !== artifactName) {
+                    continue;
                 }
+                core.info(`Downloading the artifact "${art.name}" from workflow ${run.name}:${run.id}`);
+                const zip = await client.rest.actions.downloadArtifact({
+                    owner,
+                    repo,
+                    artifact_id: art.id,
+                    archive_format: 'zip'
+                });
+                const dir = path_1.default.join(__dirname, base);
+                core.debug(`Making dir ${dir}`);
+                await mkdir(dir, { recursive: true });
+                core.debug(`Extracting Artifact to ${dir}`);
+                const adm = new adm_zip_1.default(Buffer.from(zip.data));
+                adm.extractAllTo(dir, true);
+                return dir;
             }
         }
-        catch (e_1_1) { e_1 = { error: e_1_1 }; }
-        finally {
-            try {
-                if (!_k && !_a && (_b = _l.return)) yield _b.call(_l);
-            }
-            finally { if (e_1) throw e_1.error; }
-        }
-        core.warning(`No artifacts found for the following workspaces: ${artifactWorkflowNames.join(',')}`);
-        return null;
-    });
+    }
+    core.warning(`No artifacts found for the following workspaces: ${artifactWorkflowNames.join(',')}`);
+    return null;
 }
 exports.downloadArtifacts = downloadArtifacts;
 /**
@@ -42287,19 +42177,17 @@ exports.downloadArtifacts = downloadArtifacts;
  * @param {string} name
  * @returns {Promise<artifact.UploadResponse>}
  */
-function uploadArtifacts(files, name) {
-    return __awaiter(this, void 0, void 0, function* () {
-        const artifactClient = artifact.create();
-        const artifactName = formatArtifactName(name);
-        const { retention } = getInputs();
-        const rootDirectory = '.';
-        const result = yield artifactClient.uploadArtifact(artifactName, files, rootDirectory, {
-            continueOnError: false,
-            retentionDays: retention
-        });
-        core.info(`Artifact Metadata:\n${JSON.stringify(result, null, 4)}`);
-        return result;
+async function uploadArtifacts(files, name) {
+    const artifactClient = artifact.create();
+    const artifactName = formatArtifactName(name);
+    const { retention } = getInputs();
+    const rootDirectory = '.';
+    const result = await artifactClient.uploadArtifact(artifactName, files, rootDirectory, {
+        continueOnError: false,
+        retentionDays: retention
     });
+    core.info(`Artifact Metadata:\n${JSON.stringify(result, null, 4)}`);
+    return result;
 }
 exports.uploadArtifacts = uploadArtifacts;
 /**
@@ -42307,32 +42195,30 @@ exports.uploadArtifacts = uploadArtifacts;
  * @param {string} filename
  * @returns {Promise<Coverage | null>}
  */
-function parseCoverage(filename) {
-    return __awaiter(this, void 0, void 0, function* () {
-        if (!(yield checkFileExists(filename))) {
-            core.warning(`Unable to access ${filename} for parsing`);
-            return null;
-        }
-        const ext = path_1.default.extname(filename);
-        switch (ext) {
-            case '.xml':
-                {
-                    const xml = yield parseXML(filename);
-                    if (instanceOfCobertura(xml)) {
-                        core.info(`Detected a Cobertura File at ${filename}`);
-                        return yield (0, cobertura_1.parse)(xml);
-                    }
-                    else if (instanceOfClover(xml)) {
-                        core.info(`Detected a Clover File at ${filename}`);
-                        return yield (0, clover_1.parse)(xml);
-                    }
-                }
-                break;
-            default:
-                core.warning(`Unable to parse ${filename}`);
-        }
+async function parseCoverage(filename) {
+    if (!(await checkFileExists(filename))) {
+        core.warning(`Unable to access ${filename} for parsing`);
         return null;
-    });
+    }
+    const ext = path_1.default.extname(filename);
+    switch (ext) {
+        case '.xml':
+            {
+                const xml = await parseXML(filename);
+                if (instanceOfCobertura(xml)) {
+                    core.info(`Detected a Cobertura File at ${filename}`);
+                    return await (0, cobertura_1.parse)(xml);
+                }
+                else if (instanceOfClover(xml)) {
+                    core.info(`Detected a Clover File at ${filename}`);
+                    return await (0, clover_1.parse)(xml);
+                }
+            }
+            break;
+        default:
+            core.warning(`Unable to parse ${filename}`);
+    }
+    return null;
 }
 exports.parseCoverage = parseCoverage;
 function createHash(data) {

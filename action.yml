@@ -52,9 +52,8 @@ inputs:
     required: false
     default: '0'
   retention_days:
-    description: 'The number of days to retain uploaded artifacts. When `null` (default), the default retention period for the repository is used.'
+    description: 'The number of days to retain uploaded artifacts. When `undefined` (default), the default retention period for the repository is used.'
     required: false
-    default: null
 
 outputs:
   file:
@@ -62,5 +61,5 @@ outputs:
   coverage:
     description: 'The overall coverage of the project as a percentage'
 runs:
-  using: 'node16'
+  using: 'node20'
   main: 'dist/index.js'
