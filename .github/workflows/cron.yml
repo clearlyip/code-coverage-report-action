@@ -13,7 +13,7 @@ jobs:
         with:
           node-version: 20.x
       - run: npm ci
-      - run: npm run test >> "```${GITHUB_STEP_SUMMARY}```"
+      - run: npm run test >> "${GITHUB_STEP_SUMMARY}"
       - uses: ./
         id: code_coverage_report_action
         with:
