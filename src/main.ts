@@ -229,8 +229,8 @@ async function generateMarkdown(
 
   if (badge) {
     context.coverage_badge = `https://img.shields.io/badge/${encodeURIComponent(
-      `Code Coverage-${headCoverage.coverage}%-${color}?style=for-the-badge`
-    )}`
+      `Code Coverage-${headCoverage.coverage}%-${color}`
+    )}?style=for-the-badge`
   }
 
   const markdown = compiledTemplate(context)
