@@ -1,8 +1,8 @@
 {
   "name": "code-coverage-report-action",
-  "version": "3.0.0",
+  "version": "4.0.0",
   "description": "",
-  "main": "lib/main.js",
+  "main": "dist/index.js",
   "private": true,
   "scripts": {
     "format": "prettier --write 'src/**/*.ts'",
@@ -12,9 +12,7 @@
     "package": "ncc build src/main.ts --source-map --license licenses.txt",
     "watch": "ncc build src/main.ts --watch",
     "test": "jest",
-    "all": "npm run format && npm run lint && npm run package && npm test",
-    "act": "act --artifact-server-path /tmp/artifacts -s GITHUB_TOKEN --env GITHUB_STEP_SUMMARY=/dev/stdout",
-    "act:pr": "act pull_request --artifact-server-path /tmp/artifacts -s GITHUB_TOKEN --env GITHUB_STEP_SUMMARY=/dev/stdout -e __tests__/pull-request.json"
+    "all": "npm run format && npm run lint && npm run package && npm test"
   },
   "repository": {
     "type": "git",
@@ -32,7 +30,8 @@
     "@actions/core": "^1.10.1",
     "@actions/github": "^6.0.0",
     "adm-zip": "^0.5.10",
-    "fast-xml-parser": "^4.3.2"
+    "fast-xml-parser": "^4.3.2",
+    "handlebars": "^4.7.8"
   },
   "devDependencies": {
     "@tsconfig/node20": "^20.1.2",

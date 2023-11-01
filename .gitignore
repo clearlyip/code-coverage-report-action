@@ -99,3 +99,5 @@ __tests__/runner/*
 lib/**/*
 
 .build-dev.npm
+code-coverage-results.md
+dist/artifacts

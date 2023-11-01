@@ -1,0 +1,16 @@
+# Code Coverage Report
+
+{{#if coverage_badge}}
+![Code Coverage]({{coverage_badge}})
+
+{{/if}}
+| Package |    Coverage   |
+| ------- | ------------- |
+{{#each coverage}}
+| {{package}} | {{base_coverage}} |
+{{/each}}
+{{#with overall_coverage}}
+| **{{package}}** | **{{base_coverage}}** |
+{{/with}}
+
+_Minimum allowed coverage is_ `{{minimum_allowed_coverage}}`_, this run produced_ `{{new_coverage}}`

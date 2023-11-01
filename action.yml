@@ -54,6 +54,13 @@ inputs:
   retention_days:
     description: 'The number of days to retain uploaded artifacts. When `undefined` (default), the default retention period for the repository is used.'
     required: false
+  without_base_coverage_template:
+    description: 'Path to custom template without base coverage'
+    required: false
+  with_base_coverage_template:
+    description: 'Path to custom template with base coverage'
+    required: false
+
 
 outputs:
   file:

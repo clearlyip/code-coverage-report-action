@@ -129,6 +129,9 @@ test('getInputs', () => {
     artifactDownloadWorkflowNames: null,
     artifactName: 'coverage-%name%',
     negativeDifferenceBy: 'package',
-    retention: undefined
+    retention: undefined,
+    //This is a cheat
+    withBaseCoverageTemplate: f.withBaseCoverageTemplate,
+    withoutBaseCoverageTemplate: f.withoutBaseCoverageTemplate
   })
 })

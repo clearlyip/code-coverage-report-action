@@ -366,6 +366,13 @@ export function getInputs(): Inputs {
       ? tempArtifactDownloadWorkflowNames.split(',').map(n => n.trim())
       : null
 
+  const withoutBaseCoverageTemplate =
+    core.getInput('without_base_coverage_template') ||
+    `${__dirname}/../templates/without-base-coverage.hbs`
+  const withBaseCoverageTemplate =
+    core.getInput('with_base_coverage_template') ||
+    `${__dirname}/../templates/with-base-coverage.hbs`
+
   inputs = {
     token,
     filename,
@@ -378,7 +385,9 @@ export function getInputs(): Inputs {
     artifactDownloadWorkflowNames,
     artifactName,
     negativeDifferenceBy,
-    retention: retentionDays
+    retention: retentionDays,
+    withoutBaseCoverageTemplate,
+    withBaseCoverageTemplate
   }
 
   return inputs

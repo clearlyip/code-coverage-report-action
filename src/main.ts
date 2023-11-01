@@ -8,9 +8,15 @@ import {
   roundPercentage,
   uploadArtifacts
 } from './utils'
-import {Coverage} from './interfaces'
+import {
+  Coverage,
+  HandlebarContext,
+  HandlebarContextCoverage
+} from './interfaces'
 import {writeFile} from 'fs/promises'
 import path from 'path'
+import * as handlebars from 'handlebars'
+import {readFile} from 'node:fs/promises'
 
 async function run(): Promise<void> {
   try {
@@ -108,61 +114,10 @@ async function generateMarkdown(
     fileCoverageWarningMax,
     badge,
     markdownFilename,
-    negativeDifferenceBy
+    negativeDifferenceBy,
+    withBaseCoverageTemplate,
+    withoutBaseCoverageTemplate
   } = getInputs()
-
-  const baseMap = Object.entries(headCoverage.files).map(([hash, file]) => {
-    if (baseCoverage === null) {
-      return [
-        file.relative,
-        `${colorizePercentageByThreshold(
-          file.coverage,
-          fileCoverageWarningMax,
-          fileCoverageErrorMin
-        )}`
-      ]
-    }
-
-    const baseCoveragePercentage = baseCoverage.files[hash]
-      ? baseCoverage.files[hash].coverage
-      : 0
-
-    const differencePercentage = baseCoveragePercentage
-      ? roundPercentage(file.coverage - baseCoveragePercentage)
-      : roundPercentage(file.coverage)
-
-    if (
-      failOnNegativeDifference &&
-      negativeDifferenceBy === 'package' &&
-      differencePercentage !== null &&
-      differencePercentage < 0
-    ) {
-      core.setFailed(
-        `${headCoverage.files[hash].relative} coverage difference was ${differencePercentage}%`
-      )
-    }
-
-    return [
-      file.relative,
-      `${colorizePercentageByThreshold(
-        baseCoveragePercentage,
-        fileCoverageWarningMax,
-        fileCoverageErrorMin
-      )}`,
-      `${colorizePercentageByThreshold(
-        file.coverage,
-        fileCoverageWarningMax,
-        fileCoverageErrorMin
-      )}`,
-      colorizePercentageByThreshold(differencePercentage)
-    ]
-  })
-
-  const map = baseMap.sort((a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0))
-
-  // Add a "summary row" showing changes in overall overage.
-  map.push(await addOverallRow(headCoverage, baseCoverage))
-
   const overallDifferencePercentage = baseCoverage
     ? roundPercentage(headCoverage.coverage - baseCoverage.coverage)
     : null
@@ -201,36 +156,84 @@ async function generateMarkdown(
     color = 'green'
   }
 
-  const summary = core.summary.addHeading('Code Coverage Report')
-
-  const headers =
+  const templatePath =
     baseCoverage === null
-      ? [
-          {data: 'Package', header: true},
-          {data: 'Coverage', header: true}
-        ]
-      : [
-          {data: 'Package', header: true},
-          {data: 'Base Coverage', header: true},
-          {data: 'New Coverage', header: true},
-          {data: 'Difference', header: true}
-        ]
+      ? withoutBaseCoverageTemplate
+      : withBaseCoverageTemplate
 
-  if (badge) {
-    summary.addImage(
-      `https://img.shields.io/badge/${encodeURIComponent(
-        `Code Coverage-${headCoverage.coverage}%-${color}`
-      )}?style=for-the-badge`,
-      'Code Coverage'
-    )
+  if (!(await checkFileExists(templatePath))) {
+    core.setFailed(`Unable to access template ${templatePath}`)
+    return
   }
 
-  summary
-    .addTable([headers, ...map])
-    .addBreak()
-    .addRaw(
-      `<i>Minimum allowed coverage is</i> <code>${overallCoverageFailThreshold}%</code>, this run produced</i> <code>${headCoverage.coverage}%</code>`
-    )
+  const contents = await readFile(templatePath, {
+    encoding: 'utf8'
+  })
+  const compiledTemplate = handlebars.compile(contents)
+
+  const context: HandlebarContext = {
+    minimum_allowed_coverage: `${overallCoverageFailThreshold}%`,
+    new_coverage: `${headCoverage.coverage}%`,
+    coverage: Object.entries(headCoverage.files)
+      .map(([hash, file]) => {
+        if (baseCoverage === null) {
+          return {
+            package: file.relative,
+            base_coverage: `${colorizePercentageByThreshold(
+              file.coverage,
+              fileCoverageWarningMax,
+              fileCoverageErrorMin
+            )}`
+          }
+        }
+
+        const baseCoveragePercentage = baseCoverage.files[hash]
+          ? baseCoverage.files[hash].coverage
+          : 0
+
+        const differencePercentage = baseCoveragePercentage
+          ? roundPercentage(file.coverage - baseCoveragePercentage)
+          : roundPercentage(file.coverage)
+
+        if (
+          failOnNegativeDifference &&
+          negativeDifferenceBy === 'package' &&
+          differencePercentage !== null &&
+          differencePercentage < 0
+        ) {
+          core.setFailed(
+            `${headCoverage.files[hash].relative} coverage difference was ${differencePercentage}%`
+          )
+        }
+
+        return {
+          package: file.relative,
+          base_coverage: `${colorizePercentageByThreshold(
+            baseCoveragePercentage,
+            fileCoverageWarningMax,
+            fileCoverageErrorMin
+          )}`,
+          new_coverage: `${colorizePercentageByThreshold(
+            file.coverage,
+            fileCoverageWarningMax,
+            fileCoverageErrorMin
+          )}`,
+          difference: colorizePercentageByThreshold(differencePercentage)
+        }
+      })
+      .sort((a, b) =>
+        a.package < b.package ? -1 : a.package > b.package ? 1 : 0
+      ),
+    overall_coverage: addOverallRow(headCoverage, baseCoverage)
+  }
+
+  if (badge) {
+    context.coverage_badge = `https://img.shields.io/badge/Code Coverage-${headCoverage.coverage}%-${color}?style=for-the-badge`
+  }
+
+  const markdown = compiledTemplate(context)
+
+  const summary = core.summary.addRaw(markdown)
 
   //If this is run after write the buffer is empty
   core.info(`Writing results to ${markdownFilename}.md`)
@@ -245,10 +248,10 @@ async function generateMarkdown(
 /**
  * Generate overall coverage row
  */
-async function addOverallRow(
+function addOverallRow(
   headCoverage: Coverage,
   baseCoverage: Coverage | null = null
-): Promise<string[]> {
+): HandlebarContextCoverage {
   const {overallCoverageFailThreshold} = getInputs()
 
   const overallDifferencePercentage = baseCoverage
@@ -256,30 +259,30 @@ async function addOverallRow(
     : null
 
   if (baseCoverage === null) {
-    return [
-      'Overall Coverage',
-      `${colorizePercentageByThreshold(
+    return {
+      package: 'Overall Coverage',
+      base_coverage: `${colorizePercentageByThreshold(
         headCoverage.coverage,
         0,
         overallCoverageFailThreshold
       )}`
-    ]
+    }
   }
 
-  return [
-    '<b>Overall Coverage</b>',
-    `<b>${colorizePercentageByThreshold(
+  return {
+    package: 'Overall Coverage',
+    base_coverage: `${colorizePercentageByThreshold(
       baseCoverage.coverage,
       0,
       overallCoverageFailThreshold
-    )}</b>`,
-    `<b>${colorizePercentageByThreshold(
+    )}`,
+    new_coverage: `${colorizePercentageByThreshold(
       headCoverage.coverage,
       0,
       overallCoverageFailThreshold
-    )}</b>`,
-    `<b>${colorizePercentageByThreshold(overallDifferencePercentage)}</b>`
-  ]
+    )}`,
+    difference: `${colorizePercentageByThreshold(overallDifferencePercentage)}`
+  }
 }
 
 run()
