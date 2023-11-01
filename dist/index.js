@@ -50138,7 +50138,7 @@ async function generateMarkdown(headCoverage, baseCoverage = null) {
         overall_coverage: addOverallRow(headCoverage, baseCoverage)
     };
     if (badge) {
-        context.coverage_badge = `https://img.shields.io/badge/Code Coverage-${headCoverage.coverage}%-${color}?style=for-the-badge`;
+        context.coverage_badge = `https://img.shields.io/badge/${encodeURIComponent(`Code Coverage-${headCoverage.coverage}%-${color}?style=for-the-badge`)}`;
     }
     const markdown = compiledTemplate(context);
     const summary = core.summary.addRaw(markdown);
