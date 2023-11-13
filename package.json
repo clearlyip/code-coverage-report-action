@@ -35,7 +35,7 @@
   },
   "devDependencies": {
     "@tsconfig/node20": "^20.1.2",
-    "@types/adm-zip": "^0.5.3",
+    "@types/adm-zip": "^0.5.4",
     "@types/node": "^20.8.10",
     "@typescript-eslint/parser": "^6.9.1",
     "@vercel/ncc": "^0.38.1",
