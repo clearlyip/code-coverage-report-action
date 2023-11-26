@@ -11,11 +11,9 @@ export default async function parse(cobertura: Cobertura): Promise<Coverage> {
   const packages = cobertura.coverage.packages.package
   const packageArray = Array.isArray(packages) ? packages : [packages]
 
-  const fileList = packageArray.map(
-    ({'@_name': name}) => {
-      return name
-    }
-  )
+  const fileList = packageArray.map(({'@_name': name}) => {
+    return name
+  })
   const basePath = `${determineCommonBasePath(fileList)}`
   const r = new RegExp(`^${escapeRegExp(`${basePath}/`)}`)
 
