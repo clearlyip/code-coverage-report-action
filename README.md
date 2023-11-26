@@ -42,7 +42,7 @@ jobs:
       - uses: actions/checkout@v4
       #Step to generate coverage file
       - name: Generate Coverage Report
-        uses: clearlyip/code-coverage-report-action@v3
+        uses: clearlyip/code-coverage-report-action@v4
         id: code_coverage_report_action
         #Dont run for dependabot unless you fix PR comment permissions
         if: ${{ github.actor != 'dependabot[bot]'}}
@@ -77,7 +77,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       #Step to generate coverage file
-      - uses: clearlyip/code-coverage-report-action@v3
+      - uses: clearlyip/code-coverage-report-action@v4
         with:
           #Location of the generated coverage file
           filename: 'coverage/clover.xml'
@@ -159,7 +159,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       #Step to generate coverage file
-      - uses: clearlyip/code-coverage-report-action@v3
+      - uses: clearlyip/code-coverage-report-action@v4
         with:
           #Location of the generated coverage file
           filename: 'coverage/clover.xml'
@@ -168,7 +168,7 @@ jobs:
 After this is done you will need to modify any job that uses this action to reference itself and additionally the `cron` workflow above by name using `artifact_download_workflow_names`:
 
 ```yml
-- uses: clearlyip/code-coverage-report-action@v3
+- uses: clearlyip/code-coverage-report-action@v4
   with:
     filename: 'coverage/clover.xml'
     fail_on_negative_difference: true
