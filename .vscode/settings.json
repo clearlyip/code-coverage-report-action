@@ -10,7 +10,7 @@
   "workbench.colorCustomizations": {},
   // tell the ESLint plugin to run on save
   "editor.codeActionsOnSave": {
-    "source.fixAll.eslint": true
+    "source.fixAll.eslint": "explicit"
   },
   "eslint.workingDirectories": ["./app"],
   "eslint.format.enable": true,

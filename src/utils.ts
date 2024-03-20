@@ -1,6 +1,6 @@
 import {promises as fs, constants as fsConstants} from 'fs'
 import {XMLParser} from 'fast-xml-parser'
-import * as artifact from '@actions/artifact'
+import {DefaultArtifactClient, UploadArtifactResponse} from '@actions/artifact'
 import * as core from '@actions/core'
 import * as github from '@actions/github'
 import {Clover, parse as parseClover} from './reports/clover'
@@ -160,13 +160,13 @@ export async function downloadArtifacts(
  * Upload Artifacts
  * @param {string[]} files
  * @param {string} name
- * @returns {Promise<artifact.UploadResponse>}
+ * @returns {Promise<UploadArtifactResponse>}
  */
 export async function uploadArtifacts(
   files: string[],
   name: string
-): Promise<artifact.UploadResponse> {
-  const artifactClient = artifact.create()
+): Promise<UploadArtifactResponse> {
+  const artifactClient = new DefaultArtifactClient()
   const artifactName = formatArtifactName(name)
   const {retention} = getInputs()
 
@@ -177,7 +177,6 @@ export async function uploadArtifacts(
     files,
     rootDirectory,
     {
-      continueOnError: false,
       retentionDays: retention
     }
   )
