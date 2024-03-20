@@ -30,7 +30,8 @@ async function run(): Promise<void> {
     core.debug(`filename: ${filename}`)
 
     switch (process.env.GITHUB_EVENT_NAME) {
-      case 'pull_request': {
+      case 'pull_request': 
+      case 'pull_request_target': {
         const {GITHUB_BASE_REF = ''} = process.env
         core.debug(`GITHUB_BASE_REF: ${GITHUB_BASE_REF}`)
         const artifactPath = await downloadArtifacts(GITHUB_BASE_REF)
