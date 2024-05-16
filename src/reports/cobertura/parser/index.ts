@@ -1,38 +1,79 @@
-import {Coverage} from '../../../interfaces'
+import {Coverage, Files} from '../../../interfaces'
 import {
   createHash,
   determineCommonBasePath,
   escapeRegExp,
   roundPercentage
 } from '../../../utils'
-import {Cobertura, Package} from '../types'
+import {Cobertura, Package, Class} from '../types'
 
 export default async function parse(cobertura: Cobertura): Promise<Coverage> {
-  const packages = cobertura.coverage.packages.package
-  const packageArray = Array.isArray(packages) ? packages : [packages]
+  const sources = cobertura.coverage.sources.source
+  const files: Files = await parsePackages(
+    cobertura.coverage.packages.package,
+    sources
+  )
 
-  const fileList = packageArray.map(({'@_name': name}) => {
-    return name
-  })
+  const fileList = Object.values(files).map(file => file.absolute)
   const basePath = `${determineCommonBasePath(fileList)}`
-  const r = new RegExp(`^${escapeRegExp(`${basePath}/`)}`)
+  const regExp = new RegExp(`^${escapeRegExp(`${basePath}/`)}`)
 
   return {
-    files: packageArray.reduce(
-      (previous, {'@_name': name, '@_line-rate': lineRate}: Package) => ({
-        ...previous,
-        [createHash(name.replace(r, ''))]: {
-          relative: name.replace(r, ''),
-          absolute: name,
-          coverage: roundPercentage(parseFloat(lineRate) * 100)
-        }
-      }),
-      {}
-    ),
+    files: Object.entries(files).reduce((previous, [, file]) => {
+      file.relative = file.absolute.replace(regExp, '')
+      return {...previous, [createHash(file.relative)]: file}
+    }, {}),
     coverage: roundPercentage(
       parseFloat(cobertura.coverage['@_line-rate']) * 100
     ),
     timestamp: parseInt(cobertura.coverage['@_timestamp']),
     basePath
   }
+}
+
+/**
+ * Parse Packages
+ *
+ * @param {Package[]} packages
+ * @param {string[]} sources
+ * @returns {Promise<Files>}
+ */
+async function parsePackages(
+  packages: Package[],
+  sources: string[]
+): Promise<Files> {
+  let allFiles: Files = {}
+  for await (const p of packages) {
+    if (!p.classes) {
+      continue
+    }
+    const files = await parseClasses(p.classes.class, sources)
+
+    allFiles = {...allFiles, ...files}
+  }
+  return allFiles
+}
+
+/**
+ * Process into an object
+ *
+ * @param {Class[]} classes
+ * @param {string[]} sources
+ * @returns {Promise<Files>}
+ */
+async function parseClasses(
+  classes: Class[],
+  sources: string[]
+): Promise<Files> {
+  return classes.reduce(
+    (previous, {'@_filename': path, '@_line-rate': lineRate}: Class) => ({
+      ...previous,
+      [createHash(`${sources[0]}/${path}`)]: {
+        relative: path,
+        absolute: `${sources[0]}/${path}`,
+        coverage: roundPercentage(parseFloat(lineRate) * 100)
+      }
+    }),
+    {}
+  )
 }

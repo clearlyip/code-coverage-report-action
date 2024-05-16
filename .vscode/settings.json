@@ -17,13 +17,12 @@
   "coverage-gutters.showLineCoverage": true,
   "coverage-gutters.showRulerCoverage": true,
   "coverage-gutters.coverageBaseDir": "coverage/**",
-  "coverage-gutters.coverageFileNames": [
-    "clover.xml"
-  ],
+  "coverage-gutters.coverageFileNames": ["clover.xml"],
   "[typescript]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
   "[github-actions-workflow]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
-  }
+  },
+  "jest.runMode": "on-demand"
 }

@@ -8,5 +8,5 @@ module.exports = {
 	verbose: true,
 	collectCoverage: true,
 	collectCoverageFrom: ['src/**/*.{js,ts}'],
-	coverageReporters: ['clover', ['text', {skipFull: true}]]
+	coverageReporters: ['clover', 'cobertura', ['text', {skipFull: true}]]
   }
