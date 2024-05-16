@@ -18,6 +18,7 @@ import {
   describe,
   jest
 } from '@jest/globals'
+import fs from 'fs'
 
 const env = process.env
 
@@ -135,4 +136,24 @@ test('getInputs', () => {
     withBaseCoverageTemplate: f.withBaseCoverageTemplate,
     withoutBaseCoverageTemplate: f.withoutBaseCoverageTemplate
   })
+})
+
+test('parse clover into files format', async () => {
+  const ret = await parseCoverage(__dirname + '/fixtures/clover.xml')
+
+  const loadedFile = fs.readFileSync(
+    __dirname + '/fixtures/clover.json',
+    'utf8'
+  )
+  expect(JSON.parse(loadedFile)).toEqual(ret)
+})
+
+test('parse cobertura files format', async () => {
+  const ret = await parseCoverage(__dirname + '/fixtures/cobertura.xml')
+
+  const loadedFile = fs.readFileSync(
+    __dirname + '/fixtures/cobertura.json',
+    'utf8'
+  )
+  expect(JSON.parse(loadedFile)).toEqual(ret)
 })
