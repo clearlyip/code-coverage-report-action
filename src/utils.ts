@@ -340,6 +340,9 @@ export function getInputs(): Inputs {
     core.getInput('file_coverage_warning_max') || '75'
   )
 
+  const negativeDifferenceThreshold =
+    parseFloat(core.getInput('negative_difference_threshold') || '0') * -100
+
   const failOnNegativeDifference =
     core.getInput('fail_on_negative_difference') === 'true' ? true : false
 
@@ -386,7 +389,8 @@ export function getInputs(): Inputs {
     negativeDifferenceBy,
     retention: retentionDays,
     withoutBaseCoverageTemplate,
-    withBaseCoverageTemplate
+    withBaseCoverageTemplate,
+    negativeDifferenceThreshold
   }
 
   return inputs
