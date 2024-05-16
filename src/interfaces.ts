@@ -26,6 +26,7 @@ export interface Inputs {
   retention: number | undefined
   withBaseCoverageTemplate: string
   withoutBaseCoverageTemplate: string
+  negativeDifferenceThreshold: number
 }
 
 export interface Files {

@@ -117,7 +117,8 @@ async function generateMarkdown(
     markdownFilename,
     negativeDifferenceBy,
     withBaseCoverageTemplate,
-    withoutBaseCoverageTemplate
+    withoutBaseCoverageTemplate,
+    negativeDifferenceThreshold
   } = getInputs()
   const overallDifferencePercentage = baseCoverage
     ? roundPercentage(headCoverage.coverage - baseCoverage.coverage)
@@ -126,16 +127,18 @@ async function generateMarkdown(
   core.debug(`headCoverage: ${headCoverage.coverage}`)
   core.debug(`baseCoverage: ${baseCoverage?.coverage}`)
   core.debug(`overallDifferencePercentage: ${overallDifferencePercentage}`)
+  core.debug(`negativeDifferenceThreshold: ${negativeDifferenceThreshold}`)
 
   if (
     failOnNegativeDifference &&
     negativeDifferenceBy === 'overall' &&
     overallDifferencePercentage !== null &&
     overallDifferencePercentage < 0 &&
+    overallDifferencePercentage < negativeDifferenceThreshold &&
     baseCoverage
   ) {
     core.setFailed(
-      `FAIL: Overall coverage of dropped ${overallDifferencePercentage}%, from ${baseCoverage.coverage}% to ${headCoverage.coverage}%.`
+      `FAIL: Overall coverage of dropped ${overallDifferencePercentage}%, from ${baseCoverage.coverage}% to ${headCoverage.coverage}% which is below minimum threshold of ${-negativeDifferenceThreshold}%`
     )
   }
 
@@ -200,10 +203,11 @@ async function generateMarkdown(
           failOnNegativeDifference &&
           negativeDifferenceBy === 'package' &&
           differencePercentage !== null &&
-          differencePercentage < 0
+          differencePercentage < 0 &&
+          differencePercentage < negativeDifferenceThreshold
         ) {
           core.setFailed(
-            `${headCoverage.files[hash].relative} coverage difference was ${differencePercentage}%`
+            `${headCoverage.files[hash].relative} coverage difference was ${differencePercentage}% which is below threshold of ${-negativeDifferenceThreshold}%`
           )
         }
 
