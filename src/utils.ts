@@ -47,7 +47,10 @@ export async function parseXML<T>(filename: string): Promise<T | null> {
       }
       return inArray(jpath, [
         'coverage.project.package',
-        'coverage.project.package.file'
+        'coverage.project.package.file',
+        'coverage.packages.package',
+        'coverage.packages.package.classes.class',
+        'coverage.sources.source'
       ])
     }
   }).parse(contents)

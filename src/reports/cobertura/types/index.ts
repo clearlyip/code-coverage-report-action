@@ -101,5 +101,5 @@ export interface MethodElement {
 }
 
 export interface Sources {
-  source: string
+  source: string[]
 }

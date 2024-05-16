@@ -3,6 +3,7 @@
     "dbaeumer.vscode-eslint",
     "pflannery.vscode-versionlens",
     "eamodio.gitlens",
-    "ryanluker.vscode-coverage-gutters"
+    "ryanluker.vscode-coverage-gutters",
+    "orta.vscode-jest"
   ]
 }
