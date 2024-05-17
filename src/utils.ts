@@ -317,34 +317,32 @@ export function determineCommonBasePath(
   )
 }
 
-let inputs: Inputs
 /**
  * Get Formatted Inputs
  *
  * @returns {Inputs}
  */
 export function getInputs(): Inputs {
-  if (inputs) {
-    return inputs
-  }
-
   const token = core.getInput('github_token', {required: true})
   const filename = core.getInput('filename', {required: true})
   const markdownFilename =
     core.getInput('markdown_filename') || 'code-coverage-results'
   const badge = core.getInput('badge') === 'true' ? true : false
-  const overallCoverageFailThreshold = parseInt(
-    core.getInput('overall_coverage_fail_threshold') || '0'
+  const overallCoverageFailThreshold = Math.abs(
+    parseInt(core.getInput('overall_coverage_fail_threshold') || '0')
   )
-  const fileCoverageErrorMin = parseInt(
-    core.getInput('file_coverage_error_min') || '50'
+  const fileCoverageErrorMin = Math.abs(
+    parseInt(core.getInput('file_coverage_error_min') || '50')
   )
-  const fileCoverageWarningMax = parseInt(
-    core.getInput('file_coverage_warning_max') || '75'
+
+  const fileCoverageWarningMax = Math.abs(
+    parseInt(core.getInput('file_coverage_warning_max') || '75')
   )
 
   const negativeDifferenceThreshold =
-    parseFloat(core.getInput('negative_difference_threshold') || '0') * -100
+    Math.abs(
+      parseFloat(core.getInput('negative_difference_threshold') || '0')
+    ) * -1
 
   const failOnNegativeDifference =
     core.getInput('fail_on_negative_difference') === 'true' ? true : false
@@ -356,7 +354,9 @@ export function getInputs(): Inputs {
 
   const retentionString = core.getInput('retention_days') || undefined
   const retentionDays =
-    retentionString === undefined ? undefined : parseInt(retentionString)
+    retentionString === undefined
+      ? undefined
+      : Math.abs(parseInt(retentionString))
 
   const artifactName = core.getInput('artifact_name') || 'coverage-%name%'
   if (!artifactName.includes('%name%')) {
@@ -378,7 +378,7 @@ export function getInputs(): Inputs {
     core.getInput('with_base_coverage_template') ||
     `${__dirname}/../templates/with-base-coverage.hbs`
 
-  inputs = {
+  return {
     token,
     filename,
     badge,
@@ -395,8 +395,6 @@ export function getInputs(): Inputs {
     withBaseCoverageTemplate,
     negativeDifferenceThreshold
   }
-
-  return inputs
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

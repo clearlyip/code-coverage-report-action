@@ -31,6 +31,7 @@ jobs:
           filename: 'coverage/clover.xml'
           artifact_download_workflow_names: 'ci,cron'
           badge: true
+          fail_on_negative_difference: true
       - name: Add Coverage PR Comment
         uses: marocchino/sticky-pull-request-comment@v2
         if: steps.code_coverage_report_action.outputs.file != '' && github.event_name == 'pull_request' && (success() || failure())

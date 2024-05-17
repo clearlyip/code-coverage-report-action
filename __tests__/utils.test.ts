@@ -15,19 +15,34 @@ import {
   test,
   beforeEach,
   afterEach,
-  describe,
-  jest
+  jest,
+  beforeAll,
+  afterAll
 } from '@jest/globals'
-import fs from 'fs'
+import {loadJSONFixture} from './utils'
 
-const env = process.env
+let originalWriteFunction: (str: string) => boolean
+const env = JSON.parse(JSON.stringify(process.env))
 
-beforeEach(() => {
-  jest.resetModules()
+beforeAll(async () => {
+  originalWriteFunction = process.stdout.write
+  process.stdout.write = jest.fn((str: string) => {
+    //originalWriteFunction(str)
+    return true
+  }) as any
+})
+
+afterAll(async () => {
+  process.stdout.write = originalWriteFunction as unknown as (
+    str: string
+  ) => boolean
+})
+
+beforeEach(async () => {
   process.env = {...env}
 })
 
-afterEach(() => {
+afterEach(async () => {
   process.env = env
 })
 
@@ -141,19 +156,13 @@ test('getInputs', () => {
 test('parse clover into files format', async () => {
   const ret = await parseCoverage(__dirname + '/fixtures/clover.xml')
 
-  const loadedFile = fs.readFileSync(
-    __dirname + '/fixtures/clover.json',
-    'utf8'
-  )
-  expect(JSON.parse(loadedFile)).toEqual(ret)
+  const loadedFixture = await loadJSONFixture('clover-parsed.json')
+  expect(loadedFixture).toEqual(ret)
 })
 
 test('parse cobertura files format', async () => {
   const ret = await parseCoverage(__dirname + '/fixtures/cobertura.xml')
 
-  const loadedFile = fs.readFileSync(
-    __dirname + '/fixtures/cobertura.json',
-    'utf8'
-  )
-  expect(JSON.parse(loadedFile)).toEqual(ret)
+  const loadedFixture = await loadJSONFixture('cobertura-parsed.json')
+  expect(loadedFixture).toEqual(ret)
 })

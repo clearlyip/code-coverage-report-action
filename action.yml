@@ -21,7 +21,7 @@ inputs:
     required: false
     default: 'false'
   overall_coverage_fail_threshold:
-    description: 'Fail if overall coverage below lower threshold - true / false (default).'
+    description: 'Fail if overall coverage below lower threshold percentage. The default value is 0'
     required: false
     default: '0'
   file_coverage_error_min:
@@ -48,7 +48,7 @@ inputs:
     required: false
     default: 'package'
   negative_difference_threshold:
-    description: 'The percentage drop in coverage that should be allowed, in decimal form (0.05 == 5%). The default value is 0.'
+    description: 'The percentage drop in coverage that should be allowed. The default value is 0.'
     required: false
     default: '0'
   retention_days:
