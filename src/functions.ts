@@ -108,6 +108,7 @@ export async function generateMarkdown(
   headCoverage: Coverage,
   baseCoverage: Coverage | null = null
 ): Promise<void> {
+  const inputs = getInputs()
   const {
     overallCoverageFailThreshold,
     failOnNegativeDifference,
@@ -118,8 +119,9 @@ export async function generateMarkdown(
     negativeDifferenceBy,
     withBaseCoverageTemplate,
     withoutBaseCoverageTemplate,
-    negativeDifferenceThreshold
-  } = getInputs()
+    negativeDifferenceThreshold,
+    onlyListChangedFiles
+  } = inputs
   const overallDifferencePercentage = baseCoverage
     ? roundPercentage(headCoverage.coverage - baseCoverage.coverage)
     : null
@@ -179,6 +181,25 @@ export async function generateMarkdown(
     minimum_allowed_coverage: `${overallCoverageFailThreshold}%`,
     new_coverage: `${headCoverage.coverage}%`,
     coverage: Object.entries(headCoverage.files)
+      .filter(([hash, file]) => {
+        if (baseCoverage === null) {
+          return !onlyListChangedFiles
+        }
+
+        const baseCoveragePercentage = baseCoverage.files[hash]
+          ? baseCoverage.files[hash].coverage
+          : 0
+
+        const differencePercentage = baseCoveragePercentage
+          ? roundPercentage(file.coverage - baseCoveragePercentage)
+          : roundPercentage(file.coverage)
+
+        if (onlyListChangedFiles && differencePercentage === 0) {
+          return false
+        }
+
+        return true
+      })
       .map(([hash, file]) => {
         if (baseCoverage === null) {
           return {
@@ -229,7 +250,8 @@ export async function generateMarkdown(
       .sort((a, b) =>
         a.package < b.package ? -1 : a.package > b.package ? 1 : 0
       ),
-    overall_coverage: addOverallRow(headCoverage, baseCoverage)
+    overall_coverage: addOverallRow(headCoverage, baseCoverage),
+    inputs
   }
 
   if (badge) {

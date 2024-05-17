@@ -266,3 +266,29 @@ exports[`Generate Diffed Cobertura Markdown 2`] = `
 
 _Minimum allowed coverage is_ \`0%\`_, this run produced_ \`49.83%\`"
 `;
+
+exports[`Only list changed files 1`] = `
+[
+  "::debug::headCoverage: 49\\n",
+  "::debug::baseCoverage: 50.51\\n",
+  "::debug::overallDifferencePercentage: -1.51\\n",
+  "::debug::negativeDifferenceThreshold: 0\\n",
+  "Writing results to code-coverage-results.md\\n",
+  "\\n",
+  "::set-output name=file::code-coverage-results.md\\n",
+  "\\n",
+  "::set-output name=coverage::49\\n",
+  "Writing job summary\\n",
+]
+`;
+
+exports[`Only list changed files 2`] = `
+"# Code Coverage Report: Only Changed Files listed
+
+| Package | Base Coverage | New Coverage | Difference |
+| ------- | ------------- | ------------ | ---------- |
+| utils.ts | 🟠 70.94% | 🟠 69% | 🔴 -1.94% |
+| **Overall Coverage** | **🟢 50.51%** | **🟢 49%** | **🔴 -1.51%** |
+
+_Minimum allowed coverage is_ \`0%\`_, this run produced_ \`49%\`"
+`;

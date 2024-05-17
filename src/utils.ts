@@ -347,6 +347,9 @@ export function getInputs(): Inputs {
   const failOnNegativeDifference =
     core.getInput('fail_on_negative_difference') === 'true' ? true : false
 
+  const onlyListChangedFiles =
+    core.getInput('only_list_changed_files') === 'true' ? true : false
+
   const negativeDifferenceBy =
     core.getInput('negative_difference_by') === 'overall'
       ? 'overall'
@@ -393,7 +396,8 @@ export function getInputs(): Inputs {
     retention: retentionDays,
     withoutBaseCoverageTemplate,
     withBaseCoverageTemplate,
-    negativeDifferenceThreshold
+    negativeDifferenceThreshold,
+    onlyListChangedFiles
   }
 }
 
