@@ -27,6 +27,7 @@ export interface Inputs {
   withBaseCoverageTemplate: string
   withoutBaseCoverageTemplate: string
   negativeDifferenceThreshold: number
+  onlyListChangedFiles: boolean
 }
 
 export interface Files {
@@ -46,4 +47,5 @@ export interface HandlebarContext {
   new_coverage?: string
   coverage: HandlebarContextCoverage[]
   overall_coverage: HandlebarContextCoverage
+  inputs: Inputs
 }

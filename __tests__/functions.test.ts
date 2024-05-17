@@ -160,6 +160,21 @@ test('Fail if negative_difference_threshold is set and exceeded', async () => {
   expect(await getGithubStepSummary()).toMatchSnapshot()
 })
 
+test('Only list changed files', async () => {
+  process.env.INPUT_ONLY_LIST_CHANGED_FILES = 'true'
+
+  const coverage = await loadJSONFixture('clover-parsed.json')
+  const coverageFail = JSON.parse(JSON.stringify(coverage))
+  coverageFail.files[
+    '7583809507a13391057c3aee722e422d50d961a87e2a3dbf05ea492dc6465c94'
+  ].coverage = 69
+  coverageFail.coverage = 49
+
+  await generateMarkdown(coverageFail, coverage)
+  expect(getStdoutWriteCalls()).toMatchSnapshot()
+  expect(await getGithubStepSummary()).toMatchSnapshot()
+})
+
 async function getGithubStepSummary(): Promise<string> {
   const tempFileName = process.env.GITHUB_STEP_SUMMARY as string
   return fs.promises.readFile(tempFileName, 'utf8')

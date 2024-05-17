@@ -147,6 +147,7 @@ test('getInputs', () => {
     negativeDifferenceBy: 'package',
     negativeDifferenceThreshold: -0,
     retention: undefined,
+    onlyListChangedFiles: false,
     //This is a cheat
     withBaseCoverageTemplate: f.withBaseCoverageTemplate,
     withoutBaseCoverageTemplate: f.withoutBaseCoverageTemplate

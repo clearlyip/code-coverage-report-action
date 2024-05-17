@@ -12,6 +12,10 @@ inputs:
     description: 'GitHub token. This is sometimes needed on private repositories'
     required: false
     default: ${{ github.token }}
+  only_list_changed_files:
+    description: 'Only list changed files'
+    required: false
+    default: 'false'
   markdown_filename:
     description: 'The filename (without extension) for the resulting markdown file. Default is code-coverage-results.'
     required: false
