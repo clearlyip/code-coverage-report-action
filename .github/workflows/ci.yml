@@ -24,6 +24,7 @@ jobs:
       - run: npm run format:check >> "${GITHUB_STEP_SUMMARY}"
       - run: npm run lint
       - run: npm run test >> "${GITHUB_STEP_SUMMARY}"
+      - run: npm run package
       - uses: ./
         id: code_coverage_report_action
         if: ${{ github.actor != 'dependabot[bot]'}}
