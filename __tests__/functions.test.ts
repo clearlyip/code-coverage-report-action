@@ -31,6 +31,7 @@ beforeAll(async () => {
   await fs.promises.writeFile(tempFileName, '')
   process.env.GITHUB_STEP_SUMMARY = tempFileName
   process.env.INPUT_GITHUB_TOKEN = 'token'
+  process.env.GITHUB_OUTPUT = ''
   process.env.INPUT_FILENAME = 'filename.xml'
   process.env.INPUT_ARTIFACT_NAME = 'coverage-%name%'
 })
