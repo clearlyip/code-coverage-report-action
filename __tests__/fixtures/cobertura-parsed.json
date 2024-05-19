@@ -1,1 +1,47 @@
-{"files":{"564c860307257bfac9176f554a35aa858c350a59d75c0dcd0a5d63a480805bd0":{"relative":"main.ts","absolute":"/usr/src/code-coverage-report-action/src/main.ts","coverage":0},"7583809507a13391057c3aee722e422d50d961a87e2a3dbf05ea492dc6465c94":{"relative":"utils.ts","absolute":"/usr/src/code-coverage-report-action/src/utils.ts","coverage":67.36},"2c577907984e426e2eb45b05a76679cb2ef45f2a36d0121f823290c32e5f97c4":{"relative":"reports/clover/index.ts","absolute":"/usr/src/code-coverage-report-action/src/reports/clover/index.ts","coverage":100},"25804f0e27524e107e3d739dbbeadd8025fc3aaa2cc3ce3ca481569d20da1244":{"relative":"reports/clover/parser/index.ts","absolute":"/usr/src/code-coverage-report-action/src/reports/clover/parser/index.ts","coverage":93.93},"16e49737876bdcd7a88d16a1a4d38cc5c8048ea69c7152cc1b1c43a56db22fc4":{"relative":"reports/clover/types/index.ts","absolute":"/usr/src/code-coverage-report-action/src/reports/clover/types/index.ts","coverage":100},"628976b76dd72ce208ab27d714c9761c0d61a2cceb5f4550f9f0e41b0f4ba944":{"relative":"reports/cobertura/index.ts","absolute":"/usr/src/code-coverage-report-action/src/reports/cobertura/index.ts","coverage":100},"4db0f25752a35fb4c0f500272e98c9a9a786c50468f32173c77b5755d5d61b4a":{"relative":"reports/cobertura/parser/index.ts","absolute":"/usr/src/code-coverage-report-action/src/reports/cobertura/parser/index.ts","coverage":20},"4194a7efb6c90fc1c5477f9aa8ac1c439513c816a92ce5ec4b52bc9633cecba4":{"relative":"reports/cobertura/types/index.ts","absolute":"/usr/src/code-coverage-report-action/src/reports/cobertura/types/index.ts","coverage":100}},"coverage":49.83,"timestamp":1715832361332,"basePath":"/usr/src/code-coverage-report-action/src"}
+{
+  "files": {
+    "564c860307257bfac9176f554a35aa858c350a59d75c0dcd0a5d63a480805bd0": {
+      "relative": "main.ts",
+      "absolute": "src/main.ts",
+      "coverage": 0
+    },
+    "7583809507a13391057c3aee722e422d50d961a87e2a3dbf05ea492dc6465c94": {
+      "relative": "utils.ts",
+      "absolute": "src/utils.ts",
+      "coverage": 67.36
+    },
+    "2c577907984e426e2eb45b05a76679cb2ef45f2a36d0121f823290c32e5f97c4": {
+      "relative": "reports/clover/index.ts",
+      "absolute": "src/reports/clover/index.ts",
+      "coverage": 100
+    },
+    "25804f0e27524e107e3d739dbbeadd8025fc3aaa2cc3ce3ca481569d20da1244": {
+      "relative": "reports/clover/parser/index.ts",
+      "absolute": "src/reports/clover/parser/index.ts",
+      "coverage": 93.93
+    },
+    "16e49737876bdcd7a88d16a1a4d38cc5c8048ea69c7152cc1b1c43a56db22fc4": {
+      "relative": "reports/clover/types/index.ts",
+      "absolute": "src/reports/clover/types/index.ts",
+      "coverage": 100
+    },
+    "628976b76dd72ce208ab27d714c9761c0d61a2cceb5f4550f9f0e41b0f4ba944": {
+      "relative": "reports/cobertura/index.ts",
+      "absolute": "src/reports/cobertura/index.ts",
+      "coverage": 100
+    },
+    "4db0f25752a35fb4c0f500272e98c9a9a786c50468f32173c77b5755d5d61b4a": {
+      "relative": "reports/cobertura/parser/index.ts",
+      "absolute": "src/reports/cobertura/parser/index.ts",
+      "coverage": 20
+    },
+    "4194a7efb6c90fc1c5477f9aa8ac1c439513c816a92ce5ec4b52bc9633cecba4": {
+      "relative": "reports/cobertura/types/index.ts",
+      "absolute": "src/reports/cobertura/types/index.ts",
+      "coverage": 100
+    }
+  },
+  "coverage": 49.83,
+  "timestamp": 1715832361332,
+  "basePath": "src"
+}

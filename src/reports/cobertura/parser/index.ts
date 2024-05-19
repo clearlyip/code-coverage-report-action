@@ -8,11 +8,7 @@ import {
 import {Cobertura, Package, Class} from '../types'
 
 export default async function parse(cobertura: Cobertura): Promise<Coverage> {
-  const sources = cobertura.coverage.sources.source
-  const files: Files = await parsePackages(
-    cobertura.coverage.packages.package,
-    sources
-  )
+  const files: Files = await parsePackages(cobertura.coverage.packages.package)
 
   const fileList = Object.values(files).map(file => file.absolute)
   const basePath = `${determineCommonBasePath(fileList)}`
@@ -35,19 +31,15 @@ export default async function parse(cobertura: Cobertura): Promise<Coverage> {
  * Parse Packages
  *
  * @param {Package[]} packages
- * @param {string[]} sources
  * @returns {Promise<Files>}
  */
-async function parsePackages(
-  packages: Package[],
-  sources: string[]
-): Promise<Files> {
+async function parsePackages(packages: Package[]): Promise<Files> {
   let allFiles: Files = {}
   for await (const p of packages) {
     if (!p.classes) {
       continue
     }
-    const files = await parseClasses(p.classes.class, sources)
+    const files = await parseClasses(p.classes.class)
 
     allFiles = {...allFiles, ...files}
   }
@@ -58,19 +50,15 @@ async function parsePackages(
  * Process into an object
  *
  * @param {Class[]} classes
- * @param {string[]} sources
  * @returns {Promise<Files>}
  */
-async function parseClasses(
-  classes: Class[],
-  sources: string[]
-): Promise<Files> {
+async function parseClasses(classes: Class[]): Promise<Files> {
   return classes.reduce(
     (previous, {'@_filename': path, '@_line-rate': lineRate}: Class) => ({
       ...previous,
-      [createHash(`${sources[0]}/${path}`)]: {
+      [createHash(`${path}`)]: {
         relative: path,
-        absolute: `${sources[0]}/${path}`,
+        absolute: `${path}`,
         coverage: roundPercentage(parseFloat(lineRate) * 100)
       }
     }),

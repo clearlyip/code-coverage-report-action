@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE coverage SYSTEM "http://cobertura.sourceforge.net/xml/coverage-04.dtd">
+<coverage lines-valid="0" lines-covered="0" line-rate="0" branches-valid="0" branches-covered="0" branch-rate="0" timestamp="1716003335.624" complexity="0" version="5.4.3+1">
+  <sources/>
+  <packages>
+    <package name="dio" line-rate="0" branch-rate="0">
+      <classes/>
+    </package>
+  </packages>
+</coverage>
