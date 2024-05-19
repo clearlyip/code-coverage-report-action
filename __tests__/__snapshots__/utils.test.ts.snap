@@ -1,0 +1,200 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`parse empty cobertura file 1`] = `
+{
+  "basePath": "",
+  "coverage": 0,
+  "files": {},
+  "timestamp": 1716003335,
+}
+`;
+
+exports[`parse many sources cobertura file 1`] = `
+{
+  "basePath": "",
+  "coverage": 81.41,
+  "files": {
+    "047ca623186112f554f1361a31af7b766b2afbd159064c004bf45123690456fb": {
+      "absolute": "/dio/lib/src/progress_stream/browser_progress_stream.dart",
+      "coverage": 87.5,
+      "relative": "dio/lib/src/progress_stream/browser_progress_stream.dart",
+    },
+    "0c6ad18173da236b264dd249ca7086db6b1e1b4b51cdfe40077268e3407c45ca": {
+      "absolute": "/dio/lib/src/dio_mixin.dart",
+      "coverage": 93.81,
+      "relative": "dio/lib/src/dio_mixin.dart",
+    },
+    "14883a7ae9f5f2a78e7aa04f885b9071efaa546cd0274aa39808a3bcf5be0eb2": {
+      "absolute": "/plugins/http2_adapter/lib/src/connection_manager_imp.dart",
+      "coverage": 79.84,
+      "relative": "plugins/http2_adapter/lib/src/connection_manager_imp.dart",
+    },
+    "19ed92a501e076e02b58f8470e2ec802b079d63e69ecc1c6549809033fa93915": {
+      "absolute": "/dio/lib/src/interceptors/imply_content_type.dart",
+      "coverage": 100,
+      "relative": "dio/lib/src/interceptors/imply_content_type.dart",
+    },
+    "1bc936903366c430e1c09b039066a0a2cc61123216fa6525316bdaeb1ebfb470": {
+      "absolute": "/dio/lib/src/transformer.dart",
+      "coverage": 100,
+      "relative": "dio/lib/src/transformer.dart",
+    },
+    "23beed8928f09196a04e4a994b43025e1dd4d4626743062507a0cc7af2f30050": {
+      "absolute": "/dio/lib/src/utils.dart",
+      "coverage": 98.28,
+      "relative": "dio/lib/src/utils.dart",
+    },
+    "36e5849f5b7b10173ab2520c83ba8553e1ab380fe7d50d42ddb454766f0b2372": {
+      "absolute": "/dio/lib/src/adapter.dart",
+      "coverage": 92.86,
+      "relative": "dio/lib/src/adapter.dart",
+    },
+    "38ef083699810a7e351573e0004d595497f4ad4e8dbe150fb56713caa1c87859": {
+      "absolute": "/dio/lib/src/multipart_file/io_multipart_file.dart",
+      "coverage": 85.71,
+      "relative": "dio/lib/src/multipart_file/io_multipart_file.dart",
+    },
+    "3d72fdcc8fdb85f7e75f82acdcbf3cbadce77a6e353446ccd7c2b7799508f3f0": {
+      "absolute": "/dio/lib/src/dio/dio_for_native.dart",
+      "coverage": 91.3,
+      "relative": "dio/lib/src/dio/dio_for_native.dart",
+    },
+    "42f1191f14a8444ed7b9466fd24d9a42c4222d1cc628b6dfa48db33f931a2a40": {
+      "absolute": "/dio/lib/src/dio_exception.dart",
+      "coverage": 71.93,
+      "relative": "dio/lib/src/dio_exception.dart",
+    },
+    "481f5993a7795ed1ee31f808d11a579a48fd60d698e8ca13f85dcb3acff5d421": {
+      "absolute": "/dio/lib/src/dio.dart",
+      "coverage": 25,
+      "relative": "dio/lib/src/dio.dart",
+    },
+    "541cdb8fb7046c948680968839906d9a3cc42dc00295af96ac22b8ce208a3364": {
+      "absolute": "/dio/lib/src/multipart_file/browser_multipart_file.dart",
+      "coverage": 20,
+      "relative": "dio/lib/src/multipart_file/browser_multipart_file.dart",
+    },
+    "564bd06f55902376a964cb9b191fff482b158dc781fd9973cc6c9f1e7dfa234c": {
+      "absolute": "/dio/lib/src/transformers/sync_transformer.dart",
+      "coverage": 86.67,
+      "relative": "dio/lib/src/transformers/sync_transformer.dart",
+    },
+    "5a9acdf2bac512a4da993283844d0f209fea62af98db725927357f609cf379e5": {
+      "absolute": "/dio/lib/src/adapters/browser_adapter.dart",
+      "coverage": 75,
+      "relative": "dio/lib/src/adapters/browser_adapter.dart",
+    },
+    "5c02d69a080def64961e419dc56085a6c0c37a20f4920c3df03825568638348f": {
+      "absolute": "/dio/lib/src/cancel_token.dart",
+      "coverage": 83.33,
+      "relative": "dio/lib/src/cancel_token.dart",
+    },
+    "600ff1af86377733993e06911053a318543338f01071f6521084d6aee67bfc8e": {
+      "absolute": "/dio/lib/src/compute/compute_web.dart",
+      "coverage": 0,
+      "relative": "dio/lib/src/compute/compute_web.dart",
+    },
+    "6a51f36d7f3103636a7a55e31fe9bd5deba595d8d220ef55d229c84a2fdf8daa": {
+      "absolute": "/dio/lib/src/dio/dio_for_browser.dart",
+      "coverage": 57.14,
+      "relative": "dio/lib/src/dio/dio_for_browser.dart",
+    },
+    "6b4fbab3f519f98ba0e68fb1039f0069ba2f0fa144c8262ab369e8caf6618956": {
+      "absolute": "/dio/lib/src/adapters/io_adapter.dart",
+      "coverage": 88.89,
+      "relative": "dio/lib/src/adapters/io_adapter.dart",
+    },
+    "6d76f2b15fffdcddc665cd44c6ce46c1b5ec262589db204491c08900c6f65d74": {
+      "absolute": "/dio/lib/src/parameter.dart",
+      "coverage": 8.33,
+      "relative": "dio/lib/src/parameter.dart",
+    },
+    "72ad978e4435692d5fa9db4ca4ba22f30bbd21e84a0cb5871364b2cd1d83c444": {
+      "absolute": "/plugins/http2_adapter/lib/src/connection_manager.dart",
+      "coverage": 100,
+      "relative": "plugins/http2_adapter/lib/src/connection_manager.dart",
+    },
+    "75721fcf29fb9a5e9ed2c1c29d142fbc6ae140442a972e3ca004701fc42f6f55": {
+      "absolute": "/dio/lib/src/response/response_stream_handler.dart",
+      "coverage": 100,
+      "relative": "dio/lib/src/response/response_stream_handler.dart",
+    },
+    "77cfbfe91383ace40cba72c4f98274c52526e91278bfbbe6b558db359fd2a917": {
+      "absolute": "/dio/lib/src/transformers/background_transformer.dart",
+      "coverage": 80,
+      "relative": "dio/lib/src/transformers/background_transformer.dart",
+    },
+    "7bfe2d3a657442412d5b511988b66de6da6a6a8ffacd41fa42c0e7bc3bf9ae28": {
+      "absolute": "/dio/lib/src/headers.dart",
+      "coverage": 95.12,
+      "relative": "dio/lib/src/headers.dart",
+    },
+    "823e46b07c6e8b66665bb99d7df810346c201c2849ec57a543ebdff70865c2b0": {
+      "absolute": "/dio/lib/src/redirect_record.dart",
+      "coverage": 25,
+      "relative": "dio/lib/src/redirect_record.dart",
+    },
+    "88b482500f062794ba23cf64c32c15eb4fdc2bf09bbe6408278db49aa2115cb0": {
+      "absolute": "/dio/lib/src/form_data.dart",
+      "coverage": 100,
+      "relative": "dio/lib/src/form_data.dart",
+    },
+    "9368f9a0d918c91091418412b3696df8b555783a98d70c8ef89aafefa26bee5f": {
+      "absolute": "/dio/lib/src/interceptor.dart",
+      "coverage": 97.58,
+      "relative": "dio/lib/src/interceptor.dart",
+    },
+    "9b8e81419267c84fd0c806645e7194d39487ac94b019bbf33d687c8f344b2f0c": {
+      "absolute": "/dio/lib/src/interceptors/log.dart",
+      "coverage": 0,
+      "relative": "dio/lib/src/interceptors/log.dart",
+    },
+    "9c973028fea3e83b8af2f6483ee2b029e47b4338835bf9c833fb101f159d7f26": {
+      "absolute": "/plugins/cookie_manager/lib/src/cookie_mgr.dart",
+      "coverage": 76.67,
+      "relative": "plugins/cookie_manager/lib/src/cookie_mgr.dart",
+    },
+    "9e16d901ce5a97ec166c02fd6b3c66865517e5ed2d4f98896121000c4b51fad5": {
+      "absolute": "/dio/lib/src/compute/compute_io.dart",
+      "coverage": 0,
+      "relative": "dio/lib/src/compute/compute_io.dart",
+    },
+    "b04b3368f4cc8b81b57022fc72620989d0e5941136b2fa5411085468ec6a1ccf": {
+      "absolute": "/plugins/http2_adapter/lib/src/http2_adapter.dart",
+      "coverage": 71.72,
+      "relative": "plugins/http2_adapter/lib/src/http2_adapter.dart",
+    },
+    "bed0ea39c9af0b71c65fb305e8c68236e0292cad32dd6693fe8092aefcdfb6a7": {
+      "absolute": "/dio/lib/src/options.dart",
+      "coverage": 91.94,
+      "relative": "dio/lib/src/options.dart",
+    },
+    "ddbf97444073e26a3250d434e7cfa9dc48025582df20fd874ccc4a64218e9310": {
+      "absolute": "/dio/lib/src/multipart_file.dart",
+      "coverage": 88.57,
+      "relative": "dio/lib/src/multipart_file.dart",
+    },
+    "e3a57d31614a71527998b4e2ba5982de926ac6c65fe373dafd992eda9414d82a": {
+      "absolute": "/dio/lib/src/progress_stream/io_progress_stream.dart",
+      "coverage": 78.95,
+      "relative": "dio/lib/src/progress_stream/io_progress_stream.dart",
+    },
+    "e669e973c3e9889b001c40186b78936ad023f8137420c627e0aee9da9fee0fd1": {
+      "absolute": "/plugins/compatibility_layer/lib/src/conversion_layer_adapter.dart",
+      "coverage": 69.05,
+      "relative": "plugins/compatibility_layer/lib/src/conversion_layer_adapter.dart",
+    },
+    "f651b86290b3eb324dfe2e820609f237ae671baa95840cfbdbfb8c51581c552a": {
+      "absolute": "/plugins/native_dio_adapter/lib/src/conversion_layer_adapter.dart",
+      "coverage": 92.5,
+      "relative": "plugins/native_dio_adapter/lib/src/conversion_layer_adapter.dart",
+    },
+    "f6ac8f3cb3e35a127a238c408bfe1e1b2759f57a9f1944ed0b6bdb9b1c3f3bd7": {
+      "absolute": "/dio/lib/src/response.dart",
+      "coverage": 55.56,
+      "relative": "dio/lib/src/response.dart",
+    },
+  },
+  "timestamp": 1716079685,
+}
+`;

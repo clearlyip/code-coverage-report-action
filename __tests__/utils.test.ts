@@ -154,16 +154,28 @@ test('getInputs', () => {
   })
 })
 
-test('parse clover into files format', async () => {
+test('parse clover into file format', async () => {
   const ret = await parseCoverage(__dirname + '/fixtures/clover.xml')
 
   const loadedFixture = await loadJSONFixture('clover-parsed.json')
   expect(loadedFixture).toEqual(ret)
 })
 
-test('parse cobertura files format', async () => {
+test('parse cobertura file format', async () => {
   const ret = await parseCoverage(__dirname + '/fixtures/cobertura.xml')
 
   const loadedFixture = await loadJSONFixture('cobertura-parsed.json')
   expect(loadedFixture).toEqual(ret)
+})
+
+test('parse empty cobertura file', async () => {
+  const ret = await parseCoverage(__dirname + '/fixtures/cobertura-empty.xml')
+  expect(ret).toMatchSnapshot()
+})
+
+test('parse many sources cobertura file', async () => {
+  const ret = await parseCoverage(
+    __dirname + '/fixtures/cobertura-many-sources.xml'
+  )
+  expect(ret).toMatchSnapshot()
 })

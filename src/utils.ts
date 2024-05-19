@@ -287,6 +287,9 @@ export function determineCommonBasePath(
   files: string[],
   separator = '/'
 ): string {
+  if (files.length === 0) {
+    return ''
+  }
   /**
    * Given an index number, return a function that takes an array and returns the
    * element at the given index
