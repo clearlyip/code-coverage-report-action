@@ -4,11 +4,24 @@
 ![Code Coverage]({{{coverage_badge}}})
 
 {{/if}}
+
+<details>
+
+<summary>Individual package details</summary>
+
 | Package |    Coverage   |
 | ------- | ------------- |
 {{#each coverage}}
 | {{package}} | {{base_coverage}} |
 {{/each}}
+{{#with overall_coverage}}
+| **{{package}}** | **{{base_coverage}}** |
+{{/with}}
+
+</details>
+
+| Package |    Coverage   |
+| ------- | ------------- |
 {{#with overall_coverage}}
 | **{{package}}** | **{{base_coverage}}** |
 {{/with}}
