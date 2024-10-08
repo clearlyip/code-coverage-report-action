@@ -1,5 +1,53 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`parse cobertura file with empty classes 1`] = `
+{
+  "basePath": "",
+  "coverage": 49.83,
+  "files": {},
+  "timestamp": 1715832361332,
+}
+`;
+
+exports[`parse cobertura file with empty lines 1`] = `
+{
+  "basePath": "src/main.ts",
+  "coverage": 49.83,
+  "files": {
+    "4fab5baaca5c14d2de62d8d2fceef376ddddcc8e9509d86cfa5643f51b89ce3d": {
+      "absolute": "src/main.ts",
+      "coverage": 0,
+      "relative": "src/main.ts",
+    },
+  },
+  "timestamp": 1715832361332,
+}
+`;
+
+exports[`parse cobertura file with empty methods 1`] = `
+{
+  "basePath": "src/main.ts",
+  "coverage": 49.83,
+  "files": {
+    "4fab5baaca5c14d2de62d8d2fceef376ddddcc8e9509d86cfa5643f51b89ce3d": {
+      "absolute": "src/main.ts",
+      "coverage": 0,
+      "relative": "src/main.ts",
+    },
+  },
+  "timestamp": 1715832361332,
+}
+`;
+
+exports[`parse cobertura file with empty packages 1`] = `
+{
+  "basePath": "",
+  "coverage": 0,
+  "files": {},
+  "timestamp": 1716003335,
+}
+`;
+
 exports[`parse empty cobertura file 1`] = `
 {
   "basePath": "",
