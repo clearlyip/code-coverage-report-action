@@ -33,9 +33,9 @@ export default async function parse(cobertura: Cobertura): Promise<Coverage> {
  * @param {Package[]} packages
  * @returns {Promise<Files>}
  */
-async function parsePackages(packages: Package[]): Promise<Files> {
+async function parsePackages(packages?: Package[]): Promise<Files> {
   let allFiles: Files = {}
-  for await (const p of packages) {
+  for await (const p of packages || []) {
     if (!p.classes) {
       continue
     }
@@ -52,16 +52,18 @@ async function parsePackages(packages: Package[]): Promise<Files> {
  * @param {Class[]} classes
  * @returns {Promise<Files>}
  */
-async function parseClasses(classes: Class[]): Promise<Files> {
-  return classes.reduce(
-    (previous, {'@_filename': path, '@_line-rate': lineRate}: Class) => ({
-      ...previous,
-      [createHash(`${path}`)]: {
-        relative: path,
-        absolute: `${path}`,
-        coverage: roundPercentage(parseFloat(lineRate) * 100)
-      }
-    }),
-    {}
+async function parseClasses(classes?: Class[]): Promise<Files> {
+  return (
+    classes?.reduce(
+      (previous, {'@_filename': path, '@_line-rate': lineRate}: Class) => ({
+        ...previous,
+        [createHash(`${path}`)]: {
+          relative: path,
+          absolute: `${path}`,
+          coverage: roundPercentage(parseFloat(lineRate) * 100)
+        }
+      }),
+      {}
+    ) || {}
   )
 }

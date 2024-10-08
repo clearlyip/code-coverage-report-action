@@ -22,7 +22,7 @@ export interface Coverage {
 }
 
 export interface Packages {
-  package: Package[]
+  package?: Package[]
 }
 
 export interface Package {
@@ -34,7 +34,7 @@ export interface Package {
 }
 
 export interface Classes {
-  class: Class[]
+  class?: Class[]
 }
 
 export interface Class {
@@ -48,14 +48,14 @@ export interface Class {
 }
 
 export interface Lines {
-  line: LineElement[] | PurpleLine
+  line?: LineElement[] | PurpleLine
 }
 
 export interface LineElement {
   '@_number': string
   '@_hits': string
   '@_branch'?: Boolean
-  conditions?: Conditions
+  conditions?: Conditions[] | Conditions
   '@_condition-coverage'?: string
 }
 
@@ -65,7 +65,7 @@ export enum Boolean {
 }
 
 export interface Conditions {
-  condition: ConditionElement[] | ConditionElement
+  condition?: ConditionElement[] | ConditionElement
 }
 
 export interface ConditionElement {
@@ -88,7 +88,7 @@ export interface PurpleLine {
 }
 
 export interface Methods {
-  method: MethodElement[] | MethodElement
+  method?: MethodElement[] | MethodElement
 }
 
 export interface MethodElement {
