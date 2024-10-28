@@ -173,6 +173,26 @@ test('parse empty cobertura file', async () => {
   expect(ret).toMatchSnapshot()
 })
 
+test('parse cobertura file with empty packages', async () => {
+  const ret = await parseCoverage(__dirname + '/fixtures/cobertura-empty-packages.xml')
+  expect(ret).toMatchSnapshot()
+})
+
+test('parse cobertura file with empty classes', async () => {
+  const ret = await parseCoverage(__dirname + '/fixtures/cobertura-empty-classes.xml')
+  expect(ret).toMatchSnapshot()
+})
+
+test('parse cobertura file with empty lines', async () => {
+  const ret = await parseCoverage(__dirname + '/fixtures/cobertura-empty-lines.xml')
+  expect(ret).toMatchSnapshot()
+})
+
+test('parse cobertura file with empty methods', async () => {
+  const ret = await parseCoverage(__dirname + '/fixtures/cobertura-empty-methods.xml')
+  expect(ret).toMatchSnapshot()
+})
+
 test('parse many sources cobertura file', async () => {
   const ret = await parseCoverage(
     __dirname + '/fixtures/cobertura-many-sources.xml'
