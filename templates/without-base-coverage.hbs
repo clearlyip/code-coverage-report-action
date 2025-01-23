@@ -6,9 +6,11 @@
 {{/if}}
 | Package |    Coverage   |
 | ------- | ------------- |
+{{#if show_package_coverage}}
 {{#each coverage}}
 | {{package}} | {{base_coverage}} |
 {{/each}}
+{{/if}}
 {{#with overall_coverage}}
 | **{{package}}** | **{{base_coverage}}** |
 {{/with}}
