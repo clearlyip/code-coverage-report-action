@@ -86,8 +86,7 @@ test('Generate Base Clover Markdown', async () => {
 test('Generate Base Cobertura Markdown', async () => {
   const coverage = await loadJSONFixture('cobertura-parsed.json')
   await generateMarkdown(coverage)
-  let stdoutWriteCalls = getStdoutWriteCalls()
-  expect(stdoutWriteCalls).toMatchSnapshot()
+  expect(getStdoutWriteCalls()).toMatchSnapshot()
   expect(await getGithubStepSummary()).toMatchSnapshot()
 })
 
