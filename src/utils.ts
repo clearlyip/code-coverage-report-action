@@ -330,7 +330,8 @@ export function getInputs(): Inputs {
   const filename = core.getInput('filename', {required: true})
   const markdownFilename =
     core.getInput('markdown_filename') || 'code-coverage-results'
-  const badge = core.getInput('badge') === 'true' ? true : false
+  const badge = core.getInput('badge') === 'true'
+  const skipPackageCoverage = core.getInput('skip_package_coverage') === 'true'
   const overallCoverageFailThreshold = Math.abs(
     parseInt(core.getInput('overall_coverage_fail_threshold') || '0')
   )
@@ -400,7 +401,8 @@ export function getInputs(): Inputs {
     withoutBaseCoverageTemplate,
     withBaseCoverageTemplate,
     negativeDifferenceThreshold,
-    onlyListChangedFiles
+    onlyListChangedFiles,
+    skipPackageCoverage
   }
 }
 

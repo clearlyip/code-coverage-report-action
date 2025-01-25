@@ -30,7 +30,8 @@ exports[`Dont Fail on negative difference if negative_difference_threshold is se
 | utils.ts | 🟠 70.94% | 🟠 69% | 🔴 -1.94% |
 | **Overall Coverage** | **🟢 50.51%** | **🟢 49%** | **🔴 -1.51%** |
 
-_Minimum allowed coverage is_ \`0%\`_, this run produced_ \`49%\`"
+_Minimum allowed coverage is_ \`0%\`_, this run produced_ \`49%\`
+"
 `;
 
 exports[`Fail if negative_difference_threshold is set and exceeded 1`] = `
@@ -64,7 +65,8 @@ exports[`Fail if negative_difference_threshold is set and exceeded 2`] = `
 | utils.ts | 🟠 70.94% | 🟠 69% | 🔴 -1.94% |
 | **Overall Coverage** | **🟢 50.51%** | **🟢 49%** | **🔴 -1.51%** |
 
-_Minimum allowed coverage is_ \`0%\`_, this run produced_ \`49%\`"
+_Minimum allowed coverage is_ \`0%\`_, this run produced_ \`49%\`
+"
 `;
 
 exports[`Fail if overall coverage is below fail threshold 1`] = `
@@ -98,7 +100,8 @@ exports[`Fail if overall coverage is below fail threshold 2`] = `
 | utils.ts | 🟠 70.94% | 🟠 70.94% | ⚪ 0% |
 | **Overall Coverage** | **🔴 50.51%** | **🔴 50.51%** | **⚪ 0%** |
 
-_Minimum allowed coverage is_ \`99%\`_, this run produced_ \`50.51%\`"
+_Minimum allowed coverage is_ \`99%\`_, this run produced_ \`50.51%\`
+"
 `;
 
 exports[`Fail on negative difference 1`] = `
@@ -132,7 +135,8 @@ exports[`Fail on negative difference 2`] = `
 | utils.ts | 🟠 70.94% | 🟠 69% | 🔴 -1.94% |
 | **Overall Coverage** | **🟢 50.51%** | **🟢 49%** | **🔴 -1.51%** |
 
-_Minimum allowed coverage is_ \`0%\`_, this run produced_ \`49%\`"
+_Minimum allowed coverage is_ \`0%\`_, this run produced_ \`49%\`
+"
 `;
 
 exports[`Generate Base Clover Markdown 1`] = `
@@ -165,7 +169,8 @@ exports[`Generate Base Clover Markdown 2`] = `
 | utils.ts | 🟠 70.94% |
 | **Overall Coverage** | **🟢 50.51%** |
 
-_Minimum allowed coverage is_ \`0%\`_, this run produced_ \`50.51%\`"
+_Minimum allowed coverage is_ \`0%\`_, this run produced_ \`50.51%\`
+"
 `;
 
 exports[`Generate Base Cobertura Markdown 1`] = `
@@ -198,7 +203,8 @@ exports[`Generate Base Cobertura Markdown 2`] = `
 | utils.ts | 🟠 67.36% |
 | **Overall Coverage** | **🟢 49.83%** |
 
-_Minimum allowed coverage is_ \`0%\`_, this run produced_ \`49.83%\`"
+_Minimum allowed coverage is_ \`0%\`_, this run produced_ \`49.83%\`
+"
 `;
 
 exports[`Generate Diffed Clover Markdown 1`] = `
@@ -231,7 +237,8 @@ exports[`Generate Diffed Clover Markdown 2`] = `
 | utils.ts | 🟠 70.94% | 🟠 70.94% | ⚪ 0% |
 | **Overall Coverage** | **🟢 50.51%** | **🟢 50.51%** | **⚪ 0%** |
 
-_Minimum allowed coverage is_ \`0%\`_, this run produced_ \`50.51%\`"
+_Minimum allowed coverage is_ \`0%\`_, this run produced_ \`50.51%\`
+"
 `;
 
 exports[`Generate Diffed Cobertura Markdown 1`] = `
@@ -264,7 +271,8 @@ exports[`Generate Diffed Cobertura Markdown 2`] = `
 | utils.ts | 🟠 67.36% | 🟠 67.36% | ⚪ 0% |
 | **Overall Coverage** | **🟢 49.83%** | **🟢 49.83%** | **⚪ 0%** |
 
-_Minimum allowed coverage is_ \`0%\`_, this run produced_ \`49.83%\`"
+_Minimum allowed coverage is_ \`0%\`_, this run produced_ \`49.83%\`
+"
 `;
 
 exports[`Only list changed files 1`] = `
@@ -290,5 +298,6 @@ exports[`Only list changed files 2`] = `
 | utils.ts | 🟠 70.94% | 🟠 69% | 🔴 -1.94% |
 | **Overall Coverage** | **🟢 50.51%** | **🟢 49%** | **🔴 -1.51%** |
 
-_Minimum allowed coverage is_ \`0%\`_, this run produced_ \`49%\`"
+_Minimum allowed coverage is_ \`0%\`_, this run produced_ \`49%\`
+"
 `;

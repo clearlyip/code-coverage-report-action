@@ -6,9 +6,11 @@
 {{/if}}
 | Package | Base Coverage | New Coverage | Difference |
 | ------- | ------------- | ------------ | ---------- |
+{{#if show_package_coverage}}
 {{#each coverage}}
 | {{package}} | {{base_coverage}} | {{new_coverage}} | {{difference}} |
 {{/each}}
+{{/if}}
 {{#with overall_coverage}}
 | **{{package}}** | **{{base_coverage}}** | **{{new_coverage}}** | **{{difference}}** |
 {{/with}}
