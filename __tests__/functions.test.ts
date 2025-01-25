@@ -79,8 +79,7 @@ test('add overall row with base coverage', async () => {
 test('Generate Base Clover Markdown', async () => {
   const coverage = await loadJSONFixture('clover-parsed.json')
   await generateMarkdown(coverage)
-  let stdoutWriteCalls1 = getStdoutWriteCalls()
-  expect(stdoutWriteCalls1).toMatchSnapshot()
+  expect(getStdoutWriteCalls()).toMatchSnapshot()
   expect(await getGithubStepSummary()).toMatchSnapshot()
 })
 
