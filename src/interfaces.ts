@@ -28,6 +28,7 @@ export interface Inputs {
   withoutBaseCoverageTemplate: string
   negativeDifferenceThreshold: number
   onlyListChangedFiles: boolean
+  skipPackageCoverage: boolean
 }
 
 export interface Files {
@@ -43,6 +44,7 @@ export interface HandlebarContextCoverage {
 
 export interface HandlebarContext {
   coverage_badge?: string
+  show_package_coverage?: boolean
   minimum_allowed_coverage?: string
   new_coverage?: string
   coverage: HandlebarContextCoverage[]
