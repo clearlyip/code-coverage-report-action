@@ -26,7 +26,7 @@
   },
   "homepage": "https://github.com/tm1000/code-coverage-report-action#readme",
   "dependencies": {
-    "@actions/artifact": "^2.2.2",
+    "@actions/artifact": "^2.3.0",
     "@actions/core": "^1.11.1",
     "@actions/github": "^6.0.0",
     "adm-zip": "^0.5.16",
