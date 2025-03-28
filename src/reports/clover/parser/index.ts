@@ -1,36 +1,36 @@
-import {Clover, File, FileMetrics, Package} from '../types'
-import {Coverage, Files} from '../../../interfaces'
+import { Clover, File, FileMetrics, Package } from '../types';
+import { Coverage, Files } from '../../../interfaces';
 import {
   determineCommonBasePath,
   roundPercentage,
   createHash,
   escapeRegExp
-} from '../../../utils'
+} from '../../../utils';
 
 export default async function parse(clover: Clover): Promise<Coverage> {
-  const {metrics, '@_timestamp': timestamp} = clover.coverage.project
+  const { metrics, '@_timestamp': timestamp } = clover.coverage.project;
 
-  let files: Files = {}
+  let files: Files = {};
   if (clover.coverage.project.package) {
-    files = await parsePackages(clover.coverage.project.package)
+    files = await parsePackages(clover.coverage.project.package);
   }
   if (clover.coverage.project.file) {
-    files = await parseFiles(clover.coverage.project.file)
+    files = await parseFiles(clover.coverage.project.file);
   }
 
-  const fileList = Object.values(files).map(file => file.absolute)
-  const basePath = `${determineCommonBasePath(fileList)}`
-  const regExp = new RegExp(`^${escapeRegExp(`${basePath}/`)}`)
+  const fileList = Object.values(files).map((file) => file.absolute);
+  const basePath = `${determineCommonBasePath(fileList)}`;
+  const regExp = new RegExp(`^${escapeRegExp(`${basePath}/`)}`);
 
   return {
     files: Object.entries(files).reduce((previous, [, file]) => {
-      file.relative = file.absolute.replace(regExp, '')
-      return {...previous, [createHash(file.relative)]: file}
+      file.relative = file.absolute.replace(regExp, '');
+      return { ...previous, [createHash(file.relative)]: file };
     }, {}),
     coverage: processCoverageMetrics(metrics),
     timestamp: parseInt(timestamp),
     basePath
-  }
+  };
 }
 
 /**
@@ -40,16 +40,16 @@ export default async function parse(clover: Clover): Promise<Coverage> {
  * @returns {Promise<Files>}
  */
 async function parsePackages(packages: Package[]): Promise<Files> {
-  let allFiles: Files = {}
+  let allFiles: Files = {};
   for await (const p of packages) {
     if (!p.file) {
-      continue
+      continue;
     }
-    const files = await parseFiles(p.file)
+    const files = await parseFiles(p.file);
 
-    allFiles = {...allFiles, ...files}
+    allFiles = { ...allFiles, ...files };
   }
-  return allFiles
+  return allFiles;
 }
 
 /**
@@ -62,7 +62,7 @@ async function parseFiles(files: File[]): Promise<Files> {
   return files.reduce(
     (
       previous,
-      {'@_name': name, metrics: fileMetrics, '@_path': path}: File
+      { '@_name': name, metrics: fileMetrics, '@_path': path }: File
     ) => ({
       ...previous,
       [createHash(path ?? name)]: {
@@ -72,7 +72,7 @@ async function parseFiles(files: File[]): Promise<Files> {
       }
     }),
     {}
-  )
+  );
 }
 
 /**
@@ -84,18 +84,18 @@ async function parseFiles(files: File[]): Promise<Files> {
  * @returns
  */
 function processCoverageMetrics(metrics: FileMetrics): number {
-  const coveredConditionals = parseInt(metrics['@_coveredconditionals'])
-  const coveredStatements = parseInt(metrics['@_coveredstatements'])
-  const coveredMethods = parseInt(metrics['@_coveredmethods'])
-  const conditionals = parseInt(metrics['@_conditionals'])
-  const statements = parseInt(metrics['@_statements'])
-  const methods = parseInt(metrics['@_methods'])
+  const coveredConditionals = parseInt(metrics['@_coveredconditionals']);
+  const coveredStatements = parseInt(metrics['@_coveredstatements']);
+  const coveredMethods = parseInt(metrics['@_coveredmethods']);
+  const conditionals = parseInt(metrics['@_conditionals']);
+  const statements = parseInt(metrics['@_statements']);
+  const methods = parseInt(metrics['@_methods']);
 
-  const coveredSum = coveredConditionals + coveredStatements + coveredMethods
-  const codeSum = conditionals + statements + methods
+  const coveredSum = coveredConditionals + coveredStatements + coveredMethods;
+  const codeSum = conditionals + statements + methods;
 
   const codeCoveragePercentage =
-    codeSum > 0 ? (100.0 * coveredSum) / codeSum : 0
+    codeSum > 0 ? (100.0 * coveredSum) / codeSum : 0;
 
-  return roundPercentage(codeCoveragePercentage)
+  return roundPercentage(codeCoveragePercentage);
 }

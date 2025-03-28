@@ -1,17 +1,20 @@
-import {promises as fs, constants as fsConstants} from 'fs'
-import {XMLParser} from 'fast-xml-parser'
-import {DefaultArtifactClient, UploadArtifactResponse} from '@actions/artifact'
-import * as core from '@actions/core'
-import * as github from '@actions/github'
-import {Clover, parse as parseClover} from './reports/clover'
-import {Cobertura, parse as parseCobertura} from './reports/cobertura'
-import path from 'path'
+import { promises as fs, constants as fsConstants } from 'fs';
+import { XMLParser } from 'fast-xml-parser';
+import {
+  DefaultArtifactClient,
+  UploadArtifactResponse
+} from '@actions/artifact';
+import * as core from '@actions/core';
+import * as github from '@actions/github';
+import { Clover, parse as parseClover } from './reports/clover';
+import { Cobertura, parse as parseCobertura } from './reports/cobertura';
+import path from 'path';
 
-import {Coverage, Inputs} from './interfaces'
-import crypto from 'crypto'
-import AdmZip from 'adm-zip'
+import { Coverage, Inputs } from './interfaces';
+import crypto from 'crypto';
+import AdmZip from 'adm-zip';
 
-const {access, readFile, mkdir} = fs
+const { access, readFile, mkdir } = fs;
 
 /**
  * Check if a file exists
@@ -20,12 +23,12 @@ const {access, readFile, mkdir} = fs
  */
 export async function checkFileExists(filename: string): Promise<boolean> {
   try {
-    await access(filename, fsConstants.F_OK)
-    return true
+    await access(filename, fsConstants.F_OK);
+    return true;
   } catch (_e) {
     //
   }
-  return false
+  return false;
 }
 
 /**
@@ -35,16 +38,16 @@ export async function checkFileExists(filename: string): Promise<boolean> {
  */
 export async function parseXML<T>(filename: string): Promise<T | null> {
   if (!(await checkFileExists(filename))) {
-    return null
+    return null;
   }
 
-  const contents = await readFile(filename, 'binary')
+  const contents = await readFile(filename, 'binary');
 
   return new XMLParser({
     ignoreAttributes: false,
     isArray: (name, jpath, isLeafNode, isAttribute) => {
       if (isAttribute) {
-        return false
+        return false;
       }
       return inArray(jpath, [
         'coverage.project.package',
@@ -52,9 +55,9 @@ export async function parseXML<T>(filename: string): Promise<T | null> {
         'coverage.packages.package',
         'coverage.packages.package.classes.class',
         'coverage.sources.source'
-      ])
+      ]);
     }
-  }).parse(contents)
+  }).parse(contents);
 }
 
 /**
@@ -68,23 +71,23 @@ export async function downloadArtifacts(
   name: string,
   base = 'artifacts'
 ): Promise<string | null> {
-  const {token, artifactDownloadWorkflowNames} = getInputs()
-  const client = github.getOctokit(token)
+  const { token, artifactDownloadWorkflowNames } = getInputs();
+  const client = github.getOctokit(token);
   const artifactWorkflowNames =
     artifactDownloadWorkflowNames !== null
       ? artifactDownloadWorkflowNames
-      : [github.context.job]
-  const artifactName = formatArtifactName(name)
+      : [github.context.job];
+  const artifactName = formatArtifactName(name);
 
-  const {GITHUB_BASE_REF = '', GITHUB_REPOSITORY = ''} = process.env
+  const { GITHUB_BASE_REF = '', GITHUB_REPOSITORY = '' } = process.env;
 
-  const [owner, repo] = GITHUB_REPOSITORY.split('/')
+  const [owner, repo] = GITHUB_REPOSITORY.split('/');
 
   core.info(
     `Looking for artifact "${artifactName}" in the following workflows: ${artifactWorkflowNames.join(
       ','
     )}`
-  )
+  );
   for await (const runs of client.paginate.iterator(
     client.rest.actions.listWorkflowRunsForRepo,
     {
@@ -96,8 +99,8 @@ export async function downloadArtifacts(
   )) {
     for await (const run of runs.data) {
       if (!run.name) {
-        core.debug(`${run.id} had no workflow name, skipping`)
-        continue
+        core.debug(`${run.id} had no workflow name, skipping`);
+        continue;
       }
 
       if (!inArray(run.name, artifactWorkflowNames)) {
@@ -107,47 +110,47 @@ export async function downloadArtifacts(
           }' did not match the following required workflows names: ${artifactWorkflowNames.join(
             ','
           )}`
-        )
-        continue
+        );
+        continue;
       }
 
       const artifacts = await client.rest.actions.listWorkflowRunArtifacts({
         owner,
         repo,
         run_id: run.id
-      })
+      });
       if (artifacts.data.artifacts.length === 0) {
-        core.debug(`No Artifacts in workflow ${run.id}`)
-        continue
+        core.debug(`No Artifacts in workflow ${run.id}`);
+        continue;
       }
       for await (const art of artifacts.data.artifacts) {
         if (art.expired) {
-          continue
+          continue;
         }
 
         if (art.name !== artifactName) {
-          continue
+          continue;
         }
 
         core.info(
           `Downloading the artifact "${art.name}" from workflow ${run.name}:${run.id}`
-        )
+        );
         const zip = await client.rest.actions.downloadArtifact({
           owner,
           repo,
           artifact_id: art.id,
           archive_format: 'zip'
-        })
+        });
 
-        const dir = path.join(__dirname, base)
+        const dir = path.join(__dirname, base);
 
-        core.debug(`Making dir ${dir}`)
-        await mkdir(dir, {recursive: true})
+        core.debug(`Making dir ${dir}`);
+        await mkdir(dir, { recursive: true });
 
-        core.debug(`Extracting Artifact to ${dir}`)
-        const adm = new AdmZip(Buffer.from(zip.data as string))
-        adm.extractAllTo(dir, true)
-        return dir
+        core.debug(`Extracting Artifact to ${dir}`);
+        const adm = new AdmZip(Buffer.from(zip.data as string));
+        adm.extractAllTo(dir, true);
+        return dir;
       }
     }
   }
@@ -156,8 +159,8 @@ export async function downloadArtifacts(
     `No artifacts found for the following workspaces: ${artifactWorkflowNames.join(
       ','
     )}`
-  )
-  return null
+  );
+  return null;
 }
 
 /**
@@ -170,11 +173,11 @@ export async function uploadArtifacts(
   files: string[],
   name: string
 ): Promise<UploadArtifactResponse> {
-  const artifactClient = new DefaultArtifactClient()
-  const artifactName = formatArtifactName(name)
-  const {retention} = getInputs()
+  const artifactClient = new DefaultArtifactClient();
+  const artifactName = formatArtifactName(name);
+  const { retention } = getInputs();
 
-  const rootDirectory = '.'
+  const rootDirectory = '.';
 
   const result = await artifactClient.uploadArtifact(
     artifactName,
@@ -183,11 +186,11 @@ export async function uploadArtifacts(
     {
       retentionDays: retention
     }
-  )
+  );
 
-  core.info(`Artifact Metadata:\n${JSON.stringify(result, null, 4)}`)
+  core.info(`Artifact Metadata:\n${JSON.stringify(result, null, 4)}`);
 
-  return result
+  return result;
 }
 
 /**
@@ -199,35 +202,35 @@ export async function parseCoverage(
   filename: string
 ): Promise<Coverage | null> {
   if (!(await checkFileExists(filename))) {
-    core.warning(`Unable to access ${filename} for parsing`)
-    return null
+    core.warning(`Unable to access ${filename} for parsing`);
+    return null;
   }
 
-  const ext = path.extname(filename)
+  const ext = path.extname(filename);
 
   switch (ext) {
     case '.xml':
       {
-        const xml = await parseXML<Cobertura | Clover>(filename)
+        const xml = await parseXML<Cobertura | Clover>(filename);
 
         if (instanceOfCobertura(xml)) {
-          core.info(`Detected a Cobertura File at ${filename}`)
-          return await parseCobertura(xml)
+          core.info(`Detected a Cobertura File at ${filename}`);
+          return await parseCobertura(xml);
         } else if (instanceOfClover(xml)) {
-          core.info(`Detected a Clover File at ${filename}`)
-          return await parseClover(xml)
+          core.info(`Detected a Clover File at ${filename}`);
+          return await parseClover(xml);
         }
       }
-      break
+      break;
     default:
-      core.warning(`Unable to parse ${filename}`)
+      core.warning(`Unable to parse ${filename}`);
   }
 
-  return null
+  return null;
 }
 
 export function createHash(data: crypto.BinaryLike): string {
-  return crypto.createHash('sha256').update(data).digest('hex')
+  return crypto.createHash('sha256').update(data).digest('hex');
 }
 
 /**
@@ -236,11 +239,11 @@ export function createHash(data: crypto.BinaryLike): string {
  * @returns {number}
  */
 export function roundPercentage(percentage: number): number {
-  return Math.round((percentage + Number.EPSILON) * 100) / 100
+  return Math.round((percentage + Number.EPSILON) * 100) / 100;
 }
 
 export function escapeRegExp(string: string): string {
-  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') // $& means the whole matched string
+  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
 }
 
 /**
@@ -256,25 +259,25 @@ export function colorizePercentageByThreshold(
   thresholdMin: number | null = null
 ): string {
   if (percentage === null) {
-    return '⚪ 0%'
+    return '⚪ 0%';
   }
   if (thresholdMin === null) {
     if (percentage > thresholdMax) {
-      return `🟢 ${percentage.toString()}%`
+      return `🟢 ${percentage.toString()}%`;
     } else if (percentage < thresholdMax) {
-      return `🔴 ${percentage.toString()}%`
+      return `🔴 ${percentage.toString()}%`;
     }
   } else {
     if (percentage < thresholdMin) {
-      return `🔴 ${percentage.toString()}%`
+      return `🔴 ${percentage.toString()}%`;
     } else if (percentage >= thresholdMin && percentage <= thresholdMax) {
-      return `🟠 ${percentage.toString()}%`
+      return `🟠 ${percentage.toString()}%`;
     } else if (percentage > thresholdMax) {
-      return `🟢 ${percentage.toString()}%`
+      return `🟢 ${percentage.toString()}%`;
     }
   }
 
-  return `⚪ ${percentage.toString()}%`
+  return `⚪ ${percentage.toString()}%`;
 }
 
 /**
@@ -289,7 +292,7 @@ export function determineCommonBasePath(
   separator = '/'
 ): string {
   if (files.length === 0) {
-    return ''
+    return '';
   }
   /**
    * Given an index number, return a function that takes an array and returns the
@@ -297,28 +300,28 @@ export function determineCommonBasePath(
    * @param {number} i
    * @return {function(!Array<*>): *}
    */
-  const elAt = (i: number) => (a: string[]) => a[i]
+  const elAt = (i: number) => (a: string[]) => a[i];
 
   /**
    * Given an array of strings, return an array of arrays, containing the
    * strings split at the given separator
    */
-  const splitStrings = files.map(i => i.split(separator))
+  const splitStrings = files.map((i) => i.split(separator));
   /**
    * Transpose an array of arrays:
    * Example:
    * [['a', 'b', 'c'], ['A', 'B', 'C'], [1, 2, 3]] ->
    * [['a', 'A', 1], ['b', 'B', 2], ['c', 'C', 3]]
    */
-  const rotated = splitStrings[0].map((e, i) => splitStrings.map(elAt(i)))
+  const rotated = splitStrings[0].map((e, i) => splitStrings.map(elAt(i)));
 
   return (
     rotated
       //Checks of all the elements in the array are the same.
-      .filter(arr => arr.every(e => e === arr[0]))
+      .filter((arr) => arr.every((e) => e === arr[0]))
       .map(elAt(0))
       .join(separator)
-  )
+  );
 }
 
 /**
@@ -327,64 +330,64 @@ export function determineCommonBasePath(
  * @returns {Inputs}
  */
 export function getInputs(): Inputs {
-  const token = core.getInput('github_token', {required: true})
-  const filename = core.getInput('filename', {required: true})
+  const token = core.getInput('github_token', { required: true });
+  const filename = core.getInput('filename', { required: true });
   const markdownFilename =
-    core.getInput('markdown_filename') || 'code-coverage-results'
-  const badge = core.getInput('badge') === 'true'
-  const skipPackageCoverage = core.getInput('skip_package_coverage') === 'true'
+    core.getInput('markdown_filename') || 'code-coverage-results';
+  const badge = core.getInput('badge') === 'true';
+  const skipPackageCoverage = core.getInput('skip_package_coverage') === 'true';
   const overallCoverageFailThreshold = Math.abs(
     parseInt(core.getInput('overall_coverage_fail_threshold') || '0')
-  )
+  );
   const fileCoverageErrorMin = Math.abs(
     parseInt(core.getInput('file_coverage_error_min') || '50')
-  )
+  );
 
   const fileCoverageWarningMax = Math.abs(
     parseInt(core.getInput('file_coverage_warning_max') || '75')
-  )
+  );
 
   const negativeDifferenceThreshold =
     Math.abs(
       parseFloat(core.getInput('negative_difference_threshold') || '0')
-    ) * -1
+    ) * -1;
 
   const failOnNegativeDifference =
-    core.getInput('fail_on_negative_difference') === 'true' ? true : false
+    core.getInput('fail_on_negative_difference') === 'true' ? true : false;
 
   const onlyListChangedFiles =
-    core.getInput('only_list_changed_files') === 'true' ? true : false
+    core.getInput('only_list_changed_files') === 'true' ? true : false;
 
   const negativeDifferenceBy =
     core.getInput('negative_difference_by') === 'overall'
       ? 'overall'
-      : 'package'
+      : 'package';
 
-  const retentionString = core.getInput('retention_days') || undefined
+  const retentionString = core.getInput('retention_days') || undefined;
   const retentionDays =
     retentionString === undefined
       ? undefined
-      : Math.abs(parseInt(retentionString))
+      : Math.abs(parseInt(retentionString));
 
-  const artifactName = core.getInput('artifact_name') || 'coverage-%name%'
+  const artifactName = core.getInput('artifact_name') || 'coverage-%name%';
   if (!artifactName.includes('%name%')) {
-    throw new Error('artifact_name is missing %name% variable')
+    throw new Error('artifact_name is missing %name% variable');
   }
 
   const tempArtifactDownloadWorkflowNames = core.getInput(
     'artifact_download_workflow_names'
-  )
+  );
   const artifactDownloadWorkflowNames =
     tempArtifactDownloadWorkflowNames !== ''
-      ? tempArtifactDownloadWorkflowNames.split(',').map(n => n.trim())
-      : null
+      ? tempArtifactDownloadWorkflowNames.split(',').map((n) => n.trim())
+      : null;
 
   const withoutBaseCoverageTemplate =
     core.getInput('without_base_coverage_template') ||
-    `${__dirname}/../templates/without-base-coverage.hbs`
+    `${__dirname}/../templates/without-base-coverage.hbs`;
   const withBaseCoverageTemplate =
     core.getInput('with_base_coverage_template') ||
-    `${__dirname}/../templates/with-base-coverage.hbs`
+    `${__dirname}/../templates/with-base-coverage.hbs`;
 
   return {
     token,
@@ -404,15 +407,15 @@ export function getInputs(): Inputs {
     negativeDifferenceThreshold,
     onlyListChangedFiles,
     skipPackageCoverage
-  }
+  };
 }
 
 function instanceOfCobertura(object: any): object is Cobertura {
-  return 'coverage' in object && 'packages' in object.coverage
+  return 'coverage' in object && 'packages' in object.coverage;
 }
 
 function instanceOfClover(object: any): object is Clover {
-  return 'coverage' in object && 'project' in object.coverage
+  return 'coverage' in object && 'project' in object.coverage;
 }
 
 /**
@@ -421,8 +424,8 @@ function instanceOfClover(object: any): object is Clover {
  * @returns {string}
  */
 export function formatArtifactName(name: string): string {
-  const {artifactName} = getInputs()
-  return `${artifactName}`.replace('%name%', name).replace(/\//g, '-')
+  const { artifactName } = getInputs();
+  return `${artifactName}`.replace('%name%', name).replace(/\//g, '-');
 }
 
 /**
@@ -433,9 +436,9 @@ export function formatArtifactName(name: string): string {
  * @returns {boolean}
  */
 function inArray(needle: string, haystack: string[]): boolean {
-  const length = haystack.length
+  const length = haystack.length;
   for (let i = 0; i < length; i++) {
-    if (haystack[i] === needle) return true
+    if (haystack[i] === needle) return true;
   }
-  return false
+  return false;
 }

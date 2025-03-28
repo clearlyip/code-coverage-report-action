@@ -1,4 +1,4 @@
-import * as core from '@actions/core'
+import * as core from '@actions/core';
 import {
   checkFileExists,
   colorizePercentageByThreshold,
@@ -7,98 +7,98 @@ import {
   parseCoverage,
   roundPercentage,
   uploadArtifacts
-} from './utils'
+} from './utils';
 import {
   Coverage,
   HandlebarContext,
   HandlebarContextCoverage
-} from './interfaces'
-import {writeFile} from 'fs/promises'
-import path from 'path'
-import Handlebars from 'handlebars'
-import {readFile} from 'node:fs/promises'
+} from './interfaces';
+import { writeFile } from 'fs/promises';
+import path from 'path';
+import Handlebars from 'handlebars';
+import { readFile } from 'node:fs/promises';
 
 export async function run(): Promise<void> {
   try {
-    const filename = core.getInput('filename')
+    const filename = core.getInput('filename');
 
     if (!(await checkFileExists(filename))) {
-      core.setFailed(`Unable to access ${filename}`)
-      return
+      core.setFailed(`Unable to access ${filename}`);
+      return;
     }
 
-    core.debug(`filename: ${filename}`)
+    core.debug(`filename: ${filename}`);
 
     switch (process.env.GITHUB_EVENT_NAME) {
       case 'pull_request':
       case 'pull_request_target': {
-        const {GITHUB_BASE_REF = ''} = process.env
-        core.debug(`GITHUB_BASE_REF: ${GITHUB_BASE_REF}`)
-        const artifactPath = await downloadArtifacts(GITHUB_BASE_REF)
-        core.debug(`artifactPath: ${artifactPath}`)
+        const { GITHUB_BASE_REF = '' } = process.env;
+        core.debug(`GITHUB_BASE_REF: ${GITHUB_BASE_REF}`);
+        const artifactPath = await downloadArtifacts(GITHUB_BASE_REF);
+        core.debug(`artifactPath: ${artifactPath}`);
         const baseCoverage =
           artifactPath !== null
             ? await parseCoverage(path.join(artifactPath, filename))
-            : null
+            : null;
 
-        core.info(`Parsing coverage file: ${filename}...`)
-        const headCoverage = await parseCoverage(filename)
+        core.info(`Parsing coverage file: ${filename}...`);
+        const headCoverage = await parseCoverage(filename);
 
         if (headCoverage === null) {
-          core.setFailed(`Unable to process ${filename}`)
-          return
+          core.setFailed(`Unable to process ${filename}`);
+          return;
         }
 
-        core.info(`Complete`)
+        core.info(`Complete`);
 
         //Base doesn't have an artifact
         if (baseCoverage === null) {
           core.warning(
             `${GITHUB_BASE_REF} is missing ${filename}. See documentation on how to add this`
-          )
+          );
 
-          core.info(`Generating markdown from ${headCoverage.basePath}...`)
-          await generateMarkdown(headCoverage)
-          core.info(`Complete`)
+          core.info(`Generating markdown from ${headCoverage.basePath}...`);
+          await generateMarkdown(headCoverage);
+          core.info(`Complete`);
 
-          return
+          return;
         }
 
         core.info(
           `Generating markdown between ${headCoverage.basePath} and ${baseCoverage.basePath}...`
-        )
-        await generateMarkdown(headCoverage, baseCoverage)
-        core.info(`Complete`)
-        break
+        );
+        await generateMarkdown(headCoverage, baseCoverage);
+        core.info(`Complete`);
+        break;
       }
       case 'push':
       case 'schedule':
       case 'workflow_dispatch':
         {
-          const {GITHUB_REF_NAME = ''} = process.env
-          core.info(`Uploading ${filename}...`)
-          await uploadArtifacts([filename], GITHUB_REF_NAME)
+          const { GITHUB_REF_NAME = '' } = process.env;
+          core.info(`Uploading ${filename}...`);
+          await uploadArtifacts([filename], GITHUB_REF_NAME);
           core.debug(
             `GITHUB_REF_NAME: ${GITHUB_REF_NAME}, filename: ${filename}`
-          )
-          core.info(`Complete`)
+          );
+          core.info(`Complete`);
 
-          core.info(`Parsing coverage file: ${filename}...`)
-          const headCoverage = await parseCoverage(filename)
-          core.info(`Complete`)
+          core.info(`Parsing coverage file: ${filename}...`);
+          const headCoverage = await parseCoverage(filename);
+          core.info(`Complete`);
 
           if (headCoverage != null) {
-            core.info(`Generating markdown from ${headCoverage.basePath}...`)
-            await generateMarkdown(headCoverage)
-            core.info(`Complete`)
+            core.info(`Generating markdown from ${headCoverage.basePath}...`);
+            await generateMarkdown(headCoverage);
+            core.info(`Complete`);
           }
         }
-        break
+        break;
       default:
       //TODO: return something here
     }
   } catch (err: any) {
-    core.setFailed(err.message)
+    core.setFailed(err.message);
   }
 }
 
@@ -106,7 +106,7 @@ export async function generateMarkdown(
   headCoverage: Coverage,
   baseCoverage: Coverage | null = null
 ): Promise<void> {
-  const inputs = getInputs()
+  const inputs = getInputs();
   const {
     overallCoverageFailThreshold,
     failOnNegativeDifference,
@@ -120,15 +120,15 @@ export async function generateMarkdown(
     negativeDifferenceThreshold,
     onlyListChangedFiles,
     skipPackageCoverage
-  } = inputs
+  } = inputs;
   const overallDifferencePercentage = baseCoverage
     ? roundPercentage(headCoverage.coverage - baseCoverage.coverage)
-    : null
+    : null;
 
-  core.debug(`headCoverage: ${headCoverage.coverage}`)
-  core.debug(`baseCoverage: ${baseCoverage?.coverage}`)
-  core.debug(`overallDifferencePercentage: ${overallDifferencePercentage}`)
-  core.debug(`negativeDifferenceThreshold: ${negativeDifferenceThreshold}`)
+  core.debug(`headCoverage: ${headCoverage.coverage}`);
+  core.debug(`baseCoverage: ${baseCoverage?.coverage}`);
+  core.debug(`overallDifferencePercentage: ${overallDifferencePercentage}`);
+  core.debug(`negativeDifferenceThreshold: ${negativeDifferenceThreshold}`);
 
   if (
     failOnNegativeDifference &&
@@ -140,41 +140,41 @@ export async function generateMarkdown(
   ) {
     core.setFailed(
       `FAIL: Overall coverage of dropped ${overallDifferencePercentage}%, from ${baseCoverage.coverage}% to ${headCoverage.coverage}% which is below minimum threshold of ${negativeDifferenceThreshold}%`
-    )
+    );
   }
 
   if (overallCoverageFailThreshold > headCoverage.coverage) {
     core.setFailed(
       `FAIL: Overall coverage of ${headCoverage.coverage.toString()}% below minimum threshold of ${overallCoverageFailThreshold.toString()}%.`
-    )
+    );
   }
 
-  let color = 'grey'
+  let color = 'grey';
   if (headCoverage.coverage < fileCoverageErrorMin) {
-    color = 'red'
+    color = 'red';
   } else if (
     headCoverage.coverage > fileCoverageErrorMin &&
     headCoverage.coverage < fileCoverageWarningMax
   ) {
-    color = 'orange'
+    color = 'orange';
   } else if (headCoverage.coverage > fileCoverageWarningMax) {
-    color = 'green'
+    color = 'green';
   }
 
   const templatePath =
     baseCoverage === null
       ? withoutBaseCoverageTemplate
-      : withBaseCoverageTemplate
+      : withBaseCoverageTemplate;
 
   if (!(await checkFileExists(templatePath))) {
-    core.setFailed(`Unable to access template ${templatePath}`)
-    return
+    core.setFailed(`Unable to access template ${templatePath}`);
+    return;
   }
 
   const contents = await readFile(templatePath, {
     encoding: 'utf8'
-  })
-  const compiledTemplate = Handlebars.compile(contents)
+  });
+  const compiledTemplate = Handlebars.compile(contents);
 
   const context: HandlebarContext = {
     minimum_allowed_coverage: `${overallCoverageFailThreshold}%`,
@@ -184,22 +184,22 @@ export async function generateMarkdown(
       : Object.entries(headCoverage.files)
           .filter(([hash, file]) => {
             if (baseCoverage === null) {
-              return !onlyListChangedFiles
+              return !onlyListChangedFiles;
             }
 
             const baseCoveragePercentage = baseCoverage.files[hash]
               ? baseCoverage.files[hash].coverage
-              : 0
+              : 0;
 
             const differencePercentage = baseCoveragePercentage
               ? roundPercentage(file.coverage - baseCoveragePercentage)
-              : roundPercentage(file.coverage)
+              : roundPercentage(file.coverage);
 
             if (onlyListChangedFiles && differencePercentage === 0) {
-              return false
+              return false;
             }
 
-            return true
+            return true;
           })
           .map(([hash, file]) => {
             if (baseCoverage === null) {
@@ -210,16 +210,16 @@ export async function generateMarkdown(
                   fileCoverageWarningMax,
                   fileCoverageErrorMin
                 )}`
-              }
+              };
             }
 
             const baseCoveragePercentage = baseCoverage.files[hash]
               ? baseCoverage.files[hash].coverage
-              : 0
+              : 0;
 
             const differencePercentage = baseCoveragePercentage
               ? roundPercentage(file.coverage - baseCoveragePercentage)
-              : roundPercentage(file.coverage)
+              : roundPercentage(file.coverage);
 
             if (
               failOnNegativeDifference &&
@@ -230,7 +230,7 @@ export async function generateMarkdown(
             ) {
               core.setFailed(
                 `${headCoverage.files[hash].relative} coverage difference was ${differencePercentage}% which is below threshold of ${negativeDifferenceThreshold}%`
-              )
+              );
             }
 
             return {
@@ -246,35 +246,35 @@ export async function generateMarkdown(
                 fileCoverageErrorMin
               )}`,
               difference: colorizePercentageByThreshold(differencePercentage)
-            }
+            };
           })
           .sort((a, b) =>
             a.package < b.package ? -1 : a.package > b.package ? 1 : 0
           ),
     overall_coverage: addOverallRow(headCoverage, baseCoverage),
     inputs
-  }
+  };
 
-  context.show_package_coverage = !skipPackageCoverage
+  context.show_package_coverage = !skipPackageCoverage;
 
   if (badge) {
     context.coverage_badge = `https://img.shields.io/badge/${encodeURIComponent(
       `Code Coverage-${headCoverage.coverage}%-${color}`
-    )}?style=for-the-badge`
+    )}?style=for-the-badge`;
   }
 
-  const markdown = compiledTemplate(context)
+  const markdown = compiledTemplate(context);
 
-  const summary = core.summary.addRaw(markdown)
+  const summary = core.summary.addRaw(markdown);
 
   //If this is run after write the buffer is empty
-  core.info(`Writing results to ${markdownFilename}.md`)
-  await writeFile(`${markdownFilename}.md`, summary.stringify())
-  core.setOutput('file', `${markdownFilename}.md`)
-  core.setOutput('coverage', headCoverage.coverage)
+  core.info(`Writing results to ${markdownFilename}.md`);
+  await writeFile(`${markdownFilename}.md`, summary.stringify());
+  core.setOutput('file', `${markdownFilename}.md`);
+  core.setOutput('coverage', headCoverage.coverage);
 
-  core.info(`Writing job summary`)
-  await summary.write()
+  core.info(`Writing job summary`);
+  await summary.write();
 }
 
 /**
@@ -284,11 +284,11 @@ export function addOverallRow(
   headCoverage: Coverage,
   baseCoverage: Coverage | null = null
 ): HandlebarContextCoverage {
-  const {overallCoverageFailThreshold} = getInputs()
+  const { overallCoverageFailThreshold } = getInputs();
 
   const overallDifferencePercentage = baseCoverage
     ? roundPercentage(headCoverage.coverage - baseCoverage.coverage)
-    : null
+    : null;
 
   if (baseCoverage === null) {
     return {
@@ -298,7 +298,7 @@ export function addOverallRow(
         0,
         overallCoverageFailThreshold
       )}`
-    }
+    };
   }
 
   return {
@@ -314,5 +314,5 @@ export function addOverallRow(
       overallCoverageFailThreshold
     )}`,
     difference: `${colorizePercentageByThreshold(overallDifferencePercentage)}`
-  }
+  };
 }

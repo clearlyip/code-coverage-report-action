@@ -1,43 +1,43 @@
 export interface Clover {
-  '?xml': XML
-  coverage: Coverage
+  '?xml': XML;
+  coverage: Coverage;
 }
 
 export interface XML {
-  '@_version': string
-  '@_encoding': string
+  '@_version': string;
+  '@_encoding': string;
 }
 
 export interface Coverage {
-  project: Project
-  '@_generated': string
+  project: Project;
+  '@_generated': string;
 }
 
 export interface Project {
-  file?: File[]
-  package?: Package[]
-  metrics: FileMetrics
-  '@_timestamp': string
+  file?: File[];
+  package?: Package[];
+  metrics: FileMetrics;
+  '@_timestamp': string;
 }
 
 export interface File {
-  class?: Class
-  line?: Line[]
-  metrics: FileMetrics
-  '@_name': string
-  '@_path'?: string
+  class?: Class;
+  line?: Line[];
+  metrics: FileMetrics;
+  '@_name': string;
+  '@_path'?: string;
 }
 
 export interface Package {
-  '@_name': string
-  metrics: FileMetrics
-  file?: File[]
+  '@_name': string;
+  metrics: FileMetrics;
+  file?: File[];
 }
 
 export interface Class {
-  metrics: ClassMetrics
-  '@_name': string
-  '@_namespace': Namespace
+  metrics: ClassMetrics;
+  '@_name': string;
+  '@_namespace': Namespace;
 }
 
 export enum Namespace {
@@ -45,25 +45,25 @@ export enum Namespace {
 }
 
 export interface ClassMetrics {
-  '@_complexity': string
-  '@_methods': string
-  '@_coveredmethods': string
-  '@_conditionals': string
-  '@_coveredconditionals': string
-  '@_statements': string
-  '@_coveredstatements': string
-  '@_elements': string
-  '@_coveredelements': string
+  '@_complexity': string;
+  '@_methods': string;
+  '@_coveredmethods': string;
+  '@_conditionals': string;
+  '@_coveredconditionals': string;
+  '@_statements': string;
+  '@_coveredstatements': string;
+  '@_elements': string;
+  '@_coveredelements': string;
 }
 
 export interface Line {
-  '@_num': string
-  '@_type': Type
-  '@_name'?: string
-  '@_visibility'?: Visibility
-  '@_complexity'?: string
-  '@_crap'?: string
-  '@_count': string
+  '@_num': string;
+  '@_type': Type;
+  '@_name'?: string;
+  '@_visibility'?: Visibility;
+  '@_complexity'?: string;
+  '@_crap'?: string;
+  '@_count': string;
 }
 
 export enum Type {
@@ -78,16 +78,16 @@ export enum Visibility {
 }
 
 export interface FileMetrics {
-  '@_loc': string
-  '@_ncloc': string
-  '@_classes': string
-  '@_methods': string
-  '@_coveredmethods': string
-  '@_conditionals': string
-  '@_coveredconditionals': string
-  '@_statements': string
-  '@_coveredstatements': string
-  '@_elements': string
-  '@_coveredelements': string
-  '@_files'?: string
+  '@_loc': string;
+  '@_ncloc': string;
+  '@_classes': string;
+  '@_methods': string;
+  '@_coveredmethods': string;
+  '@_conditionals': string;
+  '@_coveredconditionals': string;
+  '@_statements': string;
+  '@_coveredstatements': string;
+  '@_elements': string;
+  '@_coveredelements': string;
+  '@_files'?: string;
 }

@@ -1,13 +1,13 @@
 /* eslint-disable import/no-unresolved */
-import jest from 'eslint-plugin-jest'
-import globals from 'globals'
-import github from 'eslint-plugin-github'
+import jest from 'eslint-plugin-jest';
+import globals from 'globals';
+import github from 'eslint-plugin-github';
 
-import prettier from 'eslint-config-prettier'
-import prettierPlugin from 'eslint-plugin-prettier'
+import prettier from 'eslint-config-prettier';
+import prettierPlugin from 'eslint-plugin-prettier';
 
-import typescriptParser from '@typescript-eslint/parser'
-import typescriptEslint from '@typescript-eslint/eslint-plugin'
+import typescriptParser from '@typescript-eslint/parser';
+import typescriptEslint from '@typescript-eslint/eslint-plugin';
 
 export default [
   github.getFlatConfigs().recommended,
@@ -68,4 +68,4 @@ export default [
     },
     rules: {}
   }
-]
+];
