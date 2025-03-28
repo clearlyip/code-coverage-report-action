@@ -97,8 +97,6 @@ export async function run(): Promise<void> {
       default:
       //TODO: return something here
     }
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (err: any) {
     core.setFailed(err.message)
   }

@@ -22,8 +22,9 @@ export async function checkFileExists(filename: string): Promise<boolean> {
   try {
     await access(filename, fsConstants.F_OK)
     return true
-    // eslint-disable-next-line no-empty
-  } catch (e) {}
+  } catch (_e) {
+    //
+  }
   return false
 }
 
@@ -406,12 +407,10 @@ export function getInputs(): Inputs {
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function instanceOfCobertura(object: any): object is Cobertura {
   return 'coverage' in object && 'packages' in object.coverage
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function instanceOfClover(object: any): object is Clover {
   return 'coverage' in object && 'project' in object.coverage
 }
