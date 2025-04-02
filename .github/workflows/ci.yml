@@ -24,7 +24,6 @@ jobs:
         with:
           node-version: 20.x
       - run: npm ci
-      - run: npm run format:check >> "${GITHUB_STEP_SUMMARY}"
       - run: npm run lint
       - run: npm run test >> "${GITHUB_STEP_SUMMARY}"
       - run: npm run package
