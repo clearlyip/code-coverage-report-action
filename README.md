@@ -1,8 +1,8 @@
 # Code Coverage Report
 
-[![ci](https://github.com/tm1000/code-coverage-report-action/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/tm1000/code-coverage-report-action/actions/workflows/ci.yml)
+[![ci](https://github.com/clearlyip/code-coverage-report-action/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/clearlyip/code-coverage-report-action/actions/workflows/ci.yml)
 
-This action looks for a defined `clover` or `cobertura` file and parses that to give you feedback not only about current coverage but also coverage against the base a pull request might be merging into. It uses Github's workflow artifacts to store the raw coverage files for later comparison and it generates a markdown file that is appended to the [job summary](https://github.com/tm1000/code-coverage-report-action/actions/runs/3109427303) and that can also be used in something like [marocchino/sticky-pull-request-comment](https://github.com/marocchino/sticky-pull-request-comment). (See our workflows for examples)
+This action looks for a defined `clover` or `cobertura` file and parses that to give you feedback not only about current coverage but also coverage against the base a pull request might be merging into. It uses Github's workflow artifacts to store the raw coverage files for later comparison and it generates a markdown file that is appended to the [job summary](https://github.com/clearlyip/code-coverage-report-action/actions/runs/3109427303) and that can also be used in something like [marocchino/sticky-pull-request-comment](https://github.com/marocchino/sticky-pull-request-comment). (See our workflows for examples)
 
 ![Example Comment](/images/image1.png?raw=true 'Example Comment')
 
