@@ -14,15 +14,15 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/tm1000/code-coverage-report-action.git"
+    "url": "git+https://github.com/clearlyip/code-coverage-report-action.git"
   },
   "keywords": [],
   "author": "",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/tm1000/code-coverage-report-action/issues"
+    "url": "https://github.com/clearlyip/code-coverage-report-action/issues"
   },
-  "homepage": "https://github.com/tm1000/code-coverage-report-action#readme",
+  "homepage": "https://github.com/clearlyip/code-coverage-report-action#readme",
   "dependencies": {
     "@actions/artifact": "^2.3.2",
     "@actions/core": "^1.11.1",
