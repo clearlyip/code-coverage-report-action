@@ -1,8 +1,8 @@
-name: 'cron'
+name: "cron"
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 0 1 * *'
+    - cron: "0 0 1 * *"
 
 jobs:
   cron:
@@ -11,11 +11,11 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20.x
+          node-version: 22.x
       - run: npm ci
       - run: npm run test >> "${GITHUB_STEP_SUMMARY}"
       - uses: ./
         id: code_coverage_report_action
         with:
           badge: true
-          filename: 'coverage/clover.xml'
+          filename: "coverage/clover.xml"

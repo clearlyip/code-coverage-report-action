@@ -12,10 +12,13 @@ export default async function parse(clover: Clover): Promise<Coverage> {
 
   let files: Files = {};
   if (clover.coverage.project.package) {
-    files = await parsePackages(clover.coverage.project.package);
+    files = {
+      ...files,
+      ...(await parsePackages(clover.coverage.project.package))
+    };
   }
   if (clover.coverage.project.file) {
-    files = await parseFiles(clover.coverage.project.file);
+    files = { ...files, ...(await parseFiles(clover.coverage.project.file)) };
   }
 
   const fileList = Object.values(files).map((file) => file.absolute);
@@ -46,7 +49,6 @@ async function parsePackages(packages: Package[]): Promise<Files> {
       continue;
     }
     const files = await parseFiles(p.file);
-
     allFiles = { ...allFiles, ...files };
   }
   return allFiles;
