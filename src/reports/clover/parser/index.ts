@@ -57,10 +57,13 @@ async function parsePackages(packages: Package[]): Promise<Files> {
 /**
  * Process into an object
  *
- * @param {File[]} files
+ * @param {File[]|undefined|null} files
  * @returns {Promise<Files>}
  */
-async function parseFiles(files: File[]): Promise<Files> {
+async function parseFiles(files: File[] | undefined | null): Promise<Files> {
+  if (!files) {
+    return {};
+  }
   return files.reduce(
     (
       previous,
