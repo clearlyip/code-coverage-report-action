@@ -61,22 +61,21 @@ async function parsePackages(packages: Package[]): Promise<Files> {
  * @returns {Promise<Files>}
  */
 async function parseFiles(files: File[] | undefined | null): Promise<Files> {
-  if (!files) {
-    return {};
-  }
-  return files.reduce(
-    (
-      previous,
-      { '@_name': name, metrics: fileMetrics, '@_path': path }: File
-    ) => ({
-      ...previous,
-      [createHash(path ?? name)]: {
-        relative: path ?? name,
-        absolute: path ?? name,
-        coverage: processCoverageMetrics(fileMetrics)
-      }
-    }),
-    {}
+  return (
+    files?.reduce(
+      (
+        previous,
+        { '@_name': name, metrics: fileMetrics, '@_path': path }: File
+      ) => ({
+        ...previous,
+        [createHash(path ?? name)]: {
+          relative: path ?? name,
+          absolute: path ?? name,
+          coverage: processCoverageMetrics(fileMetrics)
+        }
+      }),
+      {}
+    ) ?? {}
   );
 }
 
