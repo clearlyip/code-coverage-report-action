@@ -174,6 +174,11 @@ test('parse empty cobertura file', async () => {
   expect(ret).toMatchSnapshot()
 })
 
+test('parse cobertura project with single file', async () => {
+  const ret = await parseCoverage(__dirname + '/fixtures/cobertura-project-single-file.xml')
+  expect(ret).toMatchSnapshot()
+})
+
 test('parse cobertura file with empty packages', async () => {
   const ret = await parseCoverage(__dirname + '/fixtures/cobertura-empty-packages.xml')
   expect(ret).toMatchSnapshot()

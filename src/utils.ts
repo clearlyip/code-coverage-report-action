@@ -50,6 +50,7 @@ export async function parseXML<T>(filename: string): Promise<T | null> {
         return false;
       }
       return inArray(jpath, [
+        'coverage.project.file',
         'coverage.project.package',
         'coverage.project.package.file',
         'coverage.packages.package',

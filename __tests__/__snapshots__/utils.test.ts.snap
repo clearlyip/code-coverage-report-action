@@ -1,4 +1,4 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
 
 exports[`parse cobertura file with empty classes 1`] = `
 {
@@ -45,6 +45,21 @@ exports[`parse cobertura file with empty packages 1`] = `
   "coverage": 0,
   "files": {},
   "timestamp": 1716003335,
+}
+`;
+
+exports[`parse cobertura project with single file 1`] = `
+{
+  "basePath": "/foo.php",
+  "coverage": 2.65,
+  "files": {
+    "83e0f134b069618626405250ccb3fd4adcc0fdfc7714b387d4aa4f30862f75a7": {
+      "absolute": "/foo.php",
+      "coverage": 0,
+      "relative": "/foo.php",
+    },
+  },
+  "timestamp": 1752615692,
 }
 `;
 
