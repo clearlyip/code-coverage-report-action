@@ -75,7 +75,7 @@ export async function run(): Promise<void> {
       case 'schedule':
       case 'workflow_dispatch':
         {
-          const { GITHUB_REF_NAME = '' } = process.env;
+          const { GITHUB_REF_NAME = '', GITHUB_WORKFLOW = '' } = process.env;
           core.info(`Uploading ${filename}...`);
           await uploadArtifacts([filename], GITHUB_REF_NAME);
           core.debug(
@@ -86,6 +86,8 @@ export async function run(): Promise<void> {
           core.info(`Parsing coverage file: ${filename}...`);
           const headCoverage = await parseCoverage(filename);
           core.info(`Complete`);
+
+          core.info(`Workflow Name: ${GITHUB_WORKFLOW}`);
 
           if (headCoverage != null) {
             core.info(`Generating markdown from ${headCoverage.basePath}...`);
