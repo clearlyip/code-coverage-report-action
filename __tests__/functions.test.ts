@@ -1,4 +1,8 @@
-import {addOverallRow, generateMarkdown} from '../src/functions'
+import {
+  addOverallRow,
+  aggregateCoverageByTopDir,
+  generateMarkdown
+} from '../src/functions'
 import {
   expect,
   test,
@@ -74,6 +78,73 @@ test('add overall row with base coverage', async () => {
     new_coverage: '🟢 50.51%',
     difference: '⚪ 0%'
   })
+})
+
+test('aggregateCoverageByTopDir without base: groups by first path segment', async () => {
+  const coverage = await loadJSONFixture('clover-parsed.json')
+  const out = aggregateCoverageByTopDir(coverage, null, 75, 50)
+
+  expect(out).toHaveLength(2)
+  expect(out.map((r) => r.package).sort()).toEqual(['(root)', 'reports/'])
+  expect(out.find((r) => r.package === '(root)')?.base_coverage).toContain('%')
+  expect(out.find((r) => r.package === 'reports/')?.base_coverage).toContain('%')
+})
+
+test('aggregateCoverageByTopDir with base: includes difference', async () => {
+  const coverage = await loadJSONFixture('clover-parsed.json')
+  const out = aggregateCoverageByTopDir(coverage, coverage, 75, 50)
+
+  expect(out).toHaveLength(2)
+  const rootRow = out.find((r) => r.package === '(root)')
+  expect(rootRow?.base_coverage).toBeDefined()
+  expect(rootRow?.new_coverage).toBeDefined()
+  expect(rootRow?.difference).toBeDefined()
+})
+
+test('aggregateCoverageByTopDir with Cobertura data uses line-weighted aggregation', async () => {
+  const coverage = await loadJSONFixture('cobertura-parsed.json')
+  const out = aggregateCoverageByTopDir(coverage, null, 75, 50)
+
+  expect(out.length).toBeGreaterThan(0)
+  const reportsRow = out.find((r) => r.package === 'reports/')
+  expect(reportsRow).toBeDefined()
+  expect(reportsRow?.base_coverage).toBeDefined()
+  const rootRow = out.find((r) => r.package === '(root)')
+  expect(rootRow).toBeDefined()
+})
+
+test('Generate markdown with base coverage and show_coverage_by_top_dir shows top-dir table and threshold', async () => {
+  process.env.INPUT_SHOW_COVERAGE_BY_TOP_DIR = 'true'
+  process.env.INPUT_NEGATIVE_DIFFERENCE_THRESHOLD = '5'
+  const coverage = await loadJSONFixture('clover-parsed.json')
+  await generateMarkdown(coverage, coverage)
+  const summary = await getGithubStepSummary()
+  expect(summary).toContain('Coverage by top-level directory')
+  expect(summary).toContain('_Maximum allowed coverage drop is_')
+  delete process.env.INPUT_SHOW_COVERAGE_BY_TOP_DIR
+  delete process.env.INPUT_NEGATIVE_DIFFERENCE_THRESHOLD
+})
+
+test('Generate markdown without coverage by top dir when show_coverage_by_top_dir is false (default)', async () => {
+  process.env.INPUT_SHOW_COVERAGE_BY_TOP_DIR = 'false'
+  const coverage = await loadJSONFixture('clover-parsed.json')
+  await generateMarkdown(coverage)
+  const summary = await getGithubStepSummary()
+  expect(summary).not.toContain('Coverage by top-level directory')
+  expect(summary).toContain('main.ts')
+  delete process.env.INPUT_SHOW_COVERAGE_BY_TOP_DIR
+})
+
+test('Generate markdown with coverage by top dir only when show_coverage_by_top_dir is true', async () => {
+  process.env.INPUT_SHOW_COVERAGE_BY_TOP_DIR = 'true'
+  const coverage = await loadJSONFixture('clover-parsed.json')
+  await generateMarkdown(coverage)
+  const summary = await getGithubStepSummary()
+  expect(summary).toContain('Coverage by top-level directory')
+  expect(summary).toContain('(root)')
+  expect(summary).toContain('reports/')
+  expect(summary).not.toContain('main.ts')
+  delete process.env.INPUT_SHOW_COVERAGE_BY_TOP_DIR
 })
 
 test('Generate Base Clover Markdown', async () => {

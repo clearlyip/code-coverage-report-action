@@ -148,11 +148,22 @@ test('getInputs', () => {
     negativeDifferenceThreshold: -0,
     retention: undefined,
     skipPackageCoverage: false,
+    showCoverageByTopDir: false,
     onlyListChangedFiles: false,
     //This is a cheat
     withBaseCoverageTemplate: f.withBaseCoverageTemplate,
     withoutBaseCoverageTemplate: f.withoutBaseCoverageTemplate
   })
+})
+
+test('getInputs with show_coverage_by_top_dir true', () => {
+  process.env.INPUT_GITHUB_TOKEN = 'token'
+  process.env.INPUT_FILENAME = 'filename.xml'
+  process.env.INPUT_SHOW_COVERAGE_BY_TOP_DIR = 'true'
+
+  const f = getInputs()
+  expect(f.showCoverageByTopDir).toBe(true)
+  delete process.env.INPUT_SHOW_COVERAGE_BY_TOP_DIR
 })
 
 test('parse clover into file format', async () => {

@@ -4,6 +4,7 @@
 ![Code Coverage]({{{coverage_badge}}})
 
 {{/if}}
+{{#unless inputs.showCoverageByTopDir}}
 | Package | Base Coverage | New Coverage | Difference |
 | ------- | ------------- | ------------ | ---------- |
 {{#if show_package_coverage}}
@@ -15,4 +16,20 @@
 | **{{package}}** | **{{base_coverage}}** | **{{new_coverage}}** | **{{difference}}** |
 {{/with}}
 
+{{/unless}}
+{{#if inputs.showCoverageByTopDir}}
+### Coverage by top-level directory
+| Package | Base Coverage | New Coverage | Difference |
+| ------- | ------------- | ------------ | ---------- |
+{{#each coverage_by_top_dir}}
+| {{package}} | {{base_coverage}} | {{new_coverage}} | {{difference}} |
+{{/each}}
+{{#with overall_coverage}}
+| **{{package}}** | **{{base_coverage}}** | **{{new_coverage}}** | **{{difference}}** |
+{{/with}}
+
+{{/if}}
 _Minimum allowed coverage is_ `{{minimum_allowed_coverage}}`_, this run produced_ `{{new_coverage}}`
+{{#if negative_difference_threshold}}
+_Maximum allowed coverage drop is_ `{{negative_difference_threshold}}`
+{{/if}}

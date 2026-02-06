@@ -31,6 +31,7 @@ exports[`Dont Fail on negative difference if negative_difference_threshold is se
 | **Overall Coverage** | **🟢 50.51%** | **🟢 49%** | **🔴 -1.51%** |
 
 _Minimum allowed coverage is_ \`0%\`_, this run produced_ \`49%\`
+_Maximum allowed coverage drop is_ \`-10%\`
 "
 `;
 
@@ -66,6 +67,7 @@ exports[`Fail if negative_difference_threshold is set and exceeded 2`] = `
 | **Overall Coverage** | **🟢 50.51%** | **🟢 49%** | **🔴 -1.51%** |
 
 _Minimum allowed coverage is_ \`0%\`_, this run produced_ \`49%\`
+_Maximum allowed coverage drop is_ \`-1%\`
 "
 `;
 
@@ -195,7 +197,7 @@ exports[`Generate Base Cobertura Markdown 2`] = `
 | ------- | ------------- |
 | main.ts | 🔴 0% |
 | reports/clover/index.ts | 🟢 100% |
-| reports/clover/parser/index.ts | 🟢 93.93% |
+| reports/clover/parser/index.ts | 🟢 93.94% |
 | reports/clover/types/index.ts | 🟢 100% |
 | reports/cobertura/index.ts | 🟢 100% |
 | reports/cobertura/parser/index.ts | 🔴 20% |
@@ -263,7 +265,7 @@ exports[`Generate Diffed Cobertura Markdown 2`] = `
 | ------- | ------------- | ------------ | ---------- |
 | main.ts | 🔴 0% | 🔴 0% | ⚪ 0% |
 | reports/clover/index.ts | 🟢 100% | 🟢 100% | ⚪ 0% |
-| reports/clover/parser/index.ts | 🟢 93.93% | 🟢 93.93% | ⚪ 0% |
+| reports/clover/parser/index.ts | 🟢 93.94% | 🟢 93.94% | ⚪ 0% |
 | reports/clover/types/index.ts | 🟢 100% | 🟢 100% | ⚪ 0% |
 | reports/cobertura/index.ts | 🟢 100% | 🟢 100% | ⚪ 0% |
 | reports/cobertura/parser/index.ts | 🔴 20% | 🔴 20% | ⚪ 0% |

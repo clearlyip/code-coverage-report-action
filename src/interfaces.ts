@@ -9,6 +9,8 @@ export interface CoverageFile {
   relative: string;
   absolute: string;
   coverage: number;
+  lines_covered?: number;
+  lines_valid?: number;
 }
 
 export interface Inputs {
@@ -29,6 +31,7 @@ export interface Inputs {
   negativeDifferenceThreshold: number;
   onlyListChangedFiles: boolean;
   skipPackageCoverage: boolean;
+  showCoverageByTopDir: boolean;
 }
 
 export interface Files {
@@ -47,7 +50,9 @@ export interface HandlebarContext {
   show_package_coverage?: boolean;
   minimum_allowed_coverage?: string;
   new_coverage?: string;
+  negative_difference_threshold?: string | null;
   coverage: HandlebarContextCoverage[];
   overall_coverage: HandlebarContextCoverage;
+  coverage_by_top_dir?: HandlebarContextCoverage[];
   inputs: Inputs;
 }
