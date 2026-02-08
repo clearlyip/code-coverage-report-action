@@ -28,7 +28,7 @@ exports[`Dont Fail on negative difference if negative_difference_threshold is se
 | reports/cobertura/parser/index.ts | 🔴 13.33% | 🔴 13.33% | ⚪ 0% |
 | reports/cobertura/types/index.ts | 🟢 100% | 🟢 100% | ⚪ 0% |
 | utils.ts | 🟠 70.94% | 🟠 69% | 🔴 -1.94% |
-| **Overall Coverage** | **🟢 50.51%** | **🟢 49%** | **-1.51%** |
+| **Overall Coverage** | **🟢 50.51%** | **🟢 49%** | **🔴 -1.51%** |
 
 _Minimum allowed coverage is_ \`0%\`_, this run produced_ \`49%\`
 _Maximum allowed coverage difference is_ \`-10%\`_, this run produced_ \`-1.51%\`
@@ -64,7 +64,7 @@ exports[`Fail if negative_difference_threshold is set and exceeded 2`] = `
 | reports/cobertura/parser/index.ts | 🔴 13.33% | 🔴 13.33% | ⚪ 0% |
 | reports/cobertura/types/index.ts | 🟢 100% | 🟢 100% | ⚪ 0% |
 | utils.ts | 🟠 70.94% | 🟠 69% | 🔴 -1.94% |
-| **Overall Coverage** | **🟢 50.51%** | **🟢 49%** | **-1.51%** |
+| **Overall Coverage** | **🟢 50.51%** | **🟢 49%** | **🔴 -1.51%** |
 
 _Minimum allowed coverage is_ \`0%\`_, this run produced_ \`49%\`
 _Maximum allowed coverage difference is_ \`-1%\`_, this run produced_ \`-1.51%\`
@@ -100,7 +100,7 @@ exports[`Fail if overall coverage is below fail threshold 2`] = `
 | reports/cobertura/parser/index.ts | 🔴 13.33% | 🔴 13.33% | ⚪ 0% |
 | reports/cobertura/types/index.ts | 🟢 100% | 🟢 100% | ⚪ 0% |
 | utils.ts | 🟠 70.94% | 🟠 70.94% | ⚪ 0% |
-| **Overall Coverage** | **🔴 50.51%** | **🔴 50.51%** | **0%** |
+| **Overall Coverage** | **🔴 50.51%** | **🔴 50.51%** | **⚪ 0%** |
 
 _Minimum allowed coverage is_ \`99%\`_, this run produced_ \`50.51%\`
 "
@@ -135,7 +135,7 @@ exports[`Fail on negative difference 2`] = `
 | reports/cobertura/parser/index.ts | 🔴 13.33% | 🔴 13.33% | ⚪ 0% |
 | reports/cobertura/types/index.ts | 🟢 100% | 🟢 100% | ⚪ 0% |
 | utils.ts | 🟠 70.94% | 🟠 69% | 🔴 -1.94% |
-| **Overall Coverage** | **🟢 50.51%** | **🟢 49%** | **-1.51%** |
+| **Overall Coverage** | **🟢 50.51%** | **🟢 49%** | **🔴 -1.51%** |
 
 _Minimum allowed coverage is_ \`0%\`_, this run produced_ \`49%\`
 "
@@ -237,7 +237,7 @@ exports[`Generate Diffed Clover Markdown 2`] = `
 | reports/cobertura/parser/index.ts | 🔴 13.33% | 🔴 13.33% | ⚪ 0% |
 | reports/cobertura/types/index.ts | 🟢 100% | 🟢 100% | ⚪ 0% |
 | utils.ts | 🟠 70.94% | 🟠 70.94% | ⚪ 0% |
-| **Overall Coverage** | **🟢 50.51%** | **🟢 50.51%** | **0%** |
+| **Overall Coverage** | **🟢 50.51%** | **🟢 50.51%** | **⚪ 0%** |
 
 _Minimum allowed coverage is_ \`0%\`_, this run produced_ \`50.51%\`
 "
@@ -271,7 +271,7 @@ exports[`Generate Diffed Cobertura Markdown 2`] = `
 | reports/cobertura/parser/index.ts | 🔴 20% | 🔴 20% | ⚪ 0% |
 | reports/cobertura/types/index.ts | 🟢 100% | 🟢 100% | ⚪ 0% |
 | utils.ts | 🟠 67.36% | 🟠 67.36% | ⚪ 0% |
-| **Overall Coverage** | **🟢 49.83%** | **🟢 49.83%** | **0%** |
+| **Overall Coverage** | **🟢 49.83%** | **🟢 49.83%** | **⚪ 0%** |
 
 _Minimum allowed coverage is_ \`0%\`_, this run produced_ \`49.83%\`
 "
@@ -298,7 +298,7 @@ exports[`Only list changed files 2`] = `
 | Package | Base Coverage | New Coverage | Difference |
 | ------- | ------------- | ------------ | ---------- |
 | utils.ts | 🟠 70.94% | 🟠 69% | 🔴 -1.94% |
-| **Overall Coverage** | **🟢 50.51%** | **🟢 49%** | **-1.51%** |
+| **Overall Coverage** | **🟢 50.51%** | **🟢 49%** | **🔴 -1.51%** |
 
 _Minimum allowed coverage is_ \`0%\`_, this run produced_ \`49%\`
 "

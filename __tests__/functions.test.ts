@@ -76,7 +76,8 @@ test('add overall row with base coverage', async () => {
     package: 'Overall Coverage',
     base_coverage: '🟢 50.51%',
     new_coverage: '🟢 50.51%',
-    difference: '0%'
+    difference: '⚪ 0%',
+    difference_plain: '0%'
   })
 })
 

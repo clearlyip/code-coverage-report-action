@@ -446,9 +446,10 @@ export function addOverallRow(
       0,
       overallCoverageFailThreshold
     )}`,
-    difference:
+    difference: `${colorizePercentageByThreshold(overallDifferencePercentage)}`,
+    difference_plain:
       overallDifferencePercentage != null
         ? `${overallDifferencePercentage}%`
-        : ''
+        : undefined
   };
 }

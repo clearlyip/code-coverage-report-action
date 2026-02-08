@@ -43,6 +43,8 @@ export interface HandlebarContextCoverage {
   base_coverage: string;
   new_coverage?: string;
   difference?: string;
+  /** Plain percentage for summary line only (no emoji), e.g. "0%" or "-1.51%" */
+  difference_plain?: string;
 }
 
 export interface HandlebarContext {
