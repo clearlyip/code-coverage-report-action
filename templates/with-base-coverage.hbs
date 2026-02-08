@@ -31,5 +31,5 @@
 {{/if}}
 _Minimum allowed coverage is_ `{{minimum_allowed_coverage}}`_, this run produced_ `{{new_coverage}}`
 {{#if negative_difference_threshold}}
-_Maximum allowed coverage difference is_ `{{negative_difference_threshold}}`{{#if overall_coverage.difference_plain}}_, this run produced_ `{{overall_coverage.difference_plain}}`{{/if}}
+_Maximum allowed coverage difference is_ `{{negative_difference_threshold}}`{{#if overall_coverage.difference}}_, this run produced_ `{{overall_coverage.difference_plain}}`{{/if}}
 {{/if}}
