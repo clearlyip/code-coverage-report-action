@@ -76,7 +76,7 @@ test('add overall row with base coverage', async () => {
     package: 'Overall Coverage',
     base_coverage: '🟢 50.51%',
     new_coverage: '🟢 50.51%',
-    difference: '⚪ 0%'
+    difference: '0%'
   })
 })
 
@@ -120,7 +120,7 @@ test('Generate markdown with base coverage and show_coverage_by_top_dir shows to
   await generateMarkdown(coverage, coverage)
   const summary = await getGithubStepSummary()
   expect(summary).toContain('Coverage by top-level directory')
-  expect(summary).toContain('_Maximum allowed coverage drop is_')
+  expect(summary).toContain('_Maximum allowed coverage difference is_')
   delete process.env.INPUT_SHOW_COVERAGE_BY_TOP_DIR
   delete process.env.INPUT_NEGATIVE_DIFFERENCE_THRESHOLD
 })

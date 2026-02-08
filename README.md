@@ -93,7 +93,7 @@ The generated markdown includes:
 
 - Per-file coverage (and when base coverage exists, base vs new vs difference).
 - **Overall coverage** row and the line: _Minimum allowed coverage is_ `x%`, _this run produced_ `y%`.
-- When **negative_difference_threshold** is set (non-zero), a line: _Maximum allowed coverage drop is_ `-X%`.
+- When **negative_difference_threshold** is set (non-zero), a line: _Maximum allowed coverage difference is_ `-X%`.
 - Report mode (either/or, controlled by `show_coverage_by_top_dir`): **`false` (default)** = normal per-file coverage table; **`true`** = per top-level directory only (one table aggregated by first path segment, e.g. `admin_pages/`, `reports/`). For Cobertura the directory view is line-weighted; for Clover it is the average of file percentages. When using the top-level directory view, only directories that appear in the current (head) run are listed; directories that existed only in the base run are not shown.
 
 ### Outputs
