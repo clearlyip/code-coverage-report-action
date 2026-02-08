@@ -41,13 +41,10 @@ function mergeFileEntry(
   existing: CoverageFile,
   incoming: CoverageFile
 ): CoverageFile {
-  const covered =
-    (existing.lines_covered ?? 0) + (incoming.lines_covered ?? 0);
+  const covered = (existing.lines_covered ?? 0) + (incoming.lines_covered ?? 0);
   const valid = (existing.lines_valid ?? 0) + (incoming.lines_valid ?? 0);
   const coverage =
-    valid > 0
-      ? roundPercentage((covered / valid) * 100)
-      : incoming.coverage;
+    valid > 0 ? roundPercentage((covered / valid) * 100) : incoming.coverage;
   return {
     relative: existing.relative,
     absolute: existing.absolute,
@@ -58,7 +55,7 @@ function mergeFileEntry(
 }
 
 async function parsePackages(packages?: Package[]): Promise<Files> {
-  let allFiles: Files = {};
+  const allFiles: Files = {};
   for await (const p of packages || []) {
     if (!p.classes) {
       continue;
@@ -79,7 +76,10 @@ async function parsePackages(packages?: Package[]): Promise<Files> {
 /**
  * Count lines_covered and lines_valid from a class's lines array
  */
-function countLines(lines: Lines): { lines_covered: number; lines_valid: number } {
+function countLines(lines: Lines): {
+  lines_covered: number;
+  lines_valid: number;
+} {
   const lineArray = lines?.line;
   if (!lineArray) {
     return { lines_covered: 0, lines_valid: 0 };
@@ -103,7 +103,12 @@ function countLines(lines: Lines): { lines_covered: number; lines_valid: number 
 async function parseClasses(classes?: Class[]): Promise<Files> {
   const byPath = new Map<
     string,
-    { relative: string; absolute: string; lines_covered: number; lines_valid: number }
+    {
+      relative: string;
+      absolute: string;
+      lines_covered: number;
+      lines_valid: number;
+    }
   >();
 
   for (const cls of classes || []) {
@@ -127,7 +132,10 @@ async function parseClasses(classes?: Class[]): Promise<Files> {
   }
 
   const result: Files = {};
-  for (const [path, { relative, absolute, lines_covered, lines_valid }] of byPath) {
+  for (const [
+    path,
+    { relative, absolute, lines_covered, lines_valid }
+  ] of byPath) {
     const coverage =
       lines_valid > 0
         ? roundPercentage((lines_covered / lines_valid) * 100)

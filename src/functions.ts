@@ -271,8 +271,7 @@ export async function generateMarkdown(
     inputs
   };
 
-  context.show_package_coverage =
-    !skipPackageCoverage && !showCoverageByTopDir;
+  context.show_package_coverage = !skipPackageCoverage && !showCoverageByTopDir;
 
   if (badge) {
     context.coverage_badge = `https://img.shields.io/badge/${encodeURIComponent(
@@ -383,10 +382,8 @@ export function aggregateCoverageByTopDir(
         ? roundPercentage((baseCovered / baseValid) * 100)
         : base.length > 0
           ? roundPercentage(
-              base.reduce(
-                (s: number, f: CoverageFile) => s + f.coverage,
-                0
-              ) / base.length
+              base.reduce((s: number, f: CoverageFile) => s + f.coverage, 0) /
+                base.length
             )
           : 0;
     const diffPct = roundPercentage(headPct - basePct);
@@ -405,8 +402,9 @@ export function aggregateCoverageByTopDir(
       difference: colorizePercentageByThreshold(diffPct)
     });
   }
-  return result.sort((a: HandlebarContextCoverage, b: HandlebarContextCoverage) =>
-    a.package < b.package ? -1 : a.package > b.package ? 1 : 0
+  return result.sort(
+    (a: HandlebarContextCoverage, b: HandlebarContextCoverage) =>
+      a.package < b.package ? -1 : a.package > b.package ? 1 : 0
   );
 }
 
