@@ -1,3 +1,4 @@
+import * as core from '@actions/core'
 import {
   addOverallRow,
   aggregateCoverageByTopDir,
@@ -79,6 +80,15 @@ test('add overall row with base coverage', async () => {
     difference: '⚪ 0%',
     difference_plain: '0%'
   })
+})
+
+test('add overall row with base coverage and negative difference includes difference_plain', async () => {
+  const head = await loadJSONFixture('clover-parsed.json')
+  const base = JSON.parse(JSON.stringify(head))
+  base.coverage = 60
+  const out = addOverallRow(head, base)
+  expect(out.difference_plain).toBeDefined()
+  expect(out.difference_plain).toMatch(/-?\d+\.?\d*%/)
 })
 
 test('aggregateCoverageByTopDir without base: groups by first path segment', async () => {
@@ -246,6 +256,63 @@ test('Only list changed files', async () => {
   expect(getStdoutWriteCalls()).toMatchSnapshot()
   expect(await getGithubStepSummary()).toMatchSnapshot()
 })
+
+test('Generate markdown with badge true includes coverage badge URL', async () => {
+  process.env.INPUT_BADGE = 'true'
+  const coverage = await loadJSONFixture('clover-parsed.json')
+  await generateMarkdown(coverage)
+  const summary = await getGithubStepSummary()
+  expect(summary).toContain('img.shields.io')
+  expect(summary).toContain('Code Coverage')
+  delete process.env.INPUT_BADGE
+})
+
+test('Generate markdown with skip_package_coverage true has empty coverage table', async () => {
+  process.env.INPUT_SKIP_PACKAGE_COVERAGE = 'true'
+  const coverage = await loadJSONFixture('clover-parsed.json')
+  await generateMarkdown(coverage)
+  const summary = await getGithubStepSummary()
+  expect(summary).toContain('Overall Coverage')
+  delete process.env.INPUT_SKIP_PACKAGE_COVERAGE
+})
+
+test('Fail on negative difference by package when file drops below threshold', async () => {
+  const setFailedSpy = jest.spyOn(core, 'setFailed').mockImplementation((msg: string) => {
+    throw new Error(msg)
+  })
+  process.env.INPUT_FAIL_ON_NEGATIVE_DIFFERENCE = 'true'
+  process.env.INPUT_NEGATIVE_DIFFERENCE_BY = 'package'
+  process.env.INPUT_NEGATIVE_DIFFERENCE_THRESHOLD = '1'
+
+  const coverage = await loadJSONFixture('clover-parsed.json')
+  const coverageFail = JSON.parse(JSON.stringify(coverage))
+  // Use a file that has high base coverage so difference is below threshold
+  const fileHash = '7583809507a13391057c3aee722e422d50d961a87e2a3dbf05ea492dc6465c94'
+  coverageFail.files[fileHash].coverage = 0
+
+  await expect(
+    generateMarkdown(coverageFail, coverage)
+  ).rejects.toThrow(/coverage difference was/)
+  setFailedSpy.mockRestore()
+  delete process.env.INPUT_FAIL_ON_NEGATIVE_DIFFERENCE
+  delete process.env.INPUT_NEGATIVE_DIFFERENCE_BY
+  delete process.env.INPUT_NEGATIVE_DIFFERENCE_THRESHOLD
+})
+
+test('generateMarkdown sets failed when template file does not exist', async () => {
+  const setFailedSpy = jest.spyOn(core, 'setFailed').mockImplementation((msg: string) => {
+    throw new Error(msg)
+  })
+  const nonexistent = path.join(__dirname, 'nonexistent-template-12345.hbs')
+  process.env.INPUT_WITHOUT_BASE_COVERAGE_TEMPLATE = nonexistent
+  process.env.INPUT_WITH_BASE_COVERAGE_TEMPLATE = nonexistent
+  const coverage = await loadJSONFixture('clover-parsed.json')
+  await expect(generateMarkdown(coverage)).rejects.toThrow(/Unable to access template/)
+  setFailedSpy.mockRestore()
+  delete process.env.INPUT_WITHOUT_BASE_COVERAGE_TEMPLATE
+  delete process.env.INPUT_WITH_BASE_COVERAGE_TEMPLATE
+})
+
 
 async function getGithubStepSummary(): Promise<string> {
   const tempFileName = process.env.GITHUB_STEP_SUMMARY as string
