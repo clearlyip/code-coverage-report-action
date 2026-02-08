@@ -136,6 +136,16 @@ test('Generate markdown with base coverage and show_coverage_by_top_dir shows to
   delete process.env.INPUT_NEGATIVE_DIFFERENCE_THRESHOLD
 })
 
+test('Summary line shows this run produced 0% when coverage difference is zero', async () => {
+  process.env.INPUT_NEGATIVE_DIFFERENCE_THRESHOLD = '5'
+  const coverage = await loadJSONFixture('clover-parsed.json')
+  await generateMarkdown(coverage, coverage)
+  const summary = await getGithubStepSummary()
+  expect(summary).toContain('_Maximum allowed coverage difference is_')
+  expect(summary).toContain('_, this run produced_ `0%`')
+  delete process.env.INPUT_NEGATIVE_DIFFERENCE_THRESHOLD
+})
+
 test('Generate markdown without coverage by top dir when show_coverage_by_top_dir is false (default)', async () => {
   process.env.INPUT_SHOW_COVERAGE_BY_TOP_DIR = 'false'
   const coverage = await loadJSONFixture('clover-parsed.json')

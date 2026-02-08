@@ -447,7 +447,7 @@ export function addOverallRow(
     difference: `${colorizePercentageByThreshold(overallDifferencePercentage)}`,
     difference_plain:
       overallDifferencePercentage != null
-        ? `${overallDifferencePercentage}%`
+        ? `${String(overallDifferencePercentage)}%`
         : undefined
   };
 }
