@@ -337,6 +337,8 @@ export function getInputs(): Inputs {
     core.getInput('markdown_filename') || 'code-coverage-results';
   const badge = core.getInput('badge') === 'true';
   const skipPackageCoverage = core.getInput('skip_package_coverage') === 'true';
+  const showCoverageByTopDir =
+    core.getInput('show_coverage_by_top_dir') === 'true';
   const overallCoverageFailThreshold = Math.abs(
     parseInt(core.getInput('overall_coverage_fail_threshold') || '0')
   );
@@ -407,7 +409,8 @@ export function getInputs(): Inputs {
     withBaseCoverageTemplate,
     negativeDifferenceThreshold,
     onlyListChangedFiles,
-    skipPackageCoverage
+    skipPackageCoverage,
+    showCoverageByTopDir
   };
 }
 

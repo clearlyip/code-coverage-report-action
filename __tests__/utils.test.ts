@@ -84,6 +84,10 @@ test('determine common base path from list of paths', () => {
   expect(path).toBe('/usr/src/app')
 })
 
+test('determine common base path from empty array returns empty string', () => {
+  expect(determineCommonBasePath([])).toBe('')
+})
+
 test('escaping regular expression input', () => {
   const output = escapeRegExp('\\^$.|?*+{}[]()')
   expect(output).toBe('\\\\\\^\\$\\.\\|\\?\\*\\+\\{\\}\\[\\]\\(\\)')
@@ -110,6 +114,10 @@ test('colorize percentage by threshold', () => {
 
   const shouldBeGreenA = colorizePercentageByThreshold(80, 75, 30)
   expect(shouldBeGreenA).toBe('🟢 80%')
+
+  // When thresholdMin is null and percentage equals thresholdMax, fallback to grey
+  const equalThreshold = colorizePercentageByThreshold(50, 50)
+  expect(equalThreshold).toBe('⚪ 50%')
 })
 
 test('parse xml', async () => {
@@ -121,11 +129,16 @@ test('parse xml', async () => {
 })
 
 test('parse coverage', async () => {
-  const ret = await parseCoverage(__filename)
-  expect(ret).not.toBeNull
+  const ret = await parseCoverage(__dirname + '/fixtures/clover.xml')
+  expect(ret).not.toBeNull()
 
   const ret1 = await parseCoverage(__filename + 'bar')
-  expect(ret1).toBeNull
+  expect(ret1).toBeNull()
+})
+
+test('parse coverage with non-xml extension returns null', async () => {
+  const ret = await parseCoverage(__filename)
+  expect(ret).toBeNull()
 })
 
 test('getInputs', () => {
@@ -148,11 +161,52 @@ test('getInputs', () => {
     negativeDifferenceThreshold: -0,
     retention: undefined,
     skipPackageCoverage: false,
+    showCoverageByTopDir: false,
     onlyListChangedFiles: false,
     //This is a cheat
     withBaseCoverageTemplate: f.withBaseCoverageTemplate,
     withoutBaseCoverageTemplate: f.withoutBaseCoverageTemplate
   })
+})
+
+test('getInputs with show_coverage_by_top_dir true', () => {
+  process.env.INPUT_GITHUB_TOKEN = 'token'
+  process.env.INPUT_FILENAME = 'filename.xml'
+  process.env.INPUT_SHOW_COVERAGE_BY_TOP_DIR = 'true'
+
+  const f = getInputs()
+  expect(f.showCoverageByTopDir).toBe(true)
+  delete process.env.INPUT_SHOW_COVERAGE_BY_TOP_DIR
+})
+
+test('getInputs throws when artifact_name is missing %name%', () => {
+  process.env.INPUT_GITHUB_TOKEN = 'token'
+  process.env.INPUT_FILENAME = 'filename.xml'
+  process.env.INPUT_ARTIFACT_NAME = 'coverage-fixed'
+
+  expect(() => getInputs()).toThrow('artifact_name is missing %name% variable')
+  process.env.INPUT_ARTIFACT_NAME = 'coverage-%name%'
+})
+
+test('getInputs with retention_days and artifact_download_workflow_names', () => {
+  process.env.INPUT_GITHUB_TOKEN = 'token'
+  process.env.INPUT_FILENAME = 'filename.xml'
+  process.env.INPUT_ARTIFACT_NAME = 'coverage-%name%'
+  process.env.INPUT_RETENTION_DAYS = '7'
+  process.env.INPUT_ARTIFACT_DOWNLOAD_WORKFLOW_NAMES = 'CI, Coverage'
+
+  const f = getInputs()
+  expect(f.retention).toBe(7)
+  expect(f.artifactDownloadWorkflowNames).toEqual(['CI', 'Coverage'])
+  delete process.env.INPUT_RETENTION_DAYS
+  delete process.env.INPUT_ARTIFACT_DOWNLOAD_WORKFLOW_NAMES
+})
+
+test('formatArtifactName replaces slashes in name with hyphens', () => {
+  process.env.INPUT_GITHUB_TOKEN = 'token'
+  process.env.INPUT_FILENAME = 'filename.xml'
+  process.env.INPUT_ARTIFACT_NAME = 'coverage-%name%'
+  expect(formatArtifactName('feature/foo')).toBe('coverage-feature-foo')
 })
 
 test('parse clover into file format', async () => {
@@ -204,4 +258,19 @@ test('parse many sources cobertura file', async () => {
     __dirname + '/fixtures/cobertura-many-sources.xml'
   )
   expect(ret).toMatchSnapshot()
+})
+
+test('parse cobertura with two packages sharing same file merges line counts', async () => {
+  const ret = await parseCoverage(
+    __dirname + '/fixtures/cobertura-two-packages-same-file.xml'
+  )
+  expect(ret).not.toBeNull()
+  const files = ret!.files
+  const fileIds = Object.keys(files)
+  expect(fileIds).toHaveLength(1)
+  const file = files[fileIds[0]]
+  expect(file.relative).toBe('src/same.ts')
+  expect(file.lines_covered).toBe(2)
+  expect(file.lines_valid).toBe(4)
+  expect(file.coverage).toBe(50)
 })

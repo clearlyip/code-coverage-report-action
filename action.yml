@@ -64,6 +64,10 @@ inputs:
   with_base_coverage_template:
     description: 'Path to custom template with base coverage'
     required: false
+  show_coverage_by_top_dir:
+    description: 'Report mode: false (default) = per-file coverage table (normal). true = per top-level directory only (aggregated by first path segment, e.g. admin_pages/). Either one or the other.'
+    required: false
+    default: 'false'
 
 
 outputs:

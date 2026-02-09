@@ -10,6 +10,7 @@ import {
 } from './utils';
 import {
   Coverage,
+  CoverageFile,
   HandlebarContext,
   HandlebarContextCoverage
 } from './interfaces';
@@ -121,7 +122,8 @@ export async function generateMarkdown(
     withoutBaseCoverageTemplate,
     negativeDifferenceThreshold,
     onlyListChangedFiles,
-    skipPackageCoverage
+    skipPackageCoverage,
+    showCoverageByTopDir
   } = inputs;
   const overallDifferencePercentage = baseCoverage
     ? roundPercentage(headCoverage.coverage - baseCoverage.coverage)
@@ -181,6 +183,10 @@ export async function generateMarkdown(
   const context: HandlebarContext = {
     minimum_allowed_coverage: `${overallCoverageFailThreshold}%`,
     new_coverage: `${headCoverage.coverage}%`,
+    negative_difference_threshold:
+      negativeDifferenceThreshold !== 0
+        ? `${negativeDifferenceThreshold}%`
+        : null,
     coverage: skipPackageCoverage
       ? []
       : Object.entries(headCoverage.files)
@@ -254,10 +260,18 @@ export async function generateMarkdown(
             a.package < b.package ? -1 : a.package > b.package ? 1 : 0
           ),
     overall_coverage: addOverallRow(headCoverage, baseCoverage),
+    coverage_by_top_dir: showCoverageByTopDir
+      ? aggregateCoverageByTopDir(
+          headCoverage,
+          baseCoverage,
+          fileCoverageWarningMax,
+          fileCoverageErrorMin
+        )
+      : [],
     inputs
   };
 
-  context.show_package_coverage = !skipPackageCoverage;
+  context.show_package_coverage = !skipPackageCoverage && !showCoverageByTopDir;
 
   if (badge) {
     context.coverage_badge = `https://img.shields.io/badge/${encodeURIComponent(
@@ -277,6 +291,121 @@ export async function generateMarkdown(
 
   core.info(`Writing job summary`);
   await summary.write();
+}
+
+/**
+ * Get top-level directory from relative path (first segment + / or "(root)").
+ */
+function getTopDir(relative: string): string {
+  const i = relative.indexOf('/');
+  return i >= 0 ? relative.slice(0, i + 1) : '(root)';
+}
+
+/**
+ * Aggregate coverage by top-level directory. Uses line-weighted when lines_covered/lines_valid
+ * are present (Cobertura), otherwise average of file percentages (Clover).
+ */
+export function aggregateCoverageByTopDir(
+  headCoverage: Coverage,
+  baseCoverage: Coverage | null,
+  fileCoverageWarningMax: number,
+  fileCoverageErrorMin: number
+): HandlebarContextCoverage[] {
+  const byDir = new Map<
+    string,
+    { head: CoverageFile[]; base: CoverageFile[] }
+  >();
+  for (const [hash, file] of Object.entries(headCoverage.files)) {
+    const dir = getTopDir(file.relative);
+    if (!byDir.has(dir)) byDir.set(dir, { head: [], base: [] });
+    byDir.get(dir)!.head.push(file);
+    if (baseCoverage?.files[hash]) {
+      byDir.get(dir)!.base.push(baseCoverage.files[hash]);
+    }
+  }
+  const result: HandlebarContextCoverage[] = [];
+  for (const [dir, { head, base }] of byDir.entries()) {
+    const hasHeadLines = head.every(
+      (f: CoverageFile) =>
+        f.lines_covered !== undefined &&
+        f.lines_valid !== undefined &&
+        f.lines_valid > 0
+    );
+    const headCovered = head.reduce(
+      (s: number, f: CoverageFile) => s + (f.lines_covered ?? 0),
+      0
+    );
+    const headValid = head.reduce(
+      (s: number, f: CoverageFile) => s + (f.lines_valid ?? 0),
+      0
+    );
+    const headPct =
+      hasHeadLines && headValid > 0
+        ? roundPercentage((headCovered / headValid) * 100)
+        : head.length > 0
+          ? roundPercentage(
+              head.reduce((s: number, f: CoverageFile) => s + f.coverage, 0) /
+                head.length
+            )
+          : 0;
+
+    if (baseCoverage === null) {
+      result.push({
+        package: dir,
+        base_coverage: `${colorizePercentageByThreshold(
+          headPct,
+          fileCoverageWarningMax,
+          fileCoverageErrorMin
+        )}`
+      });
+      continue;
+    }
+
+    const hasBaseLines =
+      base.length > 0 &&
+      base.every(
+        (f: CoverageFile) =>
+          f.lines_covered !== undefined &&
+          f.lines_valid !== undefined &&
+          f.lines_valid > 0
+      );
+    const baseCovered = base.reduce(
+      (s: number, f: CoverageFile) => s + (f.lines_covered ?? 0),
+      0
+    );
+    const baseValid = base.reduce(
+      (s: number, f: CoverageFile) => s + (f.lines_valid ?? 0),
+      0
+    );
+    const basePct =
+      hasBaseLines && baseValid > 0
+        ? roundPercentage((baseCovered / baseValid) * 100)
+        : base.length > 0
+          ? roundPercentage(
+              base.reduce((s: number, f: CoverageFile) => s + f.coverage, 0) /
+                base.length
+            )
+          : 0;
+    const diffPct = roundPercentage(headPct - basePct);
+    result.push({
+      package: dir,
+      base_coverage: `${colorizePercentageByThreshold(
+        basePct,
+        fileCoverageWarningMax,
+        fileCoverageErrorMin
+      )}`,
+      new_coverage: `${colorizePercentageByThreshold(
+        headPct,
+        fileCoverageWarningMax,
+        fileCoverageErrorMin
+      )}`,
+      difference: colorizePercentageByThreshold(diffPct)
+    });
+  }
+  return result.sort(
+    (a: HandlebarContextCoverage, b: HandlebarContextCoverage) =>
+      a.package < b.package ? -1 : a.package > b.package ? 1 : 0
+  );
 }
 
 /**
@@ -315,6 +444,10 @@ export function addOverallRow(
       0,
       overallCoverageFailThreshold
     )}`,
-    difference: `${colorizePercentageByThreshold(overallDifferencePercentage)}`
+    difference: `${colorizePercentageByThreshold(overallDifferencePercentage)}`,
+    difference_plain:
+      overallDifferencePercentage != null
+        ? `${String(overallDifferencePercentage)}%`
+        : undefined
   };
 }
