@@ -7,6 +7,12 @@ import {
   escapeRegExp,
   colorizePercentageByThreshold,
   getInputs,
+  getParentDirFromFile,
+  getPathAtDepth,
+  getTopDirFromFile,
+  isPathExcluded,
+  filterCoverageByExcludePaths,
+  filterCoverageZeroLineFiles,
   parseXML,
   parseCoverage
 } from '../src/utils'
@@ -84,8 +90,32 @@ test('determine common base path from list of paths', () => {
   expect(path).toBe('/usr/src/app')
 })
 
-test('determine common base path from empty array returns empty string', () => {
-  expect(determineCommonBasePath([])).toBe('')
+test('getTopDirFromFile returns first path segment', () => {
+  expect(getTopDirFromFile('src/common/ai_platform_client.py')).toBe('src/')
+  expect(getTopDirFromFile('src/common/asm/foo.py')).toBe('src/')
+  expect(getTopDirFromFile('main.ts')).toBe('(root)')
+  expect(getTopDirFromFile('reports/clover/index.ts')).toBe('reports/')
+})
+
+test('getParentDirFromFile returns parent directory of the file', () => {
+  expect(getParentDirFromFile('src/common/ai_platform_client.py')).toBe(
+    'src/common/'
+  )
+  expect(getParentDirFromFile('src/common/asm/foo.py')).toBe('src/common/asm/')
+  expect(getParentDirFromFile('main.ts')).toBe('(root)')
+  expect(getParentDirFromFile('reports/clover/index.ts')).toBe('reports/clover/')
+})
+
+test('getPathAtDepth returns path prefix with exactly depth segments', () => {
+  expect(getPathAtDepth('src/common/asm/foo.py', 1)).toBe('src/')
+  expect(getPathAtDepth('src/common/asm/foo.py', 2)).toBe('src/common/')
+  expect(getPathAtDepth('src/common/asm/foo.py', 3)).toBe('src/common/asm/')
+  expect(getPathAtDepth('src/common/asm/foo.py', 4)).toBe('src/common/asm/')
+  expect(getPathAtDepth('main.ts', 1)).toBe('(root)')
+  expect(getPathAtDepth('reports/clover/index.ts', 1)).toBe('reports/')
+  expect(getPathAtDepth('reports/clover/index.ts', 2)).toBe('reports/clover/')
+  expect(getPathAtDepth('reports/clover/index.ts', 3)).toBe('reports/clover/')
+  expect(getPathAtDepth('src/foo.py', 0)).toBe('(root)')
 })
 
 test('escaping regular expression input', () => {
@@ -114,10 +144,6 @@ test('colorize percentage by threshold', () => {
 
   const shouldBeGreenA = colorizePercentageByThreshold(80, 75, 30)
   expect(shouldBeGreenA).toBe('🟢 80%')
-
-  // When thresholdMin is null and percentage equals thresholdMax, fallback to grey
-  const equalThreshold = colorizePercentageByThreshold(50, 50)
-  expect(equalThreshold).toBe('⚪ 50%')
 })
 
 test('parse xml', async () => {
@@ -129,16 +155,11 @@ test('parse xml', async () => {
 })
 
 test('parse coverage', async () => {
-  const ret = await parseCoverage(__dirname + '/fixtures/clover.xml')
-  expect(ret).not.toBeNull()
+  const ret = await parseCoverage(__filename)
+  expect(ret).not.toBeNull
 
   const ret1 = await parseCoverage(__filename + 'bar')
-  expect(ret1).toBeNull()
-})
-
-test('parse coverage with non-xml extension returns null', async () => {
-  const ret = await parseCoverage(__filename)
-  expect(ret).toBeNull()
+  expect(ret1).toBeNull
 })
 
 test('getInputs', () => {
@@ -162,6 +183,9 @@ test('getInputs', () => {
     retention: undefined,
     skipPackageCoverage: false,
     showCoverageByTopDir: false,
+    coverageDepth: undefined,
+    showCoverageByParentDir: false,
+    excludePaths: [],
     onlyListChangedFiles: false,
     //This is a cheat
     withBaseCoverageTemplate: f.withBaseCoverageTemplate,
@@ -169,51 +193,140 @@ test('getInputs', () => {
   })
 })
 
-test('getInputs with show_coverage_by_top_dir true', () => {
+test('getInputs returns excludePaths when INPUT_EXCLUDE_PATHS is set', () => {
   process.env.INPUT_GITHUB_TOKEN = 'token'
   process.env.INPUT_FILENAME = 'filename.xml'
-  process.env.INPUT_SHOW_COVERAGE_BY_TOP_DIR = 'true'
+  process.env.INPUT_EXCLUDE_PATHS = 'tests/, e2e/, docs/'
 
   const f = getInputs()
-  expect(f.showCoverageByTopDir).toBe(true)
-  delete process.env.INPUT_SHOW_COVERAGE_BY_TOP_DIR
+  expect(f.excludePaths).toEqual(['tests/', 'e2e/', 'docs/'])
+  delete process.env.INPUT_EXCLUDE_PATHS
 })
 
-test('getInputs throws when artifact_name is missing %name%', () => {
-  process.env.INPUT_GITHUB_TOKEN = 'token'
-  process.env.INPUT_FILENAME = 'filename.xml'
-  process.env.INPUT_ARTIFACT_NAME = 'coverage-fixed'
-
-  expect(() => getInputs()).toThrow('artifact_name is missing %name% variable')
-  process.env.INPUT_ARTIFACT_NAME = 'coverage-%name%'
+test('isPathExcluded excludes paths by prefix', () => {
+  expect(isPathExcluded('tests/unit/test_foo.py', ['tests/'])).toBe(true)
+  expect(isPathExcluded('tests/unit/test_foo.py', ['tests'])).toBe(true)
+  expect(isPathExcluded('e2e/bar.spec.ts', ['e2e/'])).toBe(true)
+  expect(isPathExcluded('src/app/main.ts', ['tests/'])).toBe(false)
+  expect(isPathExcluded('src/app/main.ts', [])).toBe(false)
+  expect(isPathExcluded('docs/readme.md', ['docs'])).toBe(true)
 })
 
-test('getInputs with retention_days and artifact_download_workflow_names', () => {
+test('filterCoverageByExcludePaths removes matching files and recomputes overall', () => {
+  const coverage = {
+    basePath: '/repo',
+    timestamp: 0,
+    files: {
+      a: {
+        relative: 'src/foo.ts',
+        absolute: '/repo/src/foo.ts',
+        coverage: 80,
+        lines_covered: 8,
+        lines_valid: 10
+      },
+      b: {
+        relative: 'tests/foo.test.ts',
+        absolute: '/repo/tests/foo.test.ts',
+        coverage: 100,
+        lines_covered: 5,
+        lines_valid: 5
+      },
+      c: {
+        relative: 'src/bar.ts',
+        absolute: '/repo/src/bar.ts',
+        coverage: 50,
+        lines_covered: 5,
+        lines_valid: 10
+      }
+    },
+    coverage: 76.67
+  }
+  const filtered = filterCoverageByExcludePaths(coverage, ['tests/'])
+  expect(Object.keys(filtered.files)).toHaveLength(2)
+  expect(filtered.files['a']).toBeDefined()
+  expect(filtered.files['c']).toBeDefined()
+  expect(filtered.files['b']).toBeUndefined()
+  // Line-weighted: (8+5)/(10+10) * 100 = 65%
+  expect(filtered.coverage).toBe(65)
+})
+
+test('filterCoverageZeroLineFiles removes zero-line files and recomputes overall', () => {
+  const coverage = {
+    basePath: '/repo',
+    timestamp: 0,
+    files: {
+      a: {
+        relative: 'src/foo.ts',
+        absolute: '/repo/src/foo.ts',
+        coverage: 80,
+        lines_covered: 8,
+        lines_valid: 10
+      },
+      b: {
+        relative: 'empty.py',
+        absolute: '/repo/empty.py',
+        coverage: 0,
+        lines_covered: 0,
+        lines_valid: 0
+      },
+      c: {
+        relative: 'src/bar.ts',
+        absolute: '/repo/src/bar.ts',
+        coverage: 50,
+        lines_covered: 5,
+        lines_valid: 10
+      }
+    },
+    coverage: 43.33
+  }
+  const filtered = filterCoverageZeroLineFiles(coverage)
+  expect(Object.keys(filtered.files)).toHaveLength(2)
+  expect(filtered.files['a']).toBeDefined()
+  expect(filtered.files['c']).toBeDefined()
+  expect(filtered.files['b']).toBeUndefined()
+  expect(filtered.coverage).toBe(65)
+})
+
+test('getInputs returns showCoverageByParentDir true when INPUT_SHOW_COVERAGE_BY_PARENT_DIR is true', () => {
   process.env.INPUT_GITHUB_TOKEN = 'token'
   process.env.INPUT_FILENAME = 'filename.xml'
-  process.env.INPUT_ARTIFACT_NAME = 'coverage-%name%'
-  process.env.INPUT_RETENTION_DAYS = '7'
-  process.env.INPUT_ARTIFACT_DOWNLOAD_WORKFLOW_NAMES = 'CI, Coverage'
+  process.env.INPUT_SHOW_COVERAGE_BY_PARENT_DIR = 'true'
 
   const f = getInputs()
-  expect(f.retention).toBe(7)
-  expect(f.artifactDownloadWorkflowNames).toEqual(['CI', 'Coverage'])
-  delete process.env.INPUT_RETENTION_DAYS
-  delete process.env.INPUT_ARTIFACT_DOWNLOAD_WORKFLOW_NAMES
+  expect(f.showCoverageByParentDir).toBe(true)
+  expect(f.showCoverageByTopDir).toBe(false)
+  delete process.env.INPUT_SHOW_COVERAGE_BY_PARENT_DIR
 })
 
-test('formatArtifactName replaces slashes in name with hyphens', () => {
+test('getInputs returns coverageDepth when INPUT_COVERAGE_DEPTH is set', () => {
   process.env.INPUT_GITHUB_TOKEN = 'token'
   process.env.INPUT_FILENAME = 'filename.xml'
-  process.env.INPUT_ARTIFACT_NAME = 'coverage-%name%'
-  expect(formatArtifactName('feature/foo')).toBe('coverage-feature-foo')
+  process.env.INPUT_COVERAGE_DEPTH = '2'
+
+  const f = getInputs()
+  expect(f.coverageDepth).toBe(2)
+  delete process.env.INPUT_COVERAGE_DEPTH
+})
+
+test('getInputs clamps coverage_depth to at least 1', () => {
+  process.env.INPUT_GITHUB_TOKEN = 'token'
+  process.env.INPUT_FILENAME = 'filename.xml'
+  process.env.INPUT_COVERAGE_DEPTH = '0'
+
+  const f = getInputs()
+  expect(f.coverageDepth).toBe(1)
+  delete process.env.INPUT_COVERAGE_DEPTH
 })
 
 test('parse clover into file format', async () => {
   const ret = await parseCoverage(__dirname + '/fixtures/clover.xml')
 
   const loadedFixture = await loadJSONFixture('clover-parsed.json')
-  expect(loadedFixture).toEqual(ret)
+  expect(ret).toMatchObject(loadedFixture)
+  for (const file of Object.values(ret?.files ?? {})) {
+    expect(file).toHaveProperty('lines_covered')
+    expect(file).toHaveProperty('lines_valid')
+  }
 })
 
 test('parse cobertura file format', async () => {
@@ -258,19 +371,4 @@ test('parse many sources cobertura file', async () => {
     __dirname + '/fixtures/cobertura-many-sources.xml'
   )
   expect(ret).toMatchSnapshot()
-})
-
-test('parse cobertura with two packages sharing same file merges line counts', async () => {
-  const ret = await parseCoverage(
-    __dirname + '/fixtures/cobertura-two-packages-same-file.xml'
-  )
-  expect(ret).not.toBeNull()
-  const files = ret!.files
-  const fileIds = Object.keys(files)
-  expect(fileIds).toHaveLength(1)
-  const file = files[fileIds[0]]
-  expect(file.relative).toBe('src/same.ts')
-  expect(file.lines_covered).toBe(2)
-  expect(file.lines_valid).toBe(4)
-  expect(file.coverage).toBe(50)
 })

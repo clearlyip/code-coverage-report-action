@@ -65,9 +65,21 @@ inputs:
     description: 'Path to custom template with base coverage'
     required: false
   show_coverage_by_top_dir:
-    description: 'Report mode: false (default) = per-file coverage table (normal). true = per top-level directory only (aggregated by first path segment, e.g. admin_pages/). Either one or the other.'
+    description: 'When true, aggregate coverage by the first path segment (e.g. src/, tests/, (root)). Takes precedence over coverage_depth and show_coverage_by_parent_dir.'
     required: false
     default: 'false'
+  coverage_depth:
+    description: 'When set (e.g. 2), aggregate by path to this depth (1=first segment, 2=first two segments). Ignored if show_coverage_by_top_dir is true. Takes precedence over show_coverage_by_parent_dir.'
+    required: false
+    default: ''
+  show_coverage_by_parent_dir:
+    description: 'When true, aggregate coverage by the parent directory of each file (e.g. src/common/, src/aws/). Ignored if show_coverage_by_top_dir or coverage_depth is set.'
+    required: false
+    default: 'false'
+  exclude_paths:
+    description: 'Comma-separated path prefixes to exclude from coverage (e.g. tests/, e2e/, docs/). Files whose relative path starts with any prefix are excluded from the report and from overall coverage.'
+    required: false
+    default: ''
 
 
 outputs:

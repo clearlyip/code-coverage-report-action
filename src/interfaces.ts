@@ -32,6 +32,9 @@ export interface Inputs {
   onlyListChangedFiles: boolean;
   skipPackageCoverage: boolean;
   showCoverageByTopDir: boolean;
+  coverageDepth: number | undefined;
+  showCoverageByParentDir: boolean;
+  excludePaths: string[];
 }
 
 export interface Files {

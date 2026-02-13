@@ -168,6 +168,70 @@ test('Generate markdown with coverage by top dir only when show_coverage_by_top_
   delete process.env.INPUT_SHOW_COVERAGE_BY_TOP_DIR
 })
 
+test('Generate markdown with coverage by parent dir when show_coverage_by_parent_dir is true', async () => {
+  process.env.INPUT_SHOW_COVERAGE_BY_PARENT_DIR = 'true'
+  const coverage = await loadJSONFixture('clover-parsed.json')
+  await generateMarkdown(coverage)
+  const summary = await getGithubStepSummary()
+  // Should show parent dirs, not individual files
+  expect(summary).toContain('(root)')
+  expect(summary).toContain('reports/clover/')
+  expect(summary).toContain('reports/cobertura/')
+  expect(summary).not.toContain('main.ts')
+  expect(summary).not.toContain('utils.ts')
+  expect(summary).not.toContain('reports/clover/index.ts')
+  delete process.env.INPUT_SHOW_COVERAGE_BY_PARENT_DIR
+})
+
+test('Generate markdown without coverage by parent dir when show_coverage_by_parent_dir is false (default)', async () => {
+  process.env.INPUT_SHOW_COVERAGE_BY_PARENT_DIR = 'false'
+  const coverage = await loadJSONFixture('clover-parsed.json')
+  await generateMarkdown(coverage)
+  const summary = await getGithubStepSummary()
+  expect(summary).toContain('main.ts')
+  expect(summary).toContain('reports/clover/index.ts')
+  delete process.env.INPUT_SHOW_COVERAGE_BY_PARENT_DIR
+})
+
+test('Generate markdown with coverage by depth when coverage_depth is set', async () => {
+  process.env.INPUT_COVERAGE_DEPTH = '2'
+  const coverage = await loadJSONFixture('clover-parsed.json')
+  await generateMarkdown(coverage)
+  const summary = await getGithubStepSummary()
+  expect(summary).toContain('(root)')
+  expect(summary).toContain('reports/clover/')
+  expect(summary).toContain('reports/cobertura/')
+  expect(summary).not.toContain('main.ts')
+  expect(summary).not.toContain('reports/clover/index.ts')
+  delete process.env.INPUT_COVERAGE_DEPTH
+})
+
+test('Generate markdown with coverage_depth 1 is same as top_dir', async () => {
+  process.env.INPUT_COVERAGE_DEPTH = '1'
+  const coverage = await loadJSONFixture('clover-parsed.json')
+  await generateMarkdown(coverage)
+  const summary = await getGithubStepSummary()
+  expect(summary).toContain('(root)')
+  expect(summary).toContain('reports/')
+  expect(summary).not.toContain('reports/clover/')
+  expect(summary).not.toContain('main.ts')
+  delete process.env.INPUT_COVERAGE_DEPTH
+})
+
+test('Generate markdown: top_dir takes precedence over coverage_depth', async () => {
+  process.env.INPUT_SHOW_COVERAGE_BY_TOP_DIR = 'true'
+  process.env.INPUT_COVERAGE_DEPTH = '2'
+  const coverage = await loadJSONFixture('clover-parsed.json')
+  await generateMarkdown(coverage)
+  const summary = await getGithubStepSummary()
+  expect(summary).toContain('Coverage by top-level directory')
+  expect(summary).toContain('(root)')
+  expect(summary).toContain('reports/')
+  expect(summary).not.toContain('reports/clover/')
+  delete process.env.INPUT_SHOW_COVERAGE_BY_TOP_DIR
+  delete process.env.INPUT_COVERAGE_DEPTH
+})
+
 test('Generate Base Clover Markdown', async () => {
   const coverage = await loadJSONFixture('clover-parsed.json')
   await generateMarkdown(coverage)

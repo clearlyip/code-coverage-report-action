@@ -10,7 +10,7 @@ import { Clover, parse as parseClover } from './reports/clover';
 import { Cobertura, parse as parseCobertura } from './reports/cobertura';
 import path from 'path';
 
-import { Coverage, Inputs } from './interfaces';
+import { Coverage, CoverageFile, Files, Inputs } from './interfaces';
 import crypto from 'crypto';
 import AdmZip from 'adm-zip';
 
@@ -288,6 +288,44 @@ export function colorizePercentageByThreshold(
  * @param {string} separator
  * @returns {string}
  */
+/**
+ * Return the first path segment (top-level dir). e.g. "src/common/foo.py" -> "src/", "main.ts" -> "(root)"
+ */
+export function getTopDirFromFile(relativePath: string): string {
+  const normalized = relativePath.replace(/\\/g, '/');
+  const firstSlash = normalized.indexOf('/');
+  if (firstSlash === -1) return '(root)';
+  return normalized.slice(0, firstSlash + 1);
+}
+
+/**
+ * Return the parent directory of the file.
+ * e.g. "src/common/foo.py" -> "src/common/", "main.ts" -> "(root)"
+ */
+export function getParentDirFromFile(relativePath: string): string {
+  const normalized = relativePath.replace(/\\/g, '/');
+  const lastSlash = normalized.lastIndexOf('/');
+  if (lastSlash === -1) return '(root)';
+  return normalized.slice(0, lastSlash + 1);
+}
+
+/**
+ * Return the path prefix with exactly `depth` segments (directory depth).
+ * e.g. "src/common/asm/foo.py", depth 1 -> "src/", depth 2 -> "src/common/", depth 3 -> "src/common/asm/"
+ * "main.ts" or depth 0 -> "(root)". depth >= dir segments -> same as parent dir.
+ */
+export function getPathAtDepth(relativePath: string, depth: number): string {
+  if (depth < 1) return '(root)';
+  const normalized = relativePath.replace(/\\/g, '/');
+  const lastSlash = normalized.lastIndexOf('/');
+  if (lastSlash === -1) return '(root)';
+  const dirPath = normalized.slice(0, lastSlash + 1);
+  const segments = dirPath.split('/').filter(Boolean);
+  if (segments.length === 0) return '(root)';
+  const take = Math.min(depth, segments.length);
+  return `${segments.slice(0, take).join('/')}/`;
+}
+
 export function determineCommonBasePath(
   files: string[],
   separator = '/'
@@ -326,6 +364,120 @@ export function determineCommonBasePath(
 }
 
 /**
+ * Check if a relative path should be excluded based on path prefixes.
+ * Paths are normalized to forward slashes; a file is excluded if its path
+ * equals a prefix or starts with prefix/ (e.g. "tests" excludes "tests/foo.py").
+ */
+export function isPathExcluded(
+  relativePath: string,
+  excludePrefixes: string[]
+): boolean {
+  if (excludePrefixes.length === 0) return false;
+  const normalized = relativePath.replace(/\\/g, '/');
+  for (const prefix of excludePrefixes) {
+    const p = prefix.replace(/\\/g, '/').trim();
+    if (!p) continue;
+    const prefixNorm = p.endsWith('/') ? p.slice(0, -1) : p;
+    if (normalized === prefixNorm || normalized.startsWith(`${prefixNorm}/`)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Filter coverage to exclude files whose relative path starts with any exclude prefix.
+ * Recomputes overall coverage from the remaining files (line-weighted when available).
+ */
+export function filterCoverageByExcludePaths(
+  coverage: Coverage,
+  excludePaths: string[]
+): Coverage {
+  if (excludePaths.length === 0) return coverage;
+
+  const filtered: Files = {};
+  for (const [hash, file] of Object.entries(coverage.files)) {
+    if (!isPathExcluded(file.relative, excludePaths)) {
+      filtered[hash] = file;
+    }
+  }
+
+  const fileList = Object.values(filtered);
+  const hasLineCounts =
+    fileList.length > 0 &&
+    fileList.every(
+      (f: CoverageFile) =>
+        f.lines_covered !== undefined && f.lines_valid !== undefined
+    );
+  let newOverall: number;
+  if (hasLineCounts && fileList.length > 0) {
+    const totalCovered = fileList.reduce(
+      (s, f) => s + (f.lines_covered ?? 0),
+      0
+    );
+    const totalValid = fileList.reduce((s, f) => s + (f.lines_valid ?? 0), 0);
+    newOverall =
+      totalValid > 0 ? roundPercentage((totalCovered / totalValid) * 100) : 0;
+  } else if (fileList.length > 0) {
+    const sum = fileList.reduce((s, f) => s + f.coverage, 0);
+    newOverall = roundPercentage(sum / fileList.length);
+  } else {
+    newOverall = 0;
+  }
+
+  return {
+    files: filtered,
+    coverage: newOverall,
+    timestamp: coverage.timestamp,
+    basePath: coverage.basePath
+  };
+}
+
+/**
+ * Filter out files with zero coverable lines (lines_valid === 0).
+ * Recomputes overall coverage from the remaining files.
+ */
+export function filterCoverageZeroLineFiles(coverage: Coverage): Coverage {
+  const filtered: Files = {};
+  for (const [hash, file] of Object.entries(coverage.files)) {
+    const valid = file.lines_valid ?? 0;
+    if (valid > 0) {
+      filtered[hash] = file;
+    }
+  }
+
+  const fileList = Object.values(filtered);
+  const hasLineCounts =
+    fileList.length > 0 &&
+    fileList.every(
+      (f: CoverageFile) =>
+        f.lines_covered !== undefined && f.lines_valid !== undefined
+    );
+  let newOverall: number;
+  if (hasLineCounts && fileList.length > 0) {
+    const totalCovered = fileList.reduce(
+      (s, f) => s + (f.lines_covered ?? 0),
+      0
+    );
+    const totalValid = fileList.reduce((s, f) => s + (f.lines_valid ?? 0), 0);
+    newOverall =
+      totalValid > 0 ? roundPercentage((totalCovered / totalValid) * 100) : 0;
+  } else if (fileList.length > 0) {
+    const sum = fileList.reduce((s, f) => s + f.coverage, 0);
+    newOverall = roundPercentage(sum / fileList.length);
+  } else {
+    newOverall = 0;
+  }
+
+  return {
+    files: filtered,
+    coverage: newOverall,
+    timestamp: coverage.timestamp,
+    basePath: coverage.basePath
+  };
+}
+
+/**
  * Get Formatted Inputs
  *
  * @returns {Inputs}
@@ -339,6 +491,13 @@ export function getInputs(): Inputs {
   const skipPackageCoverage = core.getInput('skip_package_coverage') === 'true';
   const showCoverageByTopDir =
     core.getInput('show_coverage_by_top_dir') === 'true';
+  const coverageDepthRaw = core.getInput('coverage_depth').trim();
+  const coverageDepth =
+    coverageDepthRaw === ''
+      ? undefined
+      : Math.max(1, Math.abs(parseInt(coverageDepthRaw, 10)) || 1);
+  const showCoverageByParentDir =
+    core.getInput('show_coverage_by_parent_dir') === 'true';
   const overallCoverageFailThreshold = Math.abs(
     parseInt(core.getInput('overall_coverage_fail_threshold') || '0')
   );
@@ -392,6 +551,15 @@ export function getInputs(): Inputs {
     core.getInput('with_base_coverage_template') ||
     `${__dirname}/../templates/with-base-coverage.hbs`;
 
+  const excludePathsRaw = core.getInput('exclude_paths').trim();
+  const excludePaths =
+    excludePathsRaw === ''
+      ? []
+      : excludePathsRaw
+          .split(',')
+          .map((p) => p.trim())
+          .filter(Boolean);
+
   return {
     token,
     filename,
@@ -410,7 +578,10 @@ export function getInputs(): Inputs {
     negativeDifferenceThreshold,
     onlyListChangedFiles,
     skipPackageCoverage,
-    showCoverageByTopDir
+    showCoverageByTopDir,
+    coverageDepth,
+    showCoverageByParentDir,
+    excludePaths
   };
 }
 
