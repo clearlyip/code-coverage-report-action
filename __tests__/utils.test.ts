@@ -175,6 +175,30 @@ test('getInputs', () => {
   })
 })
 
+test('getInputs returns showCoverageByParentDir true when INPUT_SHOW_COVERAGE_BY_PARENT_DIR is true', () => {
+  process.env.INPUT_GITHUB_TOKEN = 'token'
+  process.env.INPUT_FILENAME = 'filename.xml'
+  process.env.INPUT_SHOW_COVERAGE_BY_PARENT_DIR = 'true'
+
+  const f = getInputs()
+  expect(f.showCoverageByParentDir).toBe(true)
+  expect(f.showCoverageByTopDir).toBe(false)
+  delete process.env.INPUT_SHOW_COVERAGE_BY_PARENT_DIR
+})
+
+test('getInputs throws when both show_coverage_by_top_dir and show_coverage_by_parent_dir are true', () => {
+  process.env.INPUT_GITHUB_TOKEN = 'token'
+  process.env.INPUT_FILENAME = 'filename.xml'
+  process.env.INPUT_SHOW_COVERAGE_BY_TOP_DIR = 'true'
+  process.env.INPUT_SHOW_COVERAGE_BY_PARENT_DIR = 'true'
+
+  expect(() => getInputs()).toThrow(
+    'show_coverage_by_top_dir and show_coverage_by_parent_dir are mutually exclusive'
+  )
+  delete process.env.INPUT_SHOW_COVERAGE_BY_TOP_DIR
+  delete process.env.INPUT_SHOW_COVERAGE_BY_PARENT_DIR
+})
+
 test('parse clover into file format', async () => {
   const ret = await parseCoverage(__dirname + '/fixtures/clover.xml')
 
