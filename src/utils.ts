@@ -434,6 +434,50 @@ export function filterCoverageByExcludePaths(
 }
 
 /**
+ * Filter out files with zero coverable lines (lines_valid === 0).
+ * Recomputes overall coverage from the remaining files.
+ */
+export function filterCoverageZeroLineFiles(coverage: Coverage): Coverage {
+  const filtered: Files = {};
+  for (const [hash, file] of Object.entries(coverage.files)) {
+    const valid = file.lines_valid ?? 0;
+    if (valid > 0) {
+      filtered[hash] = file;
+    }
+  }
+
+  const fileList = Object.values(filtered);
+  const hasLineCounts =
+    fileList.length > 0 &&
+    fileList.every(
+      (f: CoverageFile) =>
+        f.lines_covered !== undefined && f.lines_valid !== undefined
+    );
+  let newOverall: number;
+  if (hasLineCounts && fileList.length > 0) {
+    const totalCovered = fileList.reduce(
+      (s, f) => s + (f.lines_covered ?? 0),
+      0
+    );
+    const totalValid = fileList.reduce((s, f) => s + (f.lines_valid ?? 0), 0);
+    newOverall =
+      totalValid > 0 ? roundPercentage((totalCovered / totalValid) * 100) : 0;
+  } else if (fileList.length > 0) {
+    const sum = fileList.reduce((s, f) => s + f.coverage, 0);
+    newOverall = roundPercentage(sum / fileList.length);
+  } else {
+    newOverall = 0;
+  }
+
+  return {
+    files: filtered,
+    coverage: newOverall,
+    timestamp: coverage.timestamp,
+    basePath: coverage.basePath
+  };
+}
+
+/**
  * Get Formatted Inputs
  *
  * @returns {Inputs}

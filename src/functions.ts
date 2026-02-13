@@ -4,6 +4,7 @@ import {
   colorizePercentageByThreshold,
   downloadArtifacts,
   filterCoverageByExcludePaths,
+  filterCoverageZeroLineFiles,
   getInputs,
   getParentDirFromFile,
   getPathAtDepth,
@@ -67,6 +68,10 @@ export async function run(): Promise<void> {
             );
           }
         }
+        headCoverage = filterCoverageZeroLineFiles(headCoverage);
+        if (baseCoverage !== null) {
+          baseCoverage = filterCoverageZeroLineFiles(baseCoverage);
+        }
 
         core.info(`Complete`);
 
@@ -112,6 +117,9 @@ export async function run(): Promise<void> {
               headCoverage,
               excludePaths
             );
+          }
+          if (headCoverage != null) {
+            headCoverage = filterCoverageZeroLineFiles(headCoverage);
           }
 
           core.info(`Workflow Name: ${GITHUB_WORKFLOW}`);

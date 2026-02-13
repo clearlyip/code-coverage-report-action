@@ -60,6 +60,8 @@ exports[`parse cobertura project with single file 1`] = `
     "83e0f134b069618626405250ccb3fd4adcc0fdfc7714b387d4aa4f30862f75a7": {
       "absolute": "/foo.php",
       "coverage": 0,
+      "lines_covered": 0,
+      "lines_valid": 0,
       "relative": "/foo.php",
     },
   },

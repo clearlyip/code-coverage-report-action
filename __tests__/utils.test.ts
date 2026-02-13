@@ -12,6 +12,7 @@ import {
   getTopDirFromFile,
   isPathExcluded,
   filterCoverageByExcludePaths,
+  filterCoverageZeroLineFiles,
   parseXML,
   parseCoverage
 } from '../src/utils'
@@ -249,6 +250,43 @@ test('filterCoverageByExcludePaths removes matching files and recomputes overall
   expect(filtered.coverage).toBe(65)
 })
 
+test('filterCoverageZeroLineFiles removes zero-line files and recomputes overall', () => {
+  const coverage = {
+    basePath: '/repo',
+    timestamp: 0,
+    files: {
+      a: {
+        relative: 'src/foo.ts',
+        absolute: '/repo/src/foo.ts',
+        coverage: 80,
+        lines_covered: 8,
+        lines_valid: 10
+      },
+      b: {
+        relative: 'empty.py',
+        absolute: '/repo/empty.py',
+        coverage: 0,
+        lines_covered: 0,
+        lines_valid: 0
+      },
+      c: {
+        relative: 'src/bar.ts',
+        absolute: '/repo/src/bar.ts',
+        coverage: 50,
+        lines_covered: 5,
+        lines_valid: 10
+      }
+    },
+    coverage: 43.33
+  }
+  const filtered = filterCoverageZeroLineFiles(coverage)
+  expect(Object.keys(filtered.files)).toHaveLength(2)
+  expect(filtered.files['a']).toBeDefined()
+  expect(filtered.files['c']).toBeDefined()
+  expect(filtered.files['b']).toBeUndefined()
+  expect(filtered.coverage).toBe(65)
+})
+
 test('getInputs returns showCoverageByParentDir true when INPUT_SHOW_COVERAGE_BY_PARENT_DIR is true', () => {
   process.env.INPUT_GITHUB_TOKEN = 'token'
   process.env.INPUT_FILENAME = 'filename.xml'
@@ -284,7 +322,11 @@ test('parse clover into file format', async () => {
   const ret = await parseCoverage(__dirname + '/fixtures/clover.xml')
 
   const loadedFixture = await loadJSONFixture('clover-parsed.json')
-  expect(loadedFixture).toEqual(ret)
+  expect(ret).toMatchObject(loadedFixture)
+  for (const file of Object.values(ret?.files ?? {})) {
+    expect(file).toHaveProperty('lines_covered')
+    expect(file).toHaveProperty('lines_valid')
+  }
 })
 
 test('parse cobertura file format', async () => {

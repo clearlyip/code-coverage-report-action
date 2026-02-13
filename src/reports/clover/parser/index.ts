@@ -66,14 +66,26 @@ async function parseFiles(files: File[] | undefined | null): Promise<Files> {
       (
         previous,
         { '@_name': name, metrics: fileMetrics, '@_path': path }: File
-      ) => ({
-        ...previous,
-        [createHash(path ?? name)]: {
-          relative: path ?? name,
-          absolute: path ?? name,
-          coverage: processCoverageMetrics(fileMetrics)
-        }
-      }),
+      ) => {
+        const coveredSum =
+          parseInt(fileMetrics['@_coveredconditionals']) +
+          parseInt(fileMetrics['@_coveredstatements']) +
+          parseInt(fileMetrics['@_coveredmethods']);
+        const codeSum =
+          parseInt(fileMetrics['@_conditionals']) +
+          parseInt(fileMetrics['@_statements']) +
+          parseInt(fileMetrics['@_methods']);
+        return {
+          ...previous,
+          [createHash(path ?? name)]: {
+            relative: path ?? name,
+            absolute: path ?? name,
+            coverage: processCoverageMetrics(fileMetrics),
+            lines_covered: coveredSum,
+            lines_valid: codeSum
+          }
+        };
+      },
       {}
     ) ?? {}
   );
