@@ -10,6 +10,8 @@ import {
   getParentDirFromFile,
   getPathAtDepth,
   getTopDirFromFile,
+  isPathExcluded,
+  filterCoverageByExcludePaths,
   parseXML,
   parseCoverage
 } from '../src/utils'
@@ -182,11 +184,69 @@ test('getInputs', () => {
     showCoverageByTopDir: false,
     coverageDepth: undefined,
     showCoverageByParentDir: false,
+    excludePaths: [],
     onlyListChangedFiles: false,
     //This is a cheat
     withBaseCoverageTemplate: f.withBaseCoverageTemplate,
     withoutBaseCoverageTemplate: f.withoutBaseCoverageTemplate
   })
+})
+
+test('getInputs returns excludePaths when INPUT_EXCLUDE_PATHS is set', () => {
+  process.env.INPUT_GITHUB_TOKEN = 'token'
+  process.env.INPUT_FILENAME = 'filename.xml'
+  process.env.INPUT_EXCLUDE_PATHS = 'tests/, e2e/, docs/'
+
+  const f = getInputs()
+  expect(f.excludePaths).toEqual(['tests/', 'e2e/', 'docs/'])
+  delete process.env.INPUT_EXCLUDE_PATHS
+})
+
+test('isPathExcluded excludes paths by prefix', () => {
+  expect(isPathExcluded('tests/unit/test_foo.py', ['tests/'])).toBe(true)
+  expect(isPathExcluded('tests/unit/test_foo.py', ['tests'])).toBe(true)
+  expect(isPathExcluded('e2e/bar.spec.ts', ['e2e/'])).toBe(true)
+  expect(isPathExcluded('src/app/main.ts', ['tests/'])).toBe(false)
+  expect(isPathExcluded('src/app/main.ts', [])).toBe(false)
+  expect(isPathExcluded('docs/readme.md', ['docs'])).toBe(true)
+})
+
+test('filterCoverageByExcludePaths removes matching files and recomputes overall', () => {
+  const coverage = {
+    basePath: '/repo',
+    timestamp: 0,
+    files: {
+      a: {
+        relative: 'src/foo.ts',
+        absolute: '/repo/src/foo.ts',
+        coverage: 80,
+        lines_covered: 8,
+        lines_valid: 10
+      },
+      b: {
+        relative: 'tests/foo.test.ts',
+        absolute: '/repo/tests/foo.test.ts',
+        coverage: 100,
+        lines_covered: 5,
+        lines_valid: 5
+      },
+      c: {
+        relative: 'src/bar.ts',
+        absolute: '/repo/src/bar.ts',
+        coverage: 50,
+        lines_covered: 5,
+        lines_valid: 10
+      }
+    },
+    coverage: 76.67
+  }
+  const filtered = filterCoverageByExcludePaths(coverage, ['tests/'])
+  expect(Object.keys(filtered.files)).toHaveLength(2)
+  expect(filtered.files['a']).toBeDefined()
+  expect(filtered.files['c']).toBeDefined()
+  expect(filtered.files['b']).toBeUndefined()
+  // Line-weighted: (8+5)/(10+10) * 100 = 65%
+  expect(filtered.coverage).toBe(65)
 })
 
 test('getInputs returns showCoverageByParentDir true when INPUT_SHOW_COVERAGE_BY_PARENT_DIR is true', () => {

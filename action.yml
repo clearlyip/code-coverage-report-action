@@ -76,6 +76,10 @@ inputs:
     description: 'When true, aggregate coverage by the parent directory of each file (e.g. src/common/, src/aws/). Ignored if show_coverage_by_top_dir or coverage_depth is set.'
     required: false
     default: 'false'
+  exclude_paths:
+    description: 'Comma-separated path prefixes to exclude from coverage (e.g. tests/, e2e/, docs/). Files whose relative path starts with any prefix are excluded from the report and from overall coverage.'
+    required: false
+    default: ''
 
 
 outputs:

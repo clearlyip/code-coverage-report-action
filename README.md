@@ -87,6 +87,8 @@ jobs:
 
 See [action.yml](action.yml)
 
+- **exclude_paths**: Optional comma-separated path prefixes to exclude from the report and from overall coverage (e.g. `tests/`, `e2e/`, `docs/`). Useful to ignore directories that are not relevant for coverage, such as Python test code or generated files.
+
 ### Report contents
 
 The generated markdown includes:

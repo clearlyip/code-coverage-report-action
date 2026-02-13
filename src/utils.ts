@@ -10,7 +10,7 @@ import { Clover, parse as parseClover } from './reports/clover';
 import { Cobertura, parse as parseCobertura } from './reports/cobertura';
 import path from 'path';
 
-import { Coverage, Inputs } from './interfaces';
+import { Coverage, CoverageFile, Files, Inputs } from './interfaces';
 import crypto from 'crypto';
 import AdmZip from 'adm-zip';
 
@@ -364,6 +364,76 @@ export function determineCommonBasePath(
 }
 
 /**
+ * Check if a relative path should be excluded based on path prefixes.
+ * Paths are normalized to forward slashes; a file is excluded if its path
+ * equals a prefix or starts with prefix/ (e.g. "tests" excludes "tests/foo.py").
+ */
+export function isPathExcluded(
+  relativePath: string,
+  excludePrefixes: string[]
+): boolean {
+  if (excludePrefixes.length === 0) return false;
+  const normalized = relativePath.replace(/\\/g, '/');
+  for (const prefix of excludePrefixes) {
+    const p = prefix.replace(/\\/g, '/').trim();
+    if (!p) continue;
+    const prefixNorm = p.endsWith('/') ? p.slice(0, -1) : p;
+    if (normalized === prefixNorm || normalized.startsWith(`${prefixNorm}/`)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Filter coverage to exclude files whose relative path starts with any exclude prefix.
+ * Recomputes overall coverage from the remaining files (line-weighted when available).
+ */
+export function filterCoverageByExcludePaths(
+  coverage: Coverage,
+  excludePaths: string[]
+): Coverage {
+  if (excludePaths.length === 0) return coverage;
+
+  const filtered: Files = {};
+  for (const [hash, file] of Object.entries(coverage.files)) {
+    if (!isPathExcluded(file.relative, excludePaths)) {
+      filtered[hash] = file;
+    }
+  }
+
+  const fileList = Object.values(filtered);
+  const hasLineCounts =
+    fileList.length > 0 &&
+    fileList.every(
+      (f: CoverageFile) =>
+        f.lines_covered !== undefined && f.lines_valid !== undefined
+    );
+  let newOverall: number;
+  if (hasLineCounts && fileList.length > 0) {
+    const totalCovered = fileList.reduce(
+      (s, f) => s + (f.lines_covered ?? 0),
+      0
+    );
+    const totalValid = fileList.reduce((s, f) => s + (f.lines_valid ?? 0), 0);
+    newOverall =
+      totalValid > 0 ? roundPercentage((totalCovered / totalValid) * 100) : 0;
+  } else if (fileList.length > 0) {
+    const sum = fileList.reduce((s, f) => s + f.coverage, 0);
+    newOverall = roundPercentage(sum / fileList.length);
+  } else {
+    newOverall = 0;
+  }
+
+  return {
+    files: filtered,
+    coverage: newOverall,
+    timestamp: coverage.timestamp,
+    basePath: coverage.basePath
+  };
+}
+
+/**
  * Get Formatted Inputs
  *
  * @returns {Inputs}
@@ -437,6 +507,15 @@ export function getInputs(): Inputs {
     core.getInput('with_base_coverage_template') ||
     `${__dirname}/../templates/with-base-coverage.hbs`;
 
+  const excludePathsRaw = core.getInput('exclude_paths').trim();
+  const excludePaths =
+    excludePathsRaw === ''
+      ? []
+      : excludePathsRaw
+          .split(',')
+          .map((p) => p.trim())
+          .filter(Boolean);
+
   return {
     token,
     filename,
@@ -457,7 +536,8 @@ export function getInputs(): Inputs {
     skipPackageCoverage,
     showCoverageByTopDir,
     coverageDepth,
-    showCoverageByParentDir
+    showCoverageByParentDir,
+    excludePaths
   };
 }
 

@@ -3,6 +3,7 @@ import {
   checkFileExists,
   colorizePercentageByThreshold,
   downloadArtifacts,
+  filterCoverageByExcludePaths,
   getInputs,
   getParentDirFromFile,
   getPathAtDepth,
@@ -40,17 +41,31 @@ export async function run(): Promise<void> {
         core.debug(`GITHUB_BASE_REF: ${GITHUB_BASE_REF}`);
         const artifactPath = await downloadArtifacts(GITHUB_BASE_REF);
         core.debug(`artifactPath: ${artifactPath}`);
-        const baseCoverage =
+        let baseCoverage =
           artifactPath !== null
             ? await parseCoverage(path.join(artifactPath, filename))
             : null;
 
         core.info(`Parsing coverage file: ${filename}...`);
-        const headCoverage = await parseCoverage(filename);
+        let headCoverage = await parseCoverage(filename);
 
         if (headCoverage === null) {
           core.setFailed(`Unable to process ${filename}`);
           return;
+        }
+
+        const { excludePaths } = getInputs();
+        if (excludePaths.length > 0) {
+          headCoverage = filterCoverageByExcludePaths(
+            headCoverage,
+            excludePaths
+          );
+          if (baseCoverage !== null) {
+            baseCoverage = filterCoverageByExcludePaths(
+              baseCoverage,
+              excludePaths
+            );
+          }
         }
 
         core.info(`Complete`);
@@ -88,8 +103,16 @@ export async function run(): Promise<void> {
           core.info(`Complete`);
 
           core.info(`Parsing coverage file: ${filename}...`);
-          const headCoverage = await parseCoverage(filename);
+          let headCoverage = await parseCoverage(filename);
           core.info(`Complete`);
+
+          const { excludePaths } = getInputs();
+          if (headCoverage != null && excludePaths.length > 0) {
+            headCoverage = filterCoverageByExcludePaths(
+              headCoverage,
+              excludePaths
+            );
+          }
 
           core.info(`Workflow Name: ${GITHUB_WORKFLOW}`);
 
