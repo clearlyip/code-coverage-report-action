@@ -218,9 +218,7 @@ function buildCoverageRows(
       const headAvg = roundPercentage(headSum / count);
       const baseAvg = roundPercentage(baseSum / count);
       const differencePercentage =
-        baseCoverage !== null
-          ? roundPercentage(headAvg - baseAvg)
-          : null;
+        baseCoverage !== null ? roundPercentage(headAvg - baseAvg) : null;
       if (
         baseCoverage !== null &&
         failOnNegativeDifference &&
