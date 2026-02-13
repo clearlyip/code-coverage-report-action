@@ -5,6 +5,7 @@ import {
   downloadArtifacts,
   getInputs,
   getParentDirFromFile,
+  getPathAtDepth,
   getTopDirFromFile,
   parseCoverage,
   roundPercentage,
@@ -107,16 +108,17 @@ export async function run(): Promise<void> {
   }
 }
 
-type CoverageGroupBy = 'file' | 'top_dir' | 'parent_dir';
+type CoverageGroupBy = 'file' | 'top_dir' | 'depth' | 'parent_dir';
 
 /**
- * Build coverage rows for the template: per-file, or aggregated by top_dir (first path segment)
- * or parent_dir (directory containing the file). Parent takes precedence over top_dir when both are set.
+ * Build coverage rows for the template: per-file, or aggregated by top_dir, depth, or parent_dir.
+ * Priority: top_dir > coverage_depth > parent_dir > file (per-file).
  */
 function buildCoverageRows(
   headCoverage: Coverage,
   baseCoverage: Coverage | null,
   showCoverageByTopDir: boolean,
+  coverageDepth: number | undefined,
   showCoverageByParentDir: boolean,
   fileCoverageErrorMin: number,
   fileCoverageWarningMax: number,
@@ -139,11 +141,13 @@ function buildCoverageRows(
     }
   );
 
-  const groupBy: CoverageGroupBy = showCoverageByParentDir
-    ? 'parent_dir'
-    : showCoverageByTopDir
-      ? 'top_dir'
-      : 'file';
+  const groupBy: CoverageGroupBy = showCoverageByTopDir
+    ? 'top_dir'
+    : coverageDepth !== undefined && coverageDepth >= 1
+      ? 'depth'
+      : showCoverageByParentDir
+        ? 'parent_dir'
+        : 'file';
 
   if (groupBy === 'file') {
     return fileEntries
@@ -196,7 +200,11 @@ function buildCoverageRows(
   }
 
   const getGroupKey =
-    groupBy === 'top_dir' ? getTopDirFromFile : getParentDirFromFile;
+    groupBy === 'top_dir'
+      ? getTopDirFromFile
+      : groupBy === 'depth' && coverageDepth !== undefined
+        ? (relativePath: string) => getPathAtDepth(relativePath, coverageDepth)
+        : getParentDirFromFile;
   const byDir: Record<
     string,
     { headSum: number; baseSum: number; count: number }
@@ -280,6 +288,7 @@ export async function generateMarkdown(
     onlyListChangedFiles,
     skipPackageCoverage,
     showCoverageByTopDir,
+    coverageDepth,
     showCoverageByParentDir
   } = inputs;
   const overallDifferencePercentage = baseCoverage
@@ -350,6 +359,7 @@ export async function generateMarkdown(
           headCoverage,
           baseCoverage,
           showCoverageByTopDir,
+          coverageDepth,
           showCoverageByParentDir,
           fileCoverageErrorMin,
           fileCoverageWarningMax,

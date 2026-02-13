@@ -309,6 +309,23 @@ export function getParentDirFromFile(relativePath: string): string {
   return normalized.slice(0, lastSlash + 1);
 }
 
+/**
+ * Return the path prefix with exactly `depth` segments (directory depth).
+ * e.g. "src/common/asm/foo.py", depth 1 -> "src/", depth 2 -> "src/common/", depth 3 -> "src/common/asm/"
+ * "main.ts" or depth 0 -> "(root)". depth >= dir segments -> same as parent dir.
+ */
+export function getPathAtDepth(relativePath: string, depth: number): string {
+  if (depth < 1) return '(root)';
+  const normalized = relativePath.replace(/\\/g, '/');
+  const lastSlash = normalized.lastIndexOf('/');
+  if (lastSlash === -1) return '(root)';
+  const dirPath = normalized.slice(0, lastSlash + 1);
+  const segments = dirPath.split('/').filter(Boolean);
+  if (segments.length === 0) return '(root)';
+  const take = Math.min(depth, segments.length);
+  return `${segments.slice(0, take).join('/')}/`;
+}
+
 export function determineCommonBasePath(
   files: string[],
   separator = '/'
@@ -360,13 +377,13 @@ export function getInputs(): Inputs {
   const skipPackageCoverage = core.getInput('skip_package_coverage') === 'true';
   const showCoverageByTopDir =
     core.getInput('show_coverage_by_top_dir') === 'true';
+  const coverageDepthRaw = core.getInput('coverage_depth').trim();
+  const coverageDepth =
+    coverageDepthRaw === ''
+      ? undefined
+      : Math.max(1, Math.abs(parseInt(coverageDepthRaw, 10)) || 1);
   const showCoverageByParentDir =
     core.getInput('show_coverage_by_parent_dir') === 'true';
-  if (showCoverageByTopDir && showCoverageByParentDir) {
-    throw new Error(
-      'show_coverage_by_top_dir and show_coverage_by_parent_dir are mutually exclusive; set only one to true'
-    );
-  }
   const overallCoverageFailThreshold = Math.abs(
     parseInt(core.getInput('overall_coverage_fail_threshold') || '0')
   );
@@ -439,6 +456,7 @@ export function getInputs(): Inputs {
     onlyListChangedFiles,
     skipPackageCoverage,
     showCoverageByTopDir,
+    coverageDepth,
     showCoverageByParentDir
   };
 }

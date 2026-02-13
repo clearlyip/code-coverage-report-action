@@ -8,6 +8,7 @@ import {
   colorizePercentageByThreshold,
   getInputs,
   getParentDirFromFile,
+  getPathAtDepth,
   getTopDirFromFile,
   parseXML,
   parseCoverage
@@ -102,6 +103,18 @@ test('getParentDirFromFile returns parent directory of the file', () => {
   expect(getParentDirFromFile('reports/clover/index.ts')).toBe('reports/clover/')
 })
 
+test('getPathAtDepth returns path prefix with exactly depth segments', () => {
+  expect(getPathAtDepth('src/common/asm/foo.py', 1)).toBe('src/')
+  expect(getPathAtDepth('src/common/asm/foo.py', 2)).toBe('src/common/')
+  expect(getPathAtDepth('src/common/asm/foo.py', 3)).toBe('src/common/asm/')
+  expect(getPathAtDepth('src/common/asm/foo.py', 4)).toBe('src/common/asm/')
+  expect(getPathAtDepth('main.ts', 1)).toBe('(root)')
+  expect(getPathAtDepth('reports/clover/index.ts', 1)).toBe('reports/')
+  expect(getPathAtDepth('reports/clover/index.ts', 2)).toBe('reports/clover/')
+  expect(getPathAtDepth('reports/clover/index.ts', 3)).toBe('reports/clover/')
+  expect(getPathAtDepth('src/foo.py', 0)).toBe('(root)')
+})
+
 test('escaping regular expression input', () => {
   const output = escapeRegExp('\\^$.|?*+{}[]()')
   expect(output).toBe('\\\\\\^\\$\\.\\|\\?\\*\\+\\{\\}\\[\\]\\(\\)')
@@ -167,6 +180,7 @@ test('getInputs', () => {
     retention: undefined,
     skipPackageCoverage: false,
     showCoverageByTopDir: false,
+    coverageDepth: undefined,
     showCoverageByParentDir: false,
     onlyListChangedFiles: false,
     //This is a cheat
@@ -186,17 +200,24 @@ test('getInputs returns showCoverageByParentDir true when INPUT_SHOW_COVERAGE_BY
   delete process.env.INPUT_SHOW_COVERAGE_BY_PARENT_DIR
 })
 
-test('getInputs throws when both show_coverage_by_top_dir and show_coverage_by_parent_dir are true', () => {
+test('getInputs returns coverageDepth when INPUT_COVERAGE_DEPTH is set', () => {
   process.env.INPUT_GITHUB_TOKEN = 'token'
   process.env.INPUT_FILENAME = 'filename.xml'
-  process.env.INPUT_SHOW_COVERAGE_BY_TOP_DIR = 'true'
-  process.env.INPUT_SHOW_COVERAGE_BY_PARENT_DIR = 'true'
+  process.env.INPUT_COVERAGE_DEPTH = '2'
 
-  expect(() => getInputs()).toThrow(
-    'show_coverage_by_top_dir and show_coverage_by_parent_dir are mutually exclusive'
-  )
-  delete process.env.INPUT_SHOW_COVERAGE_BY_TOP_DIR
-  delete process.env.INPUT_SHOW_COVERAGE_BY_PARENT_DIR
+  const f = getInputs()
+  expect(f.coverageDepth).toBe(2)
+  delete process.env.INPUT_COVERAGE_DEPTH
+})
+
+test('getInputs clamps coverage_depth to at least 1', () => {
+  process.env.INPUT_GITHUB_TOKEN = 'token'
+  process.env.INPUT_FILENAME = 'filename.xml'
+  process.env.INPUT_COVERAGE_DEPTH = '0'
+
+  const f = getInputs()
+  expect(f.coverageDepth).toBe(1)
+  delete process.env.INPUT_COVERAGE_DEPTH
 })
 
 test('parse clover into file format', async () => {
