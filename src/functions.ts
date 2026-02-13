@@ -5,6 +5,7 @@ import {
   downloadArtifacts,
   getInputs,
   getParentDirFromFile,
+  getTopDirFromFile,
   parseCoverage,
   roundPercentage,
   uploadArtifacts
@@ -105,13 +106,16 @@ export async function run(): Promise<void> {
   }
 }
 
+type CoverageGroupBy = 'file' | 'top_dir' | 'parent_dir';
+
 /**
- * Build coverage rows for the template: either per-file or aggregated by
- * parent directory when showCoverageByParentDir is true.
+ * Build coverage rows for the template: per-file, or aggregated by top_dir (first path segment)
+ * or parent_dir (directory containing the file). Parent takes precedence over top_dir when both are set.
  */
 function buildCoverageRows(
   headCoverage: Coverage,
   baseCoverage: Coverage | null,
+  showCoverageByTopDir: boolean,
   showCoverageByParentDir: boolean,
   fileCoverageErrorMin: number,
   fileCoverageWarningMax: number,
@@ -134,7 +138,13 @@ function buildCoverageRows(
     }
   );
 
-  if (!showCoverageByParentDir) {
+  const groupBy: CoverageGroupBy = showCoverageByParentDir
+    ? 'parent_dir'
+    : showCoverageByTopDir
+      ? 'top_dir'
+      : 'file';
+
+  if (groupBy === 'file') {
     return fileEntries
       .map(([hash, file]) => {
         if (baseCoverage === null) {
@@ -184,24 +194,25 @@ function buildCoverageRows(
       );
   }
 
-  // Aggregate by parent directory
-  const byParentDir: Record<
+  const getGroupKey =
+    groupBy === 'top_dir' ? getTopDirFromFile : getParentDirFromFile;
+  const byDir: Record<
     string,
     { headSum: number; baseSum: number; count: number }
   > = {};
   for (const [hash, file] of fileEntries) {
-    const parentDir = getParentDirFromFile(file.relative);
-    if (!byParentDir[parentDir]) {
-      byParentDir[parentDir] = { headSum: 0, baseSum: 0, count: 0 };
+    const key = getGroupKey(file.relative);
+    if (!byDir[key]) {
+      byDir[key] = { headSum: 0, baseSum: 0, count: 0 };
     }
-    byParentDir[parentDir].headSum += file.coverage;
-    byParentDir[parentDir].count += 1;
+    byDir[key].headSum += file.coverage;
+    byDir[key].count += 1;
     if (baseCoverage?.files[hash]) {
-      byParentDir[parentDir].baseSum += baseCoverage.files[hash].coverage;
+      byDir[key].baseSum += baseCoverage.files[hash].coverage;
     }
   }
 
-  return Object.entries(byParentDir)
+  return Object.entries(byDir)
     .map(([pkg, { headSum, baseSum, count }]) => {
       const headAvg = roundPercentage(headSum / count);
       const baseAvg = roundPercentage(baseSum / count);
@@ -269,6 +280,7 @@ export async function generateMarkdown(
     negativeDifferenceThreshold,
     onlyListChangedFiles,
     skipPackageCoverage,
+    showCoverageByTopDir,
     showCoverageByParentDir
   } = inputs;
   const overallDifferencePercentage = baseCoverage
@@ -334,6 +346,7 @@ export async function generateMarkdown(
       : buildCoverageRows(
           headCoverage,
           baseCoverage,
+          showCoverageByTopDir,
           showCoverageByParentDir,
           fileCoverageErrorMin,
           fileCoverageWarningMax,

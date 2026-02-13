@@ -289,6 +289,16 @@ export function colorizePercentageByThreshold(
  * @returns {string}
  */
 /**
+ * Return the first path segment (top-level dir). e.g. "src/common/foo.py" -> "src/", "main.ts" -> "(root)"
+ */
+export function getTopDirFromFile(relativePath: string): string {
+  const normalized = relativePath.replace(/\\/g, '/');
+  const firstSlash = normalized.indexOf('/');
+  if (firstSlash === -1) return '(root)';
+  return normalized.slice(0, firstSlash + 1);
+}
+
+/**
  * Return the parent directory of the file.
  * e.g. "src/common/foo.py" -> "src/common/", "main.ts" -> "(root)"
  */
@@ -348,8 +358,15 @@ export function getInputs(): Inputs {
     core.getInput('markdown_filename') || 'code-coverage-results';
   const badge = core.getInput('badge') === 'true';
   const skipPackageCoverage = core.getInput('skip_package_coverage') === 'true';
+  const showCoverageByTopDir =
+    core.getInput('show_coverage_by_top_dir') === 'true';
   const showCoverageByParentDir =
     core.getInput('show_coverage_by_parent_dir') === 'true';
+  if (showCoverageByTopDir && showCoverageByParentDir) {
+    throw new Error(
+      'show_coverage_by_top_dir and show_coverage_by_parent_dir are mutually exclusive; set only one to true'
+    );
+  }
   const overallCoverageFailThreshold = Math.abs(
     parseInt(core.getInput('overall_coverage_fail_threshold') || '0')
   );
@@ -421,6 +438,7 @@ export function getInputs(): Inputs {
     negativeDifferenceThreshold,
     onlyListChangedFiles,
     skipPackageCoverage,
+    showCoverageByTopDir,
     showCoverageByParentDir
   };
 }

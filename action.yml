@@ -64,8 +64,12 @@ inputs:
   with_base_coverage_template:
     description: 'Path to custom template with base coverage'
     required: false
+  show_coverage_by_top_dir:
+    description: 'When true, aggregate coverage by the first path segment (e.g. src/, tests/, (root)). Mutually exclusive with show_coverage_by_parent_dir.'
+    required: false
+    default: 'false'
   show_coverage_by_parent_dir:
-    description: 'When true, aggregate coverage by the parent directory of each file instead of per-file. E.g. src/common/, src/aws/ instead of a single src/ row.'
+    description: 'When true, aggregate coverage by the parent directory of each file (e.g. src/common/, src/aws/). Mutually exclusive with show_coverage_by_top_dir.'
     required: false
     default: 'false'
 

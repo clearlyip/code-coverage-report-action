@@ -8,6 +8,7 @@ import {
   colorizePercentageByThreshold,
   getInputs,
   getParentDirFromFile,
+  getTopDirFromFile,
   parseXML,
   parseCoverage
 } from '../src/utils'
@@ -83,6 +84,13 @@ test('determine common base path from list of paths', () => {
   ])
 
   expect(path).toBe('/usr/src/app')
+})
+
+test('getTopDirFromFile returns first path segment', () => {
+  expect(getTopDirFromFile('src/common/ai_platform_client.py')).toBe('src/')
+  expect(getTopDirFromFile('src/common/asm/foo.py')).toBe('src/')
+  expect(getTopDirFromFile('main.ts')).toBe('(root)')
+  expect(getTopDirFromFile('reports/clover/index.ts')).toBe('reports/')
 })
 
 test('getParentDirFromFile returns parent directory of the file', () => {
