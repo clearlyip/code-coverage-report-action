@@ -7,6 +7,7 @@ import {
   escapeRegExp,
   colorizePercentageByThreshold,
   getInputs,
+  getParentDirFromFile,
   parseXML,
   parseCoverage
 } from '../src/utils'
@@ -82,6 +83,15 @@ test('determine common base path from list of paths', () => {
   ])
 
   expect(path).toBe('/usr/src/app')
+})
+
+test('getParentDirFromFile returns parent directory of the file', () => {
+  expect(getParentDirFromFile('src/common/ai_platform_client.py')).toBe(
+    'src/common/'
+  )
+  expect(getParentDirFromFile('src/common/asm/foo.py')).toBe('src/common/asm/')
+  expect(getParentDirFromFile('main.ts')).toBe('(root)')
+  expect(getParentDirFromFile('reports/clover/index.ts')).toBe('reports/clover/')
 })
 
 test('escaping regular expression input', () => {

@@ -29,6 +29,7 @@ export interface Inputs {
   negativeDifferenceThreshold: number;
   onlyListChangedFiles: boolean;
   skipPackageCoverage: boolean;
+  showCoverageByParentDir: boolean;
 }
 
 export interface Files {

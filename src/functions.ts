@@ -4,6 +4,7 @@ import {
   colorizePercentageByThreshold,
   downloadArtifacts,
   getInputs,
+  getParentDirFromFile,
   parseCoverage,
   roundPercentage,
   uploadArtifacts
@@ -104,6 +105,152 @@ export async function run(): Promise<void> {
   }
 }
 
+/**
+ * Build coverage rows for the template: either per-file or aggregated by
+ * parent directory when showCoverageByParentDir is true.
+ */
+function buildCoverageRows(
+  headCoverage: Coverage,
+  baseCoverage: Coverage | null,
+  showCoverageByParentDir: boolean,
+  fileCoverageErrorMin: number,
+  fileCoverageWarningMax: number,
+  onlyListChangedFiles: boolean,
+  failOnNegativeDifference: boolean,
+  negativeDifferenceBy: string,
+  negativeDifferenceThreshold: number
+): HandlebarContextCoverage[] {
+  const fileEntries = Object.entries(headCoverage.files).filter(
+    ([hash, file]) => {
+      if (baseCoverage === null) return !onlyListChangedFiles;
+      const baseCoveragePercentage = baseCoverage.files[hash]
+        ? baseCoverage.files[hash].coverage
+        : 0;
+      const differencePercentage = baseCoveragePercentage
+        ? roundPercentage(file.coverage - baseCoveragePercentage)
+        : roundPercentage(file.coverage);
+      if (onlyListChangedFiles && differencePercentage === 0) return false;
+      return true;
+    }
+  );
+
+  if (!showCoverageByParentDir) {
+    return fileEntries
+      .map(([hash, file]) => {
+        if (baseCoverage === null) {
+          return {
+            package: file.relative,
+            base_coverage: `${colorizePercentageByThreshold(
+              file.coverage,
+              fileCoverageWarningMax,
+              fileCoverageErrorMin
+            )}`
+          };
+        }
+        const baseCoveragePercentage = baseCoverage.files[hash]
+          ? baseCoverage.files[hash].coverage
+          : 0;
+        const differencePercentage = baseCoveragePercentage
+          ? roundPercentage(file.coverage - baseCoveragePercentage)
+          : roundPercentage(file.coverage);
+        if (
+          failOnNegativeDifference &&
+          negativeDifferenceBy === 'package' &&
+          differencePercentage !== null &&
+          differencePercentage < 0 &&
+          differencePercentage < negativeDifferenceThreshold
+        ) {
+          core.setFailed(
+            `${file.relative} coverage difference was ${differencePercentage}% which is below threshold of ${negativeDifferenceThreshold}%`
+          );
+        }
+        return {
+          package: file.relative,
+          base_coverage: `${colorizePercentageByThreshold(
+            baseCoveragePercentage,
+            fileCoverageWarningMax,
+            fileCoverageErrorMin
+          )}`,
+          new_coverage: `${colorizePercentageByThreshold(
+            file.coverage,
+            fileCoverageWarningMax,
+            fileCoverageErrorMin
+          )}`,
+          difference: colorizePercentageByThreshold(differencePercentage)
+        };
+      })
+      .sort((a, b) =>
+        a.package < b.package ? -1 : a.package > b.package ? 1 : 0
+      );
+  }
+
+  // Aggregate by parent directory
+  const byParentDir: Record<
+    string,
+    { headSum: number; baseSum: number; count: number }
+  > = {};
+  for (const [hash, file] of fileEntries) {
+    const parentDir = getParentDirFromFile(file.relative);
+    if (!byParentDir[parentDir]) {
+      byParentDir[parentDir] = { headSum: 0, baseSum: 0, count: 0 };
+    }
+    byParentDir[parentDir].headSum += file.coverage;
+    byParentDir[parentDir].count += 1;
+    if (baseCoverage?.files[hash]) {
+      byParentDir[parentDir].baseSum += baseCoverage.files[hash].coverage;
+    }
+  }
+
+  return Object.entries(byParentDir)
+    .map(([pkg, { headSum, baseSum, count }]) => {
+      const headAvg = roundPercentage(headSum / count);
+      const baseAvg = roundPercentage(baseSum / count);
+      const differencePercentage =
+        baseCoverage !== null
+          ? roundPercentage(headAvg - baseAvg)
+          : null;
+      if (
+        baseCoverage !== null &&
+        failOnNegativeDifference &&
+        negativeDifferenceBy === 'package' &&
+        differencePercentage !== null &&
+        differencePercentage < 0 &&
+        differencePercentage < negativeDifferenceThreshold
+      ) {
+        core.setFailed(
+          `${pkg} coverage difference was ${differencePercentage}% which is below threshold of ${negativeDifferenceThreshold}%`
+        );
+      }
+      if (baseCoverage === null) {
+        return {
+          package: pkg,
+          base_coverage: `${colorizePercentageByThreshold(
+            headAvg,
+            fileCoverageWarningMax,
+            fileCoverageErrorMin
+          )}`
+        };
+      }
+      return {
+        package: pkg,
+        base_coverage: `${colorizePercentageByThreshold(
+          baseAvg,
+          fileCoverageWarningMax,
+          fileCoverageErrorMin
+        )}`,
+        new_coverage: `${colorizePercentageByThreshold(
+          headAvg,
+          fileCoverageWarningMax,
+          fileCoverageErrorMin
+        )}`,
+        difference: colorizePercentageByThreshold(differencePercentage)
+      };
+    })
+    .sort((a, b) =>
+      a.package < b.package ? -1 : a.package > b.package ? 1 : 0
+    );
+}
+
 export async function generateMarkdown(
   headCoverage: Coverage,
   baseCoverage: Coverage | null = null
@@ -121,7 +268,8 @@ export async function generateMarkdown(
     withoutBaseCoverageTemplate,
     negativeDifferenceThreshold,
     onlyListChangedFiles,
-    skipPackageCoverage
+    skipPackageCoverage,
+    showCoverageByParentDir
   } = inputs;
   const overallDifferencePercentage = baseCoverage
     ? roundPercentage(headCoverage.coverage - baseCoverage.coverage)
@@ -183,76 +331,17 @@ export async function generateMarkdown(
     new_coverage: `${headCoverage.coverage}%`,
     coverage: skipPackageCoverage
       ? []
-      : Object.entries(headCoverage.files)
-          .filter(([hash, file]) => {
-            if (baseCoverage === null) {
-              return !onlyListChangedFiles;
-            }
-
-            const baseCoveragePercentage = baseCoverage.files[hash]
-              ? baseCoverage.files[hash].coverage
-              : 0;
-
-            const differencePercentage = baseCoveragePercentage
-              ? roundPercentage(file.coverage - baseCoveragePercentage)
-              : roundPercentage(file.coverage);
-
-            if (onlyListChangedFiles && differencePercentage === 0) {
-              return false;
-            }
-
-            return true;
-          })
-          .map(([hash, file]) => {
-            if (baseCoverage === null) {
-              return {
-                package: file.relative,
-                base_coverage: `${colorizePercentageByThreshold(
-                  file.coverage,
-                  fileCoverageWarningMax,
-                  fileCoverageErrorMin
-                )}`
-              };
-            }
-
-            const baseCoveragePercentage = baseCoverage.files[hash]
-              ? baseCoverage.files[hash].coverage
-              : 0;
-
-            const differencePercentage = baseCoveragePercentage
-              ? roundPercentage(file.coverage - baseCoveragePercentage)
-              : roundPercentage(file.coverage);
-
-            if (
-              failOnNegativeDifference &&
-              negativeDifferenceBy === 'package' &&
-              differencePercentage !== null &&
-              differencePercentage < 0 &&
-              differencePercentage < negativeDifferenceThreshold
-            ) {
-              core.setFailed(
-                `${headCoverage.files[hash].relative} coverage difference was ${differencePercentage}% which is below threshold of ${negativeDifferenceThreshold}%`
-              );
-            }
-
-            return {
-              package: file.relative,
-              base_coverage: `${colorizePercentageByThreshold(
-                baseCoveragePercentage,
-                fileCoverageWarningMax,
-                fileCoverageErrorMin
-              )}`,
-              new_coverage: `${colorizePercentageByThreshold(
-                file.coverage,
-                fileCoverageWarningMax,
-                fileCoverageErrorMin
-              )}`,
-              difference: colorizePercentageByThreshold(differencePercentage)
-            };
-          })
-          .sort((a, b) =>
-            a.package < b.package ? -1 : a.package > b.package ? 1 : 0
-          ),
+      : buildCoverageRows(
+          headCoverage,
+          baseCoverage,
+          showCoverageByParentDir,
+          fileCoverageErrorMin,
+          fileCoverageWarningMax,
+          onlyListChangedFiles,
+          failOnNegativeDifference,
+          negativeDifferenceBy,
+          negativeDifferenceThreshold
+        ),
     overall_coverage: addOverallRow(headCoverage, baseCoverage),
     inputs
   };

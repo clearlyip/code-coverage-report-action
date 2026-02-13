@@ -288,6 +288,17 @@ export function colorizePercentageByThreshold(
  * @param {string} separator
  * @returns {string}
  */
+/**
+ * Return the parent directory of the file.
+ * e.g. "src/common/foo.py" -> "src/common/", "main.ts" -> "(root)"
+ */
+export function getParentDirFromFile(relativePath: string): string {
+  const normalized = relativePath.replace(/\\/g, '/');
+  const lastSlash = normalized.lastIndexOf('/');
+  if (lastSlash === -1) return '(root)';
+  return normalized.slice(0, lastSlash + 1);
+}
+
 export function determineCommonBasePath(
   files: string[],
   separator = '/'
@@ -337,6 +348,8 @@ export function getInputs(): Inputs {
     core.getInput('markdown_filename') || 'code-coverage-results';
   const badge = core.getInput('badge') === 'true';
   const skipPackageCoverage = core.getInput('skip_package_coverage') === 'true';
+  const showCoverageByParentDir =
+    core.getInput('show_coverage_by_parent_dir') === 'true';
   const overallCoverageFailThreshold = Math.abs(
     parseInt(core.getInput('overall_coverage_fail_threshold') || '0')
   );
@@ -407,7 +420,8 @@ export function getInputs(): Inputs {
     withBaseCoverageTemplate,
     negativeDifferenceThreshold,
     onlyListChangedFiles,
-    skipPackageCoverage
+    skipPackageCoverage,
+    showCoverageByParentDir
   };
 }
 
