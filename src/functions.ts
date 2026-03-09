@@ -160,14 +160,18 @@ function buildCoverageRows(
 ): HandlebarContextCoverage[] {
   const fileEntries = Object.entries(headCoverage.files).filter(
     ([hash, file]) => {
-      if (baseCoverage === null) return !onlyListChangedFiles;
+      if (baseCoverage === null) {
+        return !onlyListChangedFiles;
+      }
       const baseCoveragePercentage = baseCoverage.files[hash]
         ? baseCoverage.files[hash].coverage
         : 0;
       const differencePercentage = baseCoveragePercentage
         ? roundPercentage(file.coverage - baseCoveragePercentage)
         : roundPercentage(file.coverage);
-      if (onlyListChangedFiles && differencePercentage === 0) return false;
+      if (onlyListChangedFiles && differencePercentage === 0) {
+        return false;
+      }
       return true;
     }
   );
@@ -457,7 +461,9 @@ export function aggregateCoverageByTopDir(
   >();
   for (const [hash, file] of Object.entries(headCoverage.files)) {
     const dir = getTopDir(file.relative);
-    if (!byDir.has(dir)) byDir.set(dir, { head: [], base: [] });
+    if (!byDir.has(dir)) {
+      byDir.set(dir, { head: [], base: [] });
+    }
     byDir.get(dir)!.head.push(file);
     if (baseCoverage?.files[hash]) {
       byDir.get(dir)!.base.push(baseCoverage.files[hash]);
