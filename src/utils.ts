@@ -388,7 +388,9 @@ export function isPathExcluded(
   const normalized = relativePath.replace(/\\/g, '/');
   for (const prefix of excludePrefixes) {
     const p = prefix.replace(/\\/g, '/').trim();
-    if (!p) continue;
+    if (!p) {
+      continue;
+    }
     const prefixNorm = p.endsWith('/') ? p.slice(0, -1) : p;
     if (normalized === prefixNorm || normalized.startsWith(`${prefixNorm}/`)) {
       return true;
