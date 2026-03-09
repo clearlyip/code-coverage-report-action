@@ -88,7 +88,9 @@ function countLines(lines: Lines): {
   let lines_covered = 0;
   for (const line of arr) {
     const hits = parseInt((line as { '@_hits'?: string })['@_hits'] ?? '0', 10);
-    if (hits > 0) lines_covered += 1;
+    if (hits > 0) {
+      lines_covered += 1;
+    }
   }
   return { lines_covered, lines_valid: arr.length };
 }

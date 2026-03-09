@@ -294,7 +294,9 @@ export function colorizePercentageByThreshold(
 export function getTopDirFromFile(relativePath: string): string {
   const normalized = relativePath.replace(/\\/g, '/');
   const firstSlash = normalized.indexOf('/');
-  if (firstSlash === -1) return '(root)';
+  if (firstSlash === -1) {
+    return '(root)';
+  }
   return normalized.slice(0, firstSlash + 1);
 }
 
@@ -305,7 +307,9 @@ export function getTopDirFromFile(relativePath: string): string {
 export function getParentDirFromFile(relativePath: string): string {
   const normalized = relativePath.replace(/\\/g, '/');
   const lastSlash = normalized.lastIndexOf('/');
-  if (lastSlash === -1) return '(root)';
+  if (lastSlash === -1) {
+    return '(root)';
+  }
   return normalized.slice(0, lastSlash + 1);
 }
 
@@ -315,13 +319,19 @@ export function getParentDirFromFile(relativePath: string): string {
  * "main.ts" or depth 0 -> "(root)". depth >= dir segments -> same as parent dir.
  */
 export function getPathAtDepth(relativePath: string, depth: number): string {
-  if (depth < 1) return '(root)';
+  if (depth < 1) {
+    return '(root)';
+  }
   const normalized = relativePath.replace(/\\/g, '/');
   const lastSlash = normalized.lastIndexOf('/');
-  if (lastSlash === -1) return '(root)';
+  if (lastSlash === -1) {
+    return '(root)';
+  }
   const dirPath = normalized.slice(0, lastSlash + 1);
   const segments = dirPath.split('/').filter(Boolean);
-  if (segments.length === 0) return '(root)';
+  if (segments.length === 0) {
+    return '(root)';
+  }
   const take = Math.min(depth, segments.length);
   return `${segments.slice(0, take).join('/')}/`;
 }
@@ -372,7 +382,9 @@ export function isPathExcluded(
   relativePath: string,
   excludePrefixes: string[]
 ): boolean {
-  if (excludePrefixes.length === 0) return false;
+  if (excludePrefixes.length === 0) {
+    return false;
+  }
   const normalized = relativePath.replace(/\\/g, '/');
   for (const prefix of excludePrefixes) {
     const p = prefix.replace(/\\/g, '/').trim();
@@ -393,7 +405,9 @@ export function filterCoverageByExcludePaths(
   coverage: Coverage,
   excludePaths: string[]
 ): Coverage {
-  if (excludePaths.length === 0) return coverage;
+  if (excludePaths.length === 0) {
+    return coverage;
+  }
 
   const filtered: Files = {};
   for (const [hash, file] of Object.entries(coverage.files)) {
@@ -613,7 +627,9 @@ export function formatArtifactName(name: string): string {
 function inArray(needle: string, haystack: string[]): boolean {
   const length = haystack.length;
   for (let i = 0; i < length; i++) {
-    if (haystack[i] === needle) return true;
+    if (haystack[i] === needle) {
+      return true;
+    }
   }
   return false;
 }
