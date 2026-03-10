@@ -242,24 +242,26 @@ function buildCoverageRows(
         : getParentDirFromFile;
   const byDir: Record<
     string,
-    { headSum: number; baseSum: number; count: number }
+    { headSum: number; baseSum: number; count: number; baseCount: number }
   > = {};
   for (const [hash, file] of fileEntries) {
     const key = getGroupKey(file.relative);
     if (!byDir[key]) {
-      byDir[key] = { headSum: 0, baseSum: 0, count: 0 };
+      byDir[key] = { headSum: 0, baseSum: 0, count: 0, baseCount: 0 };
     }
     byDir[key].headSum += file.coverage;
     byDir[key].count += 1;
     if (baseCoverage?.files[hash]) {
       byDir[key].baseSum += baseCoverage.files[hash].coverage;
+      byDir[key].baseCount += 1;
     }
   }
 
   return Object.entries(byDir)
-    .map(([pkg, { headSum, baseSum, count }]) => {
+    .map(([pkg, { headSum, baseSum, count, baseCount }]) => {
       const headAvg = roundPercentage(headSum / count);
-      const baseAvg = roundPercentage(baseSum / count);
+      const baseAvg =
+        baseCount > 0 ? roundPercentage(baseSum / baseCount) : 0;
       const differencePercentage =
         baseCoverage !== null ? roundPercentage(headAvg - baseAvg) : null;
       if (
@@ -438,14 +440,6 @@ export async function generateMarkdown(
 }
 
 /**
- * Get top-level directory from relative path (first segment + / or "(root)").
- */
-function getTopDir(relative: string): string {
-  const i = relative.indexOf('/');
-  return i >= 0 ? relative.slice(0, i + 1) : '(root)';
-}
-
-/**
  * Aggregate coverage by top-level directory. Uses line-weighted when lines_covered/lines_valid
  * are present (Cobertura), otherwise average of file percentages (Clover).
  */
@@ -460,7 +454,7 @@ export function aggregateCoverageByTopDir(
     { head: CoverageFile[]; base: CoverageFile[] }
   >();
   for (const [hash, file] of Object.entries(headCoverage.files)) {
-    const dir = getTopDir(file.relative);
+    const dir = getTopDirFromFile(file.relative);
     if (!byDir.has(dir)) {
       byDir.set(dir, { head: [], base: [] });
     }

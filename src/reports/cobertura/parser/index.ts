@@ -28,12 +28,6 @@ export default async function parse(cobertura: Cobertura): Promise<Coverage> {
 }
 
 /**
- * Parse Packages
- *
- * @param {Package[]} packages
- * @returns {Promise<Files>}
- */
-/**
  * Merge two file entries for the same path (e.g. multiple classes per file or same file in multiple packages).
  * Sums lines_covered and lines_valid; recomputes coverage from aggregated lines when both have line counts.
  */
@@ -115,7 +109,6 @@ async function parseClasses(classes?: Class[]): Promise<Files> {
 
   for (const cls of classes || []) {
     const path = cls['@_filename'];
-    const lineRate = cls['@_line-rate'];
     const { lines_covered, lines_valid } = countLines(cls.lines);
     const key = path;
 

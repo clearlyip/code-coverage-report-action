@@ -68,13 +68,13 @@ async function parseFiles(files: File[] | undefined | null): Promise<Files> {
         { '@_name': name, metrics: fileMetrics, '@_path': path }: File
       ) => {
         const coveredSum =
-          parseInt(fileMetrics['@_coveredconditionals']) +
-          parseInt(fileMetrics['@_coveredstatements']) +
-          parseInt(fileMetrics['@_coveredmethods']);
+          (parseInt(fileMetrics['@_coveredconditionals'], 10) || 0) +
+          (parseInt(fileMetrics['@_coveredstatements'], 10) || 0) +
+          (parseInt(fileMetrics['@_coveredmethods'], 10) || 0);
         const codeSum =
-          parseInt(fileMetrics['@_conditionals']) +
-          parseInt(fileMetrics['@_statements']) +
-          parseInt(fileMetrics['@_methods']);
+          (parseInt(fileMetrics['@_conditionals'], 10) || 0) +
+          (parseInt(fileMetrics['@_statements'], 10) || 0) +
+          (parseInt(fileMetrics['@_methods'], 10) || 0);
         return {
           ...previous,
           [createHash(path ?? name)]: {
@@ -100,12 +100,12 @@ async function parseFiles(files: File[] | undefined | null): Promise<Files> {
  * @returns
  */
 function processCoverageMetrics(metrics: FileMetrics): number {
-  const coveredConditionals = parseInt(metrics['@_coveredconditionals']);
-  const coveredStatements = parseInt(metrics['@_coveredstatements']);
-  const coveredMethods = parseInt(metrics['@_coveredmethods']);
-  const conditionals = parseInt(metrics['@_conditionals']);
-  const statements = parseInt(metrics['@_statements']);
-  const methods = parseInt(metrics['@_methods']);
+  const coveredConditionals = parseInt(metrics['@_coveredconditionals'], 10) || 0;
+  const coveredStatements = parseInt(metrics['@_coveredstatements'], 10) || 0;
+  const coveredMethods = parseInt(metrics['@_coveredmethods'], 10) || 0;
+  const conditionals = parseInt(metrics['@_conditionals'], 10) || 0;
+  const statements = parseInt(metrics['@_statements'], 10) || 0;
+  const methods = parseInt(metrics['@_methods'], 10) || 0;
 
   const coveredSum = coveredConditionals + coveredStatements + coveredMethods;
   const codeSum = conditionals + statements + methods;

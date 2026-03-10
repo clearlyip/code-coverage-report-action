@@ -282,13 +282,6 @@ export function colorizePercentageByThreshold(
 }
 
 /**
- * Determine a common base path
- *
- * @param {string[]} files
- * @param {string} separator
- * @returns {string}
- */
-/**
  * Return the first path segment (top-level dir). e.g. "src/common/foo.py" -> "src/", "main.ts" -> "(root)"
  */
 export function getTopDirFromFile(relativePath: string): string {
@@ -336,6 +329,13 @@ export function getPathAtDepth(relativePath: string, depth: number): string {
   return `${segments.slice(0, take).join('/')}/`;
 }
 
+/**
+ * Determine a common base path
+ *
+ * @param {string[]} files
+ * @param {string} separator
+ * @returns {string}
+ */
 export function determineCommonBasePath(
   files: string[],
   separator = '/'
@@ -400,6 +400,32 @@ export function isPathExcluded(
 }
 
 /**
+ * Recompute overall coverage percentage from a list of files.
+ * Uses line-weighted averaging when all files have lines_covered/lines_valid,
+ * otherwise falls back to averaging per-file coverage percentages.
+ */
+function recomputeOverallCoverage(fileList: CoverageFile[]): number {
+  if (fileList.length === 0) {
+    return 0;
+  }
+  const hasLineCounts = fileList.every(
+    (f) => f.lines_covered !== undefined && f.lines_valid !== undefined
+  );
+  if (hasLineCounts) {
+    const totalCovered = fileList.reduce(
+      (s, f) => s + (f.lines_covered ?? 0),
+      0
+    );
+    const totalValid = fileList.reduce((s, f) => s + (f.lines_valid ?? 0), 0);
+    return totalValid > 0
+      ? roundPercentage((totalCovered / totalValid) * 100)
+      : 0;
+  }
+  const sum = fileList.reduce((s, f) => s + f.coverage, 0);
+  return roundPercentage(sum / fileList.length);
+}
+
+/**
  * Filter coverage to exclude files whose relative path starts with any exclude prefix.
  * Recomputes overall coverage from the remaining files (line-weighted when available).
  */
@@ -418,76 +444,31 @@ export function filterCoverageByExcludePaths(
     }
   }
 
-  const fileList = Object.values(filtered);
-  const hasLineCounts =
-    fileList.length > 0 &&
-    fileList.every(
-      (f: CoverageFile) =>
-        f.lines_covered !== undefined && f.lines_valid !== undefined
-    );
-  let newOverall: number;
-  if (hasLineCounts && fileList.length > 0) {
-    const totalCovered = fileList.reduce(
-      (s, f) => s + (f.lines_covered ?? 0),
-      0
-    );
-    const totalValid = fileList.reduce((s, f) => s + (f.lines_valid ?? 0), 0);
-    newOverall =
-      totalValid > 0 ? roundPercentage((totalCovered / totalValid) * 100) : 0;
-  } else if (fileList.length > 0) {
-    const sum = fileList.reduce((s, f) => s + f.coverage, 0);
-    newOverall = roundPercentage(sum / fileList.length);
-  } else {
-    newOverall = 0;
-  }
-
   return {
     files: filtered,
-    coverage: newOverall,
+    coverage: recomputeOverallCoverage(Object.values(filtered)),
     timestamp: coverage.timestamp,
     basePath: coverage.basePath
   };
 }
 
 /**
- * Filter out files with zero coverable lines (lines_valid === 0).
+ * Filter out files with explicitly zero coverable lines (lines_valid === 0).
+ * Files where lines_valid is undefined are kept to avoid silently dropping
+ * coverage data from formats that don't report line counts.
  * Recomputes overall coverage from the remaining files.
  */
 export function filterCoverageZeroLineFiles(coverage: Coverage): Coverage {
   const filtered: Files = {};
   for (const [hash, file] of Object.entries(coverage.files)) {
-    const valid = file.lines_valid ?? 0;
-    if (valid > 0) {
+    if (file.lines_valid === undefined || file.lines_valid > 0) {
       filtered[hash] = file;
     }
   }
 
-  const fileList = Object.values(filtered);
-  const hasLineCounts =
-    fileList.length > 0 &&
-    fileList.every(
-      (f: CoverageFile) =>
-        f.lines_covered !== undefined && f.lines_valid !== undefined
-    );
-  let newOverall: number;
-  if (hasLineCounts && fileList.length > 0) {
-    const totalCovered = fileList.reduce(
-      (s, f) => s + (f.lines_covered ?? 0),
-      0
-    );
-    const totalValid = fileList.reduce((s, f) => s + (f.lines_valid ?? 0), 0);
-    newOverall =
-      totalValid > 0 ? roundPercentage((totalCovered / totalValid) * 100) : 0;
-  } else if (fileList.length > 0) {
-    const sum = fileList.reduce((s, f) => s + f.coverage, 0);
-    newOverall = roundPercentage(sum / fileList.length);
-  } else {
-    newOverall = 0;
-  }
-
   return {
     files: filtered,
-    coverage: newOverall,
+    coverage: recomputeOverallCoverage(Object.values(filtered)),
     timestamp: coverage.timestamp,
     basePath: coverage.basePath
   };
