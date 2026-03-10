@@ -100,7 +100,8 @@ async function parseFiles(files: File[] | undefined | null): Promise<Files> {
  * @returns
  */
 function processCoverageMetrics(metrics: FileMetrics): number {
-  const coveredConditionals = parseInt(metrics['@_coveredconditionals'], 10) || 0;
+  const coveredConditionals =
+    parseInt(metrics['@_coveredconditionals'], 10) || 0;
   const coveredStatements = parseInt(metrics['@_coveredstatements'], 10) || 0;
   const coveredMethods = parseInt(metrics['@_coveredmethods'], 10) || 0;
   const conditionals = parseInt(metrics['@_conditionals'], 10) || 0;

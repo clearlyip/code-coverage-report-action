@@ -260,8 +260,7 @@ function buildCoverageRows(
   return Object.entries(byDir)
     .map(([pkg, { headSum, baseSum, count, baseCount }]) => {
       const headAvg = roundPercentage(headSum / count);
-      const baseAvg =
-        baseCount > 0 ? roundPercentage(baseSum / baseCount) : 0;
+      const baseAvg = baseCount > 0 ? roundPercentage(baseSum / baseCount) : 0;
       const differencePercentage =
         baseCoverage !== null ? roundPercentage(headAvg - baseAvg) : null;
       if (
