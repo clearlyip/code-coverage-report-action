@@ -3,13 +3,19 @@ import {
   checkFileExists,
   colorizePercentageByThreshold,
   downloadArtifacts,
+  filterCoverageByExcludePaths,
+  filterCoverageZeroLineFiles,
   getInputs,
+  getParentDirFromFile,
+  getPathAtDepth,
+  getTopDirFromFile,
   parseCoverage,
   roundPercentage,
   uploadArtifacts
 } from './utils';
 import {
   Coverage,
+  CoverageFile,
   HandlebarContext,
   HandlebarContextCoverage
 } from './interfaces';
@@ -36,17 +42,35 @@ export async function run(): Promise<void> {
         core.debug(`GITHUB_BASE_REF: ${GITHUB_BASE_REF}`);
         const artifactPath = await downloadArtifacts(GITHUB_BASE_REF);
         core.debug(`artifactPath: ${artifactPath}`);
-        const baseCoverage =
+        let baseCoverage =
           artifactPath !== null
             ? await parseCoverage(path.join(artifactPath, filename))
             : null;
 
         core.info(`Parsing coverage file: ${filename}...`);
-        const headCoverage = await parseCoverage(filename);
+        let headCoverage = await parseCoverage(filename);
 
         if (headCoverage === null) {
           core.setFailed(`Unable to process ${filename}`);
           return;
+        }
+
+        const { excludePaths } = getInputs();
+        if (excludePaths.length > 0) {
+          headCoverage = filterCoverageByExcludePaths(
+            headCoverage,
+            excludePaths
+          );
+          if (baseCoverage !== null) {
+            baseCoverage = filterCoverageByExcludePaths(
+              baseCoverage,
+              excludePaths
+            );
+          }
+        }
+        headCoverage = filterCoverageZeroLineFiles(headCoverage);
+        if (baseCoverage !== null) {
+          baseCoverage = filterCoverageZeroLineFiles(baseCoverage);
         }
 
         core.info(`Complete`);
@@ -84,8 +108,19 @@ export async function run(): Promise<void> {
           core.info(`Complete`);
 
           core.info(`Parsing coverage file: ${filename}...`);
-          const headCoverage = await parseCoverage(filename);
+          let headCoverage = await parseCoverage(filename);
           core.info(`Complete`);
+
+          const { excludePaths } = getInputs();
+          if (headCoverage != null && excludePaths.length > 0) {
+            headCoverage = filterCoverageByExcludePaths(
+              headCoverage,
+              excludePaths
+            );
+          }
+          if (headCoverage != null) {
+            headCoverage = filterCoverageZeroLineFiles(headCoverage);
+          }
 
           core.info(`Workflow Name: ${GITHUB_WORKFLOW}`);
 
@@ -102,6 +137,172 @@ export async function run(): Promise<void> {
   } catch (err: any) {
     core.setFailed(err.message);
   }
+}
+
+type CoverageGroupBy = 'file' | 'top_dir' | 'depth' | 'parent_dir';
+
+/**
+ * Build coverage rows for the template: per-file, or aggregated by top_dir, depth, or parent_dir.
+ * Priority: top_dir > coverage_depth > parent_dir > file (per-file).
+ */
+function buildCoverageRows(
+  headCoverage: Coverage,
+  baseCoverage: Coverage | null,
+  showCoverageByTopDir: boolean,
+  coverageDepth: number | undefined,
+  showCoverageByParentDir: boolean,
+  fileCoverageErrorMin: number,
+  fileCoverageWarningMax: number,
+  onlyListChangedFiles: boolean,
+  failOnNegativeDifference: boolean,
+  negativeDifferenceBy: string,
+  negativeDifferenceThreshold: number
+): HandlebarContextCoverage[] {
+  const fileEntries = Object.entries(headCoverage.files).filter(
+    ([hash, file]) => {
+      if (baseCoverage === null) {
+        return !onlyListChangedFiles;
+      }
+      const baseCoveragePercentage = baseCoverage.files[hash]
+        ? baseCoverage.files[hash].coverage
+        : 0;
+      const differencePercentage = baseCoveragePercentage
+        ? roundPercentage(file.coverage - baseCoveragePercentage)
+        : roundPercentage(file.coverage);
+      if (onlyListChangedFiles && differencePercentage === 0) {
+        return false;
+      }
+      return true;
+    }
+  );
+
+  const groupBy: CoverageGroupBy = showCoverageByTopDir
+    ? 'top_dir'
+    : coverageDepth !== undefined && coverageDepth >= 1
+      ? 'depth'
+      : showCoverageByParentDir
+        ? 'parent_dir'
+        : 'file';
+
+  if (groupBy === 'file') {
+    return fileEntries
+      .map(([hash, file]) => {
+        if (baseCoverage === null) {
+          return {
+            package: file.relative,
+            base_coverage: `${colorizePercentageByThreshold(
+              file.coverage,
+              fileCoverageWarningMax,
+              fileCoverageErrorMin
+            )}`
+          };
+        }
+        const baseCoveragePercentage = baseCoverage.files[hash]
+          ? baseCoverage.files[hash].coverage
+          : 0;
+        const differencePercentage = baseCoveragePercentage
+          ? roundPercentage(file.coverage - baseCoveragePercentage)
+          : roundPercentage(file.coverage);
+        if (
+          failOnNegativeDifference &&
+          negativeDifferenceBy === 'package' &&
+          differencePercentage !== null &&
+          differencePercentage < 0 &&
+          differencePercentage < negativeDifferenceThreshold
+        ) {
+          core.setFailed(
+            `${file.relative} coverage difference was ${differencePercentage}% which is below threshold of ${negativeDifferenceThreshold}%`
+          );
+        }
+        return {
+          package: file.relative,
+          base_coverage: `${colorizePercentageByThreshold(
+            baseCoveragePercentage,
+            fileCoverageWarningMax,
+            fileCoverageErrorMin
+          )}`,
+          new_coverage: `${colorizePercentageByThreshold(
+            file.coverage,
+            fileCoverageWarningMax,
+            fileCoverageErrorMin
+          )}`,
+          difference: colorizePercentageByThreshold(differencePercentage)
+        };
+      })
+      .sort((a, b) =>
+        a.package < b.package ? -1 : a.package > b.package ? 1 : 0
+      );
+  }
+
+  const getGroupKey =
+    groupBy === 'top_dir'
+      ? getTopDirFromFile
+      : groupBy === 'depth' && coverageDepth !== undefined
+        ? (relativePath: string) => getPathAtDepth(relativePath, coverageDepth)
+        : getParentDirFromFile;
+  const byDir: Record<
+    string,
+    { headSum: number; baseSum: number; count: number; baseCount: number }
+  > = {};
+  for (const [hash, file] of fileEntries) {
+    const key = getGroupKey(file.relative);
+    if (!byDir[key]) {
+      byDir[key] = { headSum: 0, baseSum: 0, count: 0, baseCount: 0 };
+    }
+    byDir[key].headSum += file.coverage;
+    byDir[key].count += 1;
+    if (baseCoverage?.files[hash]) {
+      byDir[key].baseSum += baseCoverage.files[hash].coverage;
+      byDir[key].baseCount += 1;
+    }
+  }
+
+  return Object.entries(byDir)
+    .map(([pkg, { headSum, baseSum, count, baseCount }]) => {
+      const headAvg = roundPercentage(headSum / count);
+      const baseAvg = baseCount > 0 ? roundPercentage(baseSum / baseCount) : 0;
+      const differencePercentage =
+        baseCoverage !== null ? roundPercentage(headAvg - baseAvg) : null;
+      if (
+        baseCoverage !== null &&
+        failOnNegativeDifference &&
+        negativeDifferenceBy === 'package' &&
+        differencePercentage !== null &&
+        differencePercentage < 0 &&
+        differencePercentage < negativeDifferenceThreshold
+      ) {
+        core.setFailed(
+          `${pkg} coverage difference was ${differencePercentage}% which is below threshold of ${negativeDifferenceThreshold}%`
+        );
+      }
+      if (baseCoverage === null) {
+        return {
+          package: pkg,
+          base_coverage: `${colorizePercentageByThreshold(
+            headAvg,
+            fileCoverageWarningMax,
+            fileCoverageErrorMin
+          )}`
+        };
+      }
+      return {
+        package: pkg,
+        base_coverage: `${colorizePercentageByThreshold(
+          baseAvg,
+          fileCoverageWarningMax,
+          fileCoverageErrorMin
+        )}`,
+        new_coverage: `${colorizePercentageByThreshold(
+          headAvg,
+          fileCoverageWarningMax,
+          fileCoverageErrorMin
+        )}`,
+        difference: colorizePercentageByThreshold(differencePercentage)
+      };
+    })
+    .sort((a, b) =>
+      a.package < b.package ? -1 : a.package > b.package ? 1 : 0
+    );
 }
 
 export async function generateMarkdown(
@@ -121,7 +322,10 @@ export async function generateMarkdown(
     withoutBaseCoverageTemplate,
     negativeDifferenceThreshold,
     onlyListChangedFiles,
-    skipPackageCoverage
+    skipPackageCoverage,
+    showCoverageByTopDir,
+    coverageDepth,
+    showCoverageByParentDir
   } = inputs;
   const overallDifferencePercentage = baseCoverage
     ? roundPercentage(headCoverage.coverage - baseCoverage.coverage)
@@ -181,79 +385,34 @@ export async function generateMarkdown(
   const context: HandlebarContext = {
     minimum_allowed_coverage: `${overallCoverageFailThreshold}%`,
     new_coverage: `${headCoverage.coverage}%`,
+    negative_difference_threshold:
+      negativeDifferenceThreshold !== 0
+        ? `${negativeDifferenceThreshold}%`
+        : null,
     coverage: skipPackageCoverage
       ? []
-      : Object.entries(headCoverage.files)
-          .filter(([hash, file]) => {
-            if (baseCoverage === null) {
-              return !onlyListChangedFiles;
-            }
-
-            const baseCoveragePercentage = baseCoverage.files[hash]
-              ? baseCoverage.files[hash].coverage
-              : 0;
-
-            const differencePercentage = baseCoveragePercentage
-              ? roundPercentage(file.coverage - baseCoveragePercentage)
-              : roundPercentage(file.coverage);
-
-            if (onlyListChangedFiles && differencePercentage === 0) {
-              return false;
-            }
-
-            return true;
-          })
-          .map(([hash, file]) => {
-            if (baseCoverage === null) {
-              return {
-                package: file.relative,
-                base_coverage: `${colorizePercentageByThreshold(
-                  file.coverage,
-                  fileCoverageWarningMax,
-                  fileCoverageErrorMin
-                )}`
-              };
-            }
-
-            const baseCoveragePercentage = baseCoverage.files[hash]
-              ? baseCoverage.files[hash].coverage
-              : 0;
-
-            const differencePercentage = baseCoveragePercentage
-              ? roundPercentage(file.coverage - baseCoveragePercentage)
-              : roundPercentage(file.coverage);
-
-            if (
-              failOnNegativeDifference &&
-              negativeDifferenceBy === 'package' &&
-              differencePercentage !== null &&
-              differencePercentage < 0 &&
-              differencePercentage < negativeDifferenceThreshold
-            ) {
-              core.setFailed(
-                `${headCoverage.files[hash].relative} coverage difference was ${differencePercentage}% which is below threshold of ${negativeDifferenceThreshold}%`
-              );
-            }
-
-            return {
-              package: file.relative,
-              base_coverage: `${colorizePercentageByThreshold(
-                baseCoveragePercentage,
-                fileCoverageWarningMax,
-                fileCoverageErrorMin
-              )}`,
-              new_coverage: `${colorizePercentageByThreshold(
-                file.coverage,
-                fileCoverageWarningMax,
-                fileCoverageErrorMin
-              )}`,
-              difference: colorizePercentageByThreshold(differencePercentage)
-            };
-          })
-          .sort((a, b) =>
-            a.package < b.package ? -1 : a.package > b.package ? 1 : 0
-          ),
+      : buildCoverageRows(
+          headCoverage,
+          baseCoverage,
+          showCoverageByTopDir,
+          coverageDepth,
+          showCoverageByParentDir,
+          fileCoverageErrorMin,
+          fileCoverageWarningMax,
+          onlyListChangedFiles,
+          failOnNegativeDifference,
+          negativeDifferenceBy,
+          negativeDifferenceThreshold
+        ),
     overall_coverage: addOverallRow(headCoverage, baseCoverage),
+    coverage_by_top_dir: showCoverageByTopDir
+      ? aggregateCoverageByTopDir(
+          headCoverage,
+          baseCoverage,
+          fileCoverageWarningMax,
+          fileCoverageErrorMin
+        )
+      : [],
     inputs
   };
 
@@ -277,6 +436,115 @@ export async function generateMarkdown(
 
   core.info(`Writing job summary`);
   await summary.write();
+}
+
+/**
+ * Aggregate coverage by top-level directory. Uses line-weighted when lines_covered/lines_valid
+ * are present (Cobertura), otherwise average of file percentages (Clover).
+ */
+export function aggregateCoverageByTopDir(
+  headCoverage: Coverage,
+  baseCoverage: Coverage | null,
+  fileCoverageWarningMax: number,
+  fileCoverageErrorMin: number
+): HandlebarContextCoverage[] {
+  const byDir = new Map<
+    string,
+    { head: CoverageFile[]; base: CoverageFile[] }
+  >();
+  for (const [hash, file] of Object.entries(headCoverage.files)) {
+    const dir = getTopDirFromFile(file.relative);
+    if (!byDir.has(dir)) {
+      byDir.set(dir, { head: [], base: [] });
+    }
+    byDir.get(dir)!.head.push(file);
+    if (baseCoverage?.files[hash]) {
+      byDir.get(dir)!.base.push(baseCoverage.files[hash]);
+    }
+  }
+  const result: HandlebarContextCoverage[] = [];
+  for (const [dir, { head, base }] of byDir.entries()) {
+    const hasHeadLines = head.every(
+      (f: CoverageFile) =>
+        f.lines_covered !== undefined &&
+        f.lines_valid !== undefined &&
+        f.lines_valid > 0
+    );
+    const headCovered = head.reduce(
+      (s: number, f: CoverageFile) => s + (f.lines_covered ?? 0),
+      0
+    );
+    const headValid = head.reduce(
+      (s: number, f: CoverageFile) => s + (f.lines_valid ?? 0),
+      0
+    );
+    const headPct =
+      hasHeadLines && headValid > 0
+        ? roundPercentage((headCovered / headValid) * 100)
+        : head.length > 0
+          ? roundPercentage(
+              head.reduce((s: number, f: CoverageFile) => s + f.coverage, 0) /
+                head.length
+            )
+          : 0;
+
+    if (baseCoverage === null) {
+      result.push({
+        package: dir,
+        base_coverage: `${colorizePercentageByThreshold(
+          headPct,
+          fileCoverageWarningMax,
+          fileCoverageErrorMin
+        )}`
+      });
+      continue;
+    }
+
+    const hasBaseLines =
+      base.length > 0 &&
+      base.every(
+        (f: CoverageFile) =>
+          f.lines_covered !== undefined &&
+          f.lines_valid !== undefined &&
+          f.lines_valid > 0
+      );
+    const baseCovered = base.reduce(
+      (s: number, f: CoverageFile) => s + (f.lines_covered ?? 0),
+      0
+    );
+    const baseValid = base.reduce(
+      (s: number, f: CoverageFile) => s + (f.lines_valid ?? 0),
+      0
+    );
+    const basePct =
+      hasBaseLines && baseValid > 0
+        ? roundPercentage((baseCovered / baseValid) * 100)
+        : base.length > 0
+          ? roundPercentage(
+              base.reduce((s: number, f: CoverageFile) => s + f.coverage, 0) /
+                base.length
+            )
+          : 0;
+    const diffPct = roundPercentage(headPct - basePct);
+    result.push({
+      package: dir,
+      base_coverage: `${colorizePercentageByThreshold(
+        basePct,
+        fileCoverageWarningMax,
+        fileCoverageErrorMin
+      )}`,
+      new_coverage: `${colorizePercentageByThreshold(
+        headPct,
+        fileCoverageWarningMax,
+        fileCoverageErrorMin
+      )}`,
+      difference: colorizePercentageByThreshold(diffPct)
+    });
+  }
+  return result.sort(
+    (a: HandlebarContextCoverage, b: HandlebarContextCoverage) =>
+      a.package < b.package ? -1 : a.package > b.package ? 1 : 0
+  );
 }
 
 /**
@@ -315,6 +583,10 @@ export function addOverallRow(
       0,
       overallCoverageFailThreshold
     )}`,
-    difference: `${colorizePercentageByThreshold(overallDifferencePercentage)}`
+    difference: `${colorizePercentageByThreshold(overallDifferencePercentage)}`,
+    difference_plain:
+      overallDifferencePercentage != null
+        ? `${String(overallDifferencePercentage)}%`
+        : undefined
   };
 }

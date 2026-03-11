@@ -1,4 +1,9 @@
-import {addOverallRow, generateMarkdown} from '../src/functions'
+import * as core from '@actions/core'
+import {
+  addOverallRow,
+  aggregateCoverageByTopDir,
+  generateMarkdown
+} from '../src/functions'
 import {
   expect,
   test,
@@ -72,8 +77,159 @@ test('add overall row with base coverage', async () => {
     package: 'Overall Coverage',
     base_coverage: '🟢 50.51%',
     new_coverage: '🟢 50.51%',
-    difference: '⚪ 0%'
+    difference: '⚪ 0%',
+    difference_plain: '0%'
   })
+})
+
+test('add overall row with base coverage and negative difference includes difference_plain', async () => {
+  const head = await loadJSONFixture('clover-parsed.json')
+  const base = JSON.parse(JSON.stringify(head))
+  base.coverage = 60
+  const out = addOverallRow(head, base)
+  expect(out.difference_plain).toBeDefined()
+  expect(out.difference_plain).toMatch(/-?\d+\.?\d*%/)
+})
+
+test('aggregateCoverageByTopDir without base: groups by first path segment', async () => {
+  const coverage = await loadJSONFixture('clover-parsed.json')
+  const out = aggregateCoverageByTopDir(coverage, null, 75, 50)
+
+  expect(out).toHaveLength(2)
+  expect(out.map((r) => r.package).sort()).toEqual(['(root)', 'reports/'])
+  expect(out.find((r) => r.package === '(root)')?.base_coverage).toContain('%')
+  expect(out.find((r) => r.package === 'reports/')?.base_coverage).toContain('%')
+})
+
+test('aggregateCoverageByTopDir with base: includes difference', async () => {
+  const coverage = await loadJSONFixture('clover-parsed.json')
+  const out = aggregateCoverageByTopDir(coverage, coverage, 75, 50)
+
+  expect(out).toHaveLength(2)
+  const rootRow = out.find((r) => r.package === '(root)')
+  expect(rootRow?.base_coverage).toBeDefined()
+  expect(rootRow?.new_coverage).toBeDefined()
+  expect(rootRow?.difference).toBeDefined()
+})
+
+test('aggregateCoverageByTopDir with Cobertura data uses line-weighted aggregation', async () => {
+  const coverage = await loadJSONFixture('cobertura-parsed.json')
+  const out = aggregateCoverageByTopDir(coverage, null, 75, 50)
+
+  expect(out.length).toBeGreaterThan(0)
+  const reportsRow = out.find((r) => r.package === 'reports/')
+  expect(reportsRow).toBeDefined()
+  expect(reportsRow?.base_coverage).toBeDefined()
+  const rootRow = out.find((r) => r.package === '(root)')
+  expect(rootRow).toBeDefined()
+})
+
+test('Generate markdown with base coverage and show_coverage_by_top_dir shows top-dir table and threshold', async () => {
+  process.env.INPUT_SHOW_COVERAGE_BY_TOP_DIR = 'true'
+  process.env.INPUT_NEGATIVE_DIFFERENCE_THRESHOLD = '5'
+  const coverage = await loadJSONFixture('clover-parsed.json')
+  await generateMarkdown(coverage, coverage)
+  const summary = await getGithubStepSummary()
+  expect(summary).toContain('Coverage by top-level directory')
+  expect(summary).toContain('_Maximum allowed coverage difference is_')
+  delete process.env.INPUT_SHOW_COVERAGE_BY_TOP_DIR
+  delete process.env.INPUT_NEGATIVE_DIFFERENCE_THRESHOLD
+})
+
+test('Summary line shows this run produced 0% when coverage difference is zero', async () => {
+  process.env.INPUT_NEGATIVE_DIFFERENCE_THRESHOLD = '5'
+  const coverage = await loadJSONFixture('clover-parsed.json')
+  await generateMarkdown(coverage, coverage)
+  const summary = await getGithubStepSummary()
+  expect(summary).toContain('_Maximum allowed coverage difference is_')
+  expect(summary).toContain('_, this run produced_ `0%`')
+  delete process.env.INPUT_NEGATIVE_DIFFERENCE_THRESHOLD
+})
+
+test('Generate markdown without coverage by top dir when show_coverage_by_top_dir is false (default)', async () => {
+  process.env.INPUT_SHOW_COVERAGE_BY_TOP_DIR = 'false'
+  const coverage = await loadJSONFixture('clover-parsed.json')
+  await generateMarkdown(coverage)
+  const summary = await getGithubStepSummary()
+  expect(summary).not.toContain('Coverage by top-level directory')
+  expect(summary).toContain('main.ts')
+  delete process.env.INPUT_SHOW_COVERAGE_BY_TOP_DIR
+})
+
+test('Generate markdown with coverage by top dir only when show_coverage_by_top_dir is true', async () => {
+  process.env.INPUT_SHOW_COVERAGE_BY_TOP_DIR = 'true'
+  const coverage = await loadJSONFixture('clover-parsed.json')
+  await generateMarkdown(coverage)
+  const summary = await getGithubStepSummary()
+  expect(summary).toContain('Coverage by top-level directory')
+  expect(summary).toContain('(root)')
+  expect(summary).toContain('reports/')
+  expect(summary).not.toContain('main.ts')
+  delete process.env.INPUT_SHOW_COVERAGE_BY_TOP_DIR
+})
+
+test('Generate markdown with coverage by parent dir when show_coverage_by_parent_dir is true', async () => {
+  process.env.INPUT_SHOW_COVERAGE_BY_PARENT_DIR = 'true'
+  const coverage = await loadJSONFixture('clover-parsed.json')
+  await generateMarkdown(coverage)
+  const summary = await getGithubStepSummary()
+  // Should show parent dirs, not individual files
+  expect(summary).toContain('(root)')
+  expect(summary).toContain('reports/clover/')
+  expect(summary).toContain('reports/cobertura/')
+  expect(summary).not.toContain('main.ts')
+  expect(summary).not.toContain('utils.ts')
+  expect(summary).not.toContain('reports/clover/index.ts')
+  delete process.env.INPUT_SHOW_COVERAGE_BY_PARENT_DIR
+})
+
+test('Generate markdown without coverage by parent dir when show_coverage_by_parent_dir is false (default)', async () => {
+  process.env.INPUT_SHOW_COVERAGE_BY_PARENT_DIR = 'false'
+  const coverage = await loadJSONFixture('clover-parsed.json')
+  await generateMarkdown(coverage)
+  const summary = await getGithubStepSummary()
+  expect(summary).toContain('main.ts')
+  expect(summary).toContain('reports/clover/index.ts')
+  delete process.env.INPUT_SHOW_COVERAGE_BY_PARENT_DIR
+})
+
+test('Generate markdown with coverage by depth when coverage_depth is set', async () => {
+  process.env.INPUT_COVERAGE_DEPTH = '2'
+  const coverage = await loadJSONFixture('clover-parsed.json')
+  await generateMarkdown(coverage)
+  const summary = await getGithubStepSummary()
+  expect(summary).toContain('(root)')
+  expect(summary).toContain('reports/clover/')
+  expect(summary).toContain('reports/cobertura/')
+  expect(summary).not.toContain('main.ts')
+  expect(summary).not.toContain('reports/clover/index.ts')
+  delete process.env.INPUT_COVERAGE_DEPTH
+})
+
+test('Generate markdown with coverage_depth 1 is same as top_dir', async () => {
+  process.env.INPUT_COVERAGE_DEPTH = '1'
+  const coverage = await loadJSONFixture('clover-parsed.json')
+  await generateMarkdown(coverage)
+  const summary = await getGithubStepSummary()
+  expect(summary).toContain('(root)')
+  expect(summary).toContain('reports/')
+  expect(summary).not.toContain('reports/clover/')
+  expect(summary).not.toContain('main.ts')
+  delete process.env.INPUT_COVERAGE_DEPTH
+})
+
+test('Generate markdown: top_dir takes precedence over coverage_depth', async () => {
+  process.env.INPUT_SHOW_COVERAGE_BY_TOP_DIR = 'true'
+  process.env.INPUT_COVERAGE_DEPTH = '2'
+  const coverage = await loadJSONFixture('clover-parsed.json')
+  await generateMarkdown(coverage)
+  const summary = await getGithubStepSummary()
+  expect(summary).toContain('Coverage by top-level directory')
+  expect(summary).toContain('(root)')
+  expect(summary).toContain('reports/')
+  expect(summary).not.toContain('reports/clover/')
+  delete process.env.INPUT_SHOW_COVERAGE_BY_TOP_DIR
+  delete process.env.INPUT_COVERAGE_DEPTH
 })
 
 test('Generate Base Clover Markdown', async () => {
@@ -173,6 +329,145 @@ test('Only list changed files', async () => {
   await generateMarkdown(coverageFail, coverage)
   expect(getStdoutWriteCalls()).toMatchSnapshot()
   expect(await getGithubStepSummary()).toMatchSnapshot()
+})
+
+test('Generate markdown with badge true includes coverage badge URL', async () => {
+  process.env.INPUT_BADGE = 'true'
+  const coverage = await loadJSONFixture('clover-parsed.json')
+  await generateMarkdown(coverage)
+  const summary = await getGithubStepSummary()
+  expect(summary).toContain('img.shields.io')
+  expect(summary).toContain('Code Coverage')
+  delete process.env.INPUT_BADGE
+})
+
+test('Generate markdown with skip_package_coverage true has empty coverage table', async () => {
+  process.env.INPUT_SKIP_PACKAGE_COVERAGE = 'true'
+  const coverage = await loadJSONFixture('clover-parsed.json')
+  await generateMarkdown(coverage)
+  const summary = await getGithubStepSummary()
+  expect(summary).toContain('Overall Coverage')
+  delete process.env.INPUT_SKIP_PACKAGE_COVERAGE
+})
+
+test('Fail on negative difference by package when file drops below threshold', async () => {
+  const setFailedSpy = jest.spyOn(core, 'setFailed').mockImplementation((msg: string) => {
+    throw new Error(msg)
+  })
+  process.env.INPUT_FAIL_ON_NEGATIVE_DIFFERENCE = 'true'
+  process.env.INPUT_NEGATIVE_DIFFERENCE_BY = 'package'
+  process.env.INPUT_NEGATIVE_DIFFERENCE_THRESHOLD = '1'
+
+  const coverage = await loadJSONFixture('clover-parsed.json')
+  const coverageFail = JSON.parse(JSON.stringify(coverage))
+  // Use a file that has high base coverage so difference is below threshold
+  const fileHash = '7583809507a13391057c3aee722e422d50d961a87e2a3dbf05ea492dc6465c94'
+  coverageFail.files[fileHash].coverage = 0
+
+  await expect(
+    generateMarkdown(coverageFail, coverage)
+  ).rejects.toThrow(/coverage difference was/)
+  setFailedSpy.mockRestore()
+  delete process.env.INPUT_FAIL_ON_NEGATIVE_DIFFERENCE
+  delete process.env.INPUT_NEGATIVE_DIFFERENCE_BY
+  delete process.env.INPUT_NEGATIVE_DIFFERENCE_THRESHOLD
+})
+
+test('generateMarkdown sets failed when template file does not exist', async () => {
+  const setFailedSpy = jest.spyOn(core, 'setFailed').mockImplementation((msg: string) => {
+    throw new Error(msg)
+  })
+  const nonexistent = path.join(__dirname, 'nonexistent-template-12345.hbs')
+  process.env.INPUT_WITHOUT_BASE_COVERAGE_TEMPLATE = nonexistent
+  process.env.INPUT_WITH_BASE_COVERAGE_TEMPLATE = nonexistent
+  const coverage = await loadJSONFixture('clover-parsed.json')
+  await expect(generateMarkdown(coverage)).rejects.toThrow(/Unable to access template/)
+  setFailedSpy.mockRestore()
+  delete process.env.INPUT_WITHOUT_BASE_COVERAGE_TEMPLATE
+  delete process.env.INPUT_WITH_BASE_COVERAGE_TEMPLATE
+})
+
+
+test('Generate markdown with coverage_depth and base coverage shows depth-grouped rows', async () => {
+  process.env.INPUT_COVERAGE_DEPTH = '2'
+  const coverage = await loadJSONFixture('clover-parsed.json')
+  await generateMarkdown(coverage, coverage)
+  const summary = await getGithubStepSummary()
+  expect(summary).toContain('reports/clover/')
+  expect(summary).toContain('reports/cobertura/')
+  expect(summary).not.toContain('main.ts')
+  delete process.env.INPUT_COVERAGE_DEPTH
+})
+
+test('Generate markdown with show_coverage_by_parent_dir and base coverage shows grouped rows with diff', async () => {
+  process.env.INPUT_SHOW_COVERAGE_BY_PARENT_DIR = 'true'
+  const coverage = await loadJSONFixture('clover-parsed.json')
+  await generateMarkdown(coverage, coverage)
+  const summary = await getGithubStepSummary()
+  expect(summary).toContain('reports/clover/')
+  expect(summary).toContain('reports/cobertura/')
+  expect(summary).not.toContain('main.ts')
+  delete process.env.INPUT_SHOW_COVERAGE_BY_PARENT_DIR
+})
+
+test('Fail on negative difference by package in top_dir grouped mode', async () => {
+  const setFailedSpy = jest
+    .spyOn(core, 'setFailed')
+    .mockImplementation((msg: string) => {
+      throw new Error(msg)
+    })
+  process.env.INPUT_FAIL_ON_NEGATIVE_DIFFERENCE = 'true'
+  process.env.INPUT_NEGATIVE_DIFFERENCE_BY = 'package'
+  process.env.INPUT_NEGATIVE_DIFFERENCE_THRESHOLD = '1'
+  process.env.INPUT_SHOW_COVERAGE_BY_TOP_DIR = 'true'
+
+  const coverage = await loadJSONFixture('clover-parsed.json')
+  const coverageFail = JSON.parse(JSON.stringify(coverage))
+  for (const hash of Object.keys(coverageFail.files)) {
+    coverageFail.files[hash].coverage = 0
+  }
+  coverageFail.coverage = 0
+
+  await expect(generateMarkdown(coverageFail, coverage)).rejects.toThrow(
+    /coverage difference was/
+  )
+  setFailedSpy.mockRestore()
+  delete process.env.INPUT_FAIL_ON_NEGATIVE_DIFFERENCE
+  delete process.env.INPUT_NEGATIVE_DIFFERENCE_BY
+  delete process.env.INPUT_NEGATIVE_DIFFERENCE_THRESHOLD
+  delete process.env.INPUT_SHOW_COVERAGE_BY_TOP_DIR
+})
+
+test('Generate markdown with onlyListChangedFiles and no base produces no file rows', async () => {
+  process.env.INPUT_ONLY_LIST_CHANGED_FILES = 'true'
+  const coverage = await loadJSONFixture('clover-parsed.json')
+  await generateMarkdown(coverage)
+  const summary = await getGithubStepSummary()
+  expect(summary).toContain('Overall Coverage')
+  delete process.env.INPUT_ONLY_LIST_CHANGED_FILES
+})
+
+test('Fail on overall coverage diff below threshold when negativeDifferenceBy is overall', async () => {
+  const setFailedSpy = jest
+    .spyOn(core, 'setFailed')
+    .mockImplementation((msg: string) => {
+      throw new Error(msg)
+    })
+  process.env.INPUT_FAIL_ON_NEGATIVE_DIFFERENCE = 'true'
+  process.env.INPUT_NEGATIVE_DIFFERENCE_BY = 'overall'
+  process.env.INPUT_NEGATIVE_DIFFERENCE_THRESHOLD = '1'
+
+  const coverage = await loadJSONFixture('clover-parsed.json')
+  const coverageFail = JSON.parse(JSON.stringify(coverage))
+  coverageFail.coverage = 0
+
+  await expect(generateMarkdown(coverageFail, coverage)).rejects.toThrow(
+    /FAIL: Overall coverage/
+  )
+  setFailedSpy.mockRestore()
+  delete process.env.INPUT_FAIL_ON_NEGATIVE_DIFFERENCE
+  delete process.env.INPUT_NEGATIVE_DIFFERENCE_BY
+  delete process.env.INPUT_NEGATIVE_DIFFERENCE_THRESHOLD
 })
 
 async function getGithubStepSummary(): Promise<string> {

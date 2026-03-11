@@ -1,0 +1,31 @@
+<?xml version="1.0" ?>
+<!DOCTYPE coverage SYSTEM "http://cobertura.sourceforge.net/xml/coverage-04.dtd">
+<coverage line-rate="0.5" branch-rate="0" timestamp="1715832361332" version="0.1">
+  <sources>
+    <source>/usr/src/app</source>
+  </sources>
+  <packages>
+    <package name="pkg1" line-rate="0.5" branch-rate="0">
+      <classes>
+        <class name="same.ts" filename="src/same.ts" line-rate="0.5" branch-rate="0">
+          <methods/>
+          <lines>
+            <line number="1" hits="1"/>
+            <line number="2" hits="0"/>
+          </lines>
+        </class>
+      </classes>
+    </package>
+    <package name="pkg2" line-rate="0.5" branch-rate="0">
+      <classes>
+        <class name="same.ts" filename="src/same.ts" line-rate="0.5" branch-rate="0">
+          <methods/>
+          <lines>
+            <line number="3" hits="1"/>
+            <line number="4" hits="0"/>
+          </lines>
+        </class>
+      </classes>
+    </package>
+  </packages>
+</coverage>
