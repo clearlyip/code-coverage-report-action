@@ -2,8 +2,6 @@ import * as core from '@actions/core'
 import fs from 'fs'
 import path from 'path'
 import crypto from 'crypto'
-import { run } from '../src/functions'
-import * as utilsModule from '../src/utils'
 import {
   expect,
   test,
@@ -14,22 +12,56 @@ import {
   jest
 } from '@jest/globals'
 
-jest.mock('../src/utils', () => {
-  const actual =
-    jest.requireActual('../src/utils') as typeof import('../src/utils')
-  return {
-    ...actual,
-    checkFileExists: jest.fn(),
-    downloadArtifacts: jest.fn(),
-    parseCoverage: jest.fn(),
-    uploadArtifacts: jest.fn()
-  }
-})
+// Static imports of the real utils functions that should NOT be mocked.
+// These are resolved before jest.unstable_mockModule runs, so they reference
+// the actual implementations. We then pass them into the mock factory so that
+// functions.ts (loaded dynamically after the mock is set up) gets the real
+// implementations for everything except the four controlled mocks below.
+import {
+  colorizePercentageByThreshold,
+  filterCoverageByExcludePaths,
+  filterCoverageZeroLineFiles,
+  getInputs,
+  getParentDirFromFile,
+  getPathAtDepth,
+  getTopDirFromFile,
+  roundPercentage
+} from '../src/utils'
 
-const mockCheckFileExists = jest.mocked(utilsModule.checkFileExists)
-const mockDownloadArtifacts = jest.mocked(utilsModule.downloadArtifacts)
-const mockParseCoverage = jest.mocked(utilsModule.parseCoverage)
-const mockUploadArtifacts = jest.mocked(utilsModule.uploadArtifacts)
+// @actions/core is provided by moduleNameMapper → __mocks__/@actions/core.ts.
+// That stub exports jest.fn() mocks with real default implementations, so
+// jest.mocked(core.setFailed) is directly usable without a per-file factory.
+
+// jest.fn() mock controls for the four functions we want to intercept.
+const mockCheckFileExists = jest.fn<(...args: unknown[]) => Promise<boolean>>()
+const mockDownloadArtifacts = jest.fn<(...args: unknown[]) => Promise<string | null>>()
+const mockParseCoverage = jest.fn<(...args: unknown[]) => Promise<unknown>>()
+const mockUploadArtifacts = jest.fn<(...args: unknown[]) => Promise<unknown>>()
+
+// For the local utils module, jest.requireActual cannot load ESM modules
+// synchronously inside a jest.mock() factory.  jest.unstable_mockModule uses
+// an async factory which IS safe in ESM mode.  We deliberately do NOT call
+// import('../src/utils') inside the factory (that would trigger a circular
+// load and OOM).  Instead we pass in the real functions via closures from the
+// static imports above.
+jest.unstable_mockModule('../src/utils', async () => ({
+  colorizePercentageByThreshold,
+  filterCoverageByExcludePaths,
+  filterCoverageZeroLineFiles,
+  getInputs,
+  getParentDirFromFile,
+  getPathAtDepth,
+  getTopDirFromFile,
+  roundPercentage,
+  checkFileExists: mockCheckFileExists,
+  downloadArtifacts: mockDownloadArtifacts,
+  parseCoverage: mockParseCoverage,
+  uploadArtifacts: mockUploadArtifacts
+}))
+
+// Dynamic import MUST come after jest.unstable_mockModule so that when
+// functions.ts loads utils.ts, it gets the mocked version.
+let run: () => Promise<void>
 
 const mockCoverage = {
   files: {
@@ -56,15 +88,18 @@ beforeAll(async () => {
   process.stdout.write = jest.fn(() => true) as any
 
   tempSummaryFile = path.join(
-    __dirname,
+    import.meta.dirname,
     `temp-run-summary-${crypto.randomBytes(4).toString('hex')}.md`
   )
   tempOutputFile = path.join(
-    __dirname,
+    import.meta.dirname,
     `temp-run-output-${crypto.randomBytes(4).toString('hex')}.txt`
   )
   await fs.promises.writeFile(tempSummaryFile, '')
   await fs.promises.writeFile(tempOutputFile, '')
+
+  // Import functions AFTER the mock is registered so utils imports are mocked
+  ;({ run } = await import('../src/functions'))
 })
 
 afterAll(async () => {
@@ -108,16 +143,12 @@ afterEach(async () => {
 
 test('run: missing file calls setFailed', async () => {
   mockCheckFileExists.mockResolvedValue(false)
-  const setFailed = jest
-    .spyOn(core, 'setFailed')
-    .mockImplementation((() => {}) as any)
 
   await run()
 
-  expect(setFailed).toHaveBeenCalledWith(
+  expect(jest.mocked(core.setFailed)).toHaveBeenCalledWith(
     expect.stringContaining('Unable to access')
   )
-  setFailed.mockRestore()
 })
 
 test('run: pull_request with base artifact generates markdown with both coverages', async () => {
@@ -142,15 +173,10 @@ test('run: pull_request without base artifact warns and generates markdown with 
   mockDownloadArtifacts.mockResolvedValue(null)
   mockParseCoverage.mockResolvedValue(mockCoverage as any)
 
-  const warnSpy = jest
-    .spyOn(core, 'warning')
-    .mockImplementation((() => {}) as any)
-
   await run()
 
-  expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('missing'))
+  expect(jest.mocked(core.warning)).toHaveBeenCalledWith(expect.stringContaining('missing'))
   expect(mockParseCoverage).toHaveBeenCalledTimes(1)
-  warnSpy.mockRestore()
 })
 
 test('run: pull_request_target works like pull_request', async () => {
@@ -172,16 +198,11 @@ test('run: pull_request with null head coverage calls setFailed', async () => {
   mockDownloadArtifacts.mockResolvedValue(null)
   mockParseCoverage.mockResolvedValue(null)
 
-  const setFailed = jest
-    .spyOn(core, 'setFailed')
-    .mockImplementation((() => {}) as any)
-
   await run()
 
-  expect(setFailed).toHaveBeenCalledWith(
+  expect(jest.mocked(core.setFailed)).toHaveBeenCalledWith(
     expect.stringContaining('Unable to process')
   )
-  setFailed.mockRestore()
 })
 
 test('run: pull_request with excludePaths filters both coverages', async () => {
@@ -278,14 +299,9 @@ test('run: exception from uploadArtifacts calls setFailed', async () => {
 
   mockUploadArtifacts.mockRejectedValue(new Error('Network error'))
 
-  const setFailed = jest
-    .spyOn(core, 'setFailed')
-    .mockImplementation((() => {}) as any)
-
   await run()
 
-  expect(setFailed).toHaveBeenCalledWith('Network error')
-  setFailed.mockRestore()
+  expect(jest.mocked(core.setFailed)).toHaveBeenCalledWith('Network error')
 })
 
 test('run: exception from downloadArtifacts calls setFailed', async () => {
@@ -294,12 +310,8 @@ test('run: exception from downloadArtifacts calls setFailed', async () => {
 
   mockDownloadArtifacts.mockRejectedValue(new Error('Download failed'))
 
-  const setFailed = jest
-    .spyOn(core, 'setFailed')
-    .mockImplementation((() => {}) as any)
-
   await run()
 
-  expect(setFailed).toHaveBeenCalledWith('Download failed')
-  setFailed.mockRestore()
+  expect(jest.mocked(core.setFailed)).toHaveBeenCalledWith('Download failed')
 })
+
