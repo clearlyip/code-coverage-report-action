@@ -49,7 +49,7 @@ export async function parseXML<T>(filename: string): Promise<T | null> {
       if (isAttribute) {
         return false;
       }
-      return inArray(jpath, [
+      return inArray(jpath as string, [
         'coverage.project.file',
         'coverage.project.package',
         'coverage.project.package.file',

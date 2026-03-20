@@ -32,7 +32,7 @@ jest.mock('fs', () => {
     ...actual,
     promises: {
       ...actual.promises,
-      mkdir: jest.fn().mockResolvedValue(undefined)
+      mkdir: jest.fn<(...args: unknown[]) => Promise<string | undefined>>().mockResolvedValue(undefined)
     },
     constants: actual.constants
   }
@@ -68,7 +68,7 @@ afterEach(() => {
 
 test('uploadArtifacts calls uploadArtifact with correct artifact name', async () => {
   const mockUploadArtifact = jest
-    .fn()
+    .fn<(...args: unknown[]) => Promise<{id?: number; size?: number}>>()
     .mockResolvedValue({ id: 42, size: 1000 })
   ;(DefaultArtifactClient as jest.Mock).mockImplementation(() => ({
     uploadArtifact: mockUploadArtifact
@@ -87,7 +87,7 @@ test('uploadArtifacts calls uploadArtifact with correct artifact name', async ()
 
 test('uploadArtifacts replaces slashes in branch name', async () => {
   const mockUploadArtifact = jest
-    .fn()
+    .fn<(...args: unknown[]) => Promise<{id?: number; size?: number}>>()
     .mockResolvedValue({ id: 1, size: 100 })
   ;(DefaultArtifactClient as jest.Mock).mockImplementation(() => ({
     uploadArtifact: mockUploadArtifact
@@ -106,7 +106,7 @@ test('uploadArtifacts replaces slashes in branch name', async () => {
 test('uploadArtifacts passes retention days when INPUT_RETENTION_DAYS is set', async () => {
   process.env.INPUT_RETENTION_DAYS = '30'
   const mockUploadArtifact = jest
-    .fn()
+    .fn<(...args: unknown[]) => Promise<{id?: number; size?: number}>>()
     .mockResolvedValue({ id: 1, size: 100 })
   ;(DefaultArtifactClient as jest.Mock).mockImplementation(() => ({
     uploadArtifact: mockUploadArtifact
@@ -156,7 +156,7 @@ function createMockOctokit({
             })
           ),
         downloadArtifact: jest
-          .fn()
+          .fn<(...args: unknown[]) => Promise<{data: Buffer}>>()
           .mockResolvedValue({ data: Buffer.alloc(100) })
       }
     }

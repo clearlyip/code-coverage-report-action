@@ -14,6 +14,26 @@ import {
   jest
 } from '@jest/globals'
 
+jest.mock('@actions/core', () => ({
+  __esModule: true,
+  getInput: jest.fn((name: string) =>
+    (process.env['INPUT_' + name.replace(/ /g, '_').toUpperCase()] || '').trim()
+  ),
+  setFailed: jest.fn(),
+  info: jest.fn(),
+  debug: jest.fn(),
+  warning: jest.fn(),
+  error: jest.fn(),
+  setOutput: jest.fn(),
+  summary: {
+    addRaw: jest.fn().mockReturnThis(),
+    stringify: jest.fn().mockReturnValue(''),
+    write: jest.fn<(options?: {overwrite?: boolean}) => Promise<void>>().mockResolvedValue(undefined),
+    isEmptyBuffer: jest.fn().mockReturnValue(false),
+    emptyBuffer: jest.fn().mockReturnThis()
+  }
+}))
+
 jest.mock('../src/utils', () => {
   const actual =
     jest.requireActual('../src/utils') as typeof import('../src/utils')
@@ -108,16 +128,12 @@ afterEach(async () => {
 
 test('run: missing file calls setFailed', async () => {
   mockCheckFileExists.mockResolvedValue(false)
-  const setFailed = jest
-    .spyOn(core, 'setFailed')
-    .mockImplementation((() => {}) as any)
 
   await run()
 
-  expect(setFailed).toHaveBeenCalledWith(
+  expect(jest.mocked(core.setFailed)).toHaveBeenCalledWith(
     expect.stringContaining('Unable to access')
   )
-  setFailed.mockRestore()
 })
 
 test('run: pull_request with base artifact generates markdown with both coverages', async () => {
@@ -142,15 +158,10 @@ test('run: pull_request without base artifact warns and generates markdown with 
   mockDownloadArtifacts.mockResolvedValue(null)
   mockParseCoverage.mockResolvedValue(mockCoverage as any)
 
-  const warnSpy = jest
-    .spyOn(core, 'warning')
-    .mockImplementation((() => {}) as any)
-
   await run()
 
-  expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('missing'))
+  expect(jest.mocked(core.warning)).toHaveBeenCalledWith(expect.stringContaining('missing'))
   expect(mockParseCoverage).toHaveBeenCalledTimes(1)
-  warnSpy.mockRestore()
 })
 
 test('run: pull_request_target works like pull_request', async () => {
@@ -172,16 +183,11 @@ test('run: pull_request with null head coverage calls setFailed', async () => {
   mockDownloadArtifacts.mockResolvedValue(null)
   mockParseCoverage.mockResolvedValue(null)
 
-  const setFailed = jest
-    .spyOn(core, 'setFailed')
-    .mockImplementation((() => {}) as any)
-
   await run()
 
-  expect(setFailed).toHaveBeenCalledWith(
+  expect(jest.mocked(core.setFailed)).toHaveBeenCalledWith(
     expect.stringContaining('Unable to process')
   )
-  setFailed.mockRestore()
 })
 
 test('run: pull_request with excludePaths filters both coverages', async () => {
@@ -278,14 +284,9 @@ test('run: exception from uploadArtifacts calls setFailed', async () => {
 
   mockUploadArtifacts.mockRejectedValue(new Error('Network error'))
 
-  const setFailed = jest
-    .spyOn(core, 'setFailed')
-    .mockImplementation((() => {}) as any)
-
   await run()
 
-  expect(setFailed).toHaveBeenCalledWith('Network error')
-  setFailed.mockRestore()
+  expect(jest.mocked(core.setFailed)).toHaveBeenCalledWith('Network error')
 })
 
 test('run: exception from downloadArtifacts calls setFailed', async () => {
@@ -294,12 +295,7 @@ test('run: exception from downloadArtifacts calls setFailed', async () => {
 
   mockDownloadArtifacts.mockRejectedValue(new Error('Download failed'))
 
-  const setFailed = jest
-    .spyOn(core, 'setFailed')
-    .mockImplementation((() => {}) as any)
-
   await run()
 
-  expect(setFailed).toHaveBeenCalledWith('Download failed')
-  setFailed.mockRestore()
+  expect(jest.mocked(core.setFailed)).toHaveBeenCalledWith('Download failed')
 })

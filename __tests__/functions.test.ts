@@ -18,6 +18,11 @@ import path from 'path'
 import crypto from 'crypto'
 import {loadJSONFixture} from './utils'
 
+jest.mock('@actions/core', () => {
+  const stub = jest.requireActual<typeof import('@actions/core')>('@actions/core')
+  return { __esModule: true, ...stub }
+})
+
 let originalWriteFunction: (str: string) => boolean
 const env: NodeJS.ProcessEnv = JSON.parse(JSON.stringify(process.env))
 let testEnv: NodeJS.ProcessEnv = {}
@@ -351,8 +356,8 @@ test('Generate markdown with skip_package_coverage true has empty coverage table
 })
 
 test('Fail on negative difference by package when file drops below threshold', async () => {
-  const setFailedSpy = jest.spyOn(core, 'setFailed').mockImplementation((msg: string) => {
-    throw new Error(msg)
+  const setFailedSpy = jest.spyOn(core, 'setFailed').mockImplementation((msg: string | Error) => {
+    throw new Error(typeof msg === 'string' ? msg : msg.message)
   })
   process.env.INPUT_FAIL_ON_NEGATIVE_DIFFERENCE = 'true'
   process.env.INPUT_NEGATIVE_DIFFERENCE_BY = 'package'
@@ -374,8 +379,8 @@ test('Fail on negative difference by package when file drops below threshold', a
 })
 
 test('generateMarkdown sets failed when template file does not exist', async () => {
-  const setFailedSpy = jest.spyOn(core, 'setFailed').mockImplementation((msg: string) => {
-    throw new Error(msg)
+  const setFailedSpy = jest.spyOn(core, 'setFailed').mockImplementation((msg: string | Error) => {
+    throw new Error(typeof msg === 'string' ? msg : msg.message)
   })
   const nonexistent = path.join(__dirname, 'nonexistent-template-12345.hbs')
   process.env.INPUT_WITHOUT_BASE_COVERAGE_TEMPLATE = nonexistent
@@ -413,8 +418,8 @@ test('Generate markdown with show_coverage_by_parent_dir and base coverage shows
 test('Fail on negative difference by package in top_dir grouped mode', async () => {
   const setFailedSpy = jest
     .spyOn(core, 'setFailed')
-    .mockImplementation((msg: string) => {
-      throw new Error(msg)
+    .mockImplementation((msg: string | Error) => {
+      throw new Error(typeof msg === 'string' ? msg : msg.message)
     })
   process.env.INPUT_FAIL_ON_NEGATIVE_DIFFERENCE = 'true'
   process.env.INPUT_NEGATIVE_DIFFERENCE_BY = 'package'
@@ -450,8 +455,8 @@ test('Generate markdown with onlyListChangedFiles and no base produces no file r
 test('Fail on overall coverage diff below threshold when negativeDifferenceBy is overall', async () => {
   const setFailedSpy = jest
     .spyOn(core, 'setFailed')
-    .mockImplementation((msg: string) => {
-      throw new Error(msg)
+    .mockImplementation((msg: string | Error) => {
+      throw new Error(typeof msg === 'string' ? msg : msg.message)
     })
   process.env.INPUT_FAIL_ON_NEGATIVE_DIFFERENCE = 'true'
   process.env.INPUT_NEGATIVE_DIFFERENCE_BY = 'overall'
