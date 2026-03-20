@@ -11,21 +11,6 @@ import {
   jest
 } from '@jest/globals'
 
-jest.mock('@actions/artifact', () => ({
-  DefaultArtifactClient: jest.fn()
-}))
-
-jest.mock('@actions/github', () => ({
-  getOctokit: jest.fn(),
-  context: { job: 'test-job' }
-}))
-
-jest.mock('adm-zip', () => {
-  return jest.fn().mockImplementation(() => ({
-    extractAllTo: jest.fn()
-  }))
-})
-
 jest.mock('fs', () => {
   const actual = jest.requireActual('fs') as typeof import('fs')
   return {

@@ -2,18 +2,20 @@ import { promises as fs, constants as fsConstants } from 'fs';
 import { XMLParser } from 'fast-xml-parser';
 import {
   DefaultArtifactClient,
-  UploadArtifactResponse
+  UploadArtifactResponse // eslint-disable-line import/named
 } from '@actions/artifact';
 import * as core from '@actions/core';
 import * as github from '@actions/github';
 import { Clover, parse as parseClover } from './reports/clover';
 import { Cobertura, parse as parseCobertura } from './reports/cobertura';
 import path from 'path';
+import { fileURLToPath } from 'url';
 
 import { Coverage, CoverageFile, Files, Inputs } from './interfaces';
 import crypto from 'crypto';
 import AdmZip from 'adm-zip';
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const { access, readFile, mkdir } = fs;
 
 /**

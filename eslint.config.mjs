@@ -18,7 +18,8 @@ export default [
       '**/lib/',
       '**/node_modules/',
       '**/jest.config.js',
-      '**/__tests__/'
+      '**/__tests__/',
+      '**/__mocks__/'
     ]
   },
   {

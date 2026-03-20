@@ -2,8 +2,6 @@ import * as core from '@actions/core'
 import fs from 'fs'
 import path from 'path'
 import crypto from 'crypto'
-import { run } from '../src/functions'
-import * as utilsModule from '../src/utils'
 import {
   expect,
   test,
@@ -14,42 +12,56 @@ import {
   jest
 } from '@jest/globals'
 
-jest.mock('@actions/core', () => ({
-  __esModule: true,
-  getInput: jest.fn((name: string) =>
-    (process.env['INPUT_' + name.replace(/ /g, '_').toUpperCase()] || '').trim()
-  ),
-  setFailed: jest.fn(),
-  info: jest.fn(),
-  debug: jest.fn(),
-  warning: jest.fn(),
-  error: jest.fn(),
-  setOutput: jest.fn(),
-  summary: {
-    addRaw: jest.fn().mockReturnThis(),
-    stringify: jest.fn().mockReturnValue(''),
-    write: jest.fn<(options?: {overwrite?: boolean}) => Promise<void>>().mockResolvedValue(undefined),
-    isEmptyBuffer: jest.fn().mockReturnValue(false),
-    emptyBuffer: jest.fn().mockReturnThis()
-  }
+// Static imports of the real utils functions that should NOT be mocked.
+// These are resolved before jest.unstable_mockModule runs, so they reference
+// the actual implementations. We then pass them into the mock factory so that
+// functions.ts (loaded dynamically after the mock is set up) gets the real
+// implementations for everything except the four controlled mocks below.
+import {
+  colorizePercentageByThreshold,
+  filterCoverageByExcludePaths,
+  filterCoverageZeroLineFiles,
+  getInputs,
+  getParentDirFromFile,
+  getPathAtDepth,
+  getTopDirFromFile,
+  roundPercentage
+} from '../src/utils'
+
+// @actions/core is provided by moduleNameMapper → __mocks__/@actions/core.ts.
+// That stub exports jest.fn() mocks with real default implementations, so
+// jest.mocked(core.setFailed) is directly usable without a per-file factory.
+
+// jest.fn() mock controls for the four functions we want to intercept.
+const mockCheckFileExists = jest.fn<(...args: unknown[]) => Promise<boolean>>()
+const mockDownloadArtifacts = jest.fn<(...args: unknown[]) => Promise<string | null>>()
+const mockParseCoverage = jest.fn<(...args: unknown[]) => Promise<unknown>>()
+const mockUploadArtifacts = jest.fn<(...args: unknown[]) => Promise<unknown>>()
+
+// For the local utils module, jest.requireActual cannot load ESM modules
+// synchronously inside a jest.mock() factory.  jest.unstable_mockModule uses
+// an async factory which IS safe in ESM mode.  We deliberately do NOT call
+// import('../src/utils') inside the factory (that would trigger a circular
+// load and OOM).  Instead we pass in the real functions via closures from the
+// static imports above.
+jest.unstable_mockModule('../src/utils', async () => ({
+  colorizePercentageByThreshold,
+  filterCoverageByExcludePaths,
+  filterCoverageZeroLineFiles,
+  getInputs,
+  getParentDirFromFile,
+  getPathAtDepth,
+  getTopDirFromFile,
+  roundPercentage,
+  checkFileExists: mockCheckFileExists,
+  downloadArtifacts: mockDownloadArtifacts,
+  parseCoverage: mockParseCoverage,
+  uploadArtifacts: mockUploadArtifacts
 }))
 
-jest.mock('../src/utils', () => {
-  const actual =
-    jest.requireActual('../src/utils') as typeof import('../src/utils')
-  return {
-    ...actual,
-    checkFileExists: jest.fn(),
-    downloadArtifacts: jest.fn(),
-    parseCoverage: jest.fn(),
-    uploadArtifacts: jest.fn()
-  }
-})
-
-const mockCheckFileExists = jest.mocked(utilsModule.checkFileExists)
-const mockDownloadArtifacts = jest.mocked(utilsModule.downloadArtifacts)
-const mockParseCoverage = jest.mocked(utilsModule.parseCoverage)
-const mockUploadArtifacts = jest.mocked(utilsModule.uploadArtifacts)
+// Dynamic import MUST come after jest.unstable_mockModule so that when
+// functions.ts loads utils.ts, it gets the mocked version.
+let run: () => Promise<void>
 
 const mockCoverage = {
   files: {
@@ -76,15 +88,18 @@ beforeAll(async () => {
   process.stdout.write = jest.fn(() => true) as any
 
   tempSummaryFile = path.join(
-    __dirname,
+    import.meta.dirname,
     `temp-run-summary-${crypto.randomBytes(4).toString('hex')}.md`
   )
   tempOutputFile = path.join(
-    __dirname,
+    import.meta.dirname,
     `temp-run-output-${crypto.randomBytes(4).toString('hex')}.txt`
   )
   await fs.promises.writeFile(tempSummaryFile, '')
   await fs.promises.writeFile(tempOutputFile, '')
+
+  // Import functions AFTER the mock is registered so utils imports are mocked
+  ;({ run } = await import('../src/functions'))
 })
 
 afterAll(async () => {
@@ -299,3 +314,4 @@ test('run: exception from downloadArtifacts calls setFailed', async () => {
 
   expect(jest.mocked(core.setFailed)).toHaveBeenCalledWith('Download failed')
 })
+

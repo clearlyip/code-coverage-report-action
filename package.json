@@ -9,7 +9,7 @@
     "lint:fix": "eslint --fix",
     "package": "ncc build src/main.ts --source-map --license licenses.txt",
     "watch": "ncc build src/main.ts --watch",
-    "test": "jest",
+    "test": "NODE_OPTIONS=--experimental-vm-modules jest",
     "all": "npm run lint && npm run package && npm test",
     "ts-node": "ts-node"
   },

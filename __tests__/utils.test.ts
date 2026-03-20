@@ -61,10 +61,10 @@ test('formats the artifact name', async () => {
 })
 
 test('files exists', async () => {
-  const ret = await checkFileExists(__filename)
+  const ret = await checkFileExists(import.meta.filename)
   expect(ret).toBeTruthy()
 
-  const ret1 = await checkFileExists(__filename + 'bar')
+  const ret1 = await checkFileExists(import.meta.filename + 'bar')
   expect(ret1).toBeFalsy()
 })
 
@@ -147,18 +147,18 @@ test('colorize percentage by threshold', () => {
 })
 
 test('parse xml', async () => {
-  const ret = await parseXML(__filename)
+  const ret = await parseXML(import.meta.filename)
   expect(ret).toBeTruthy()
 
-  const ret1 = await parseXML(__filename + 'bar')
+  const ret1 = await parseXML(import.meta.filename + 'bar')
   expect(ret1).toBeFalsy()
 })
 
 test('parse coverage', async () => {
-  const ret = await parseCoverage(__filename)
+  const ret = await parseCoverage(import.meta.filename)
   expect(ret).not.toBeNull
 
-  const ret1 = await parseCoverage(__filename + 'bar')
+  const ret1 = await parseCoverage(import.meta.filename + 'bar')
   expect(ret1).toBeNull
 })
 
@@ -319,7 +319,7 @@ test('getInputs clamps coverage_depth to at least 1', () => {
 })
 
 test('parse clover into file format', async () => {
-  const ret = await parseCoverage(__dirname + '/fixtures/clover.xml')
+  const ret = await parseCoverage(import.meta.dirname + '/fixtures/clover.xml')
 
   const loadedFixture = await loadJSONFixture('clover-parsed.json')
   expect(ret).toMatchObject(loadedFixture)
@@ -330,45 +330,45 @@ test('parse clover into file format', async () => {
 })
 
 test('parse cobertura file format', async () => {
-  const ret = await parseCoverage(__dirname + '/fixtures/cobertura.xml')
+  const ret = await parseCoverage(import.meta.dirname + '/fixtures/cobertura.xml')
 
   const loadedFixture = await loadJSONFixture('cobertura-parsed.json')
   expect(loadedFixture).toEqual(ret)
 })
 
 test('parse empty cobertura file', async () => {
-  const ret = await parseCoverage(__dirname + '/fixtures/cobertura-empty.xml')
+  const ret = await parseCoverage(import.meta.dirname + '/fixtures/cobertura-empty.xml')
   expect(ret).toMatchSnapshot()
 })
 
 test('parse cobertura project with single file', async () => {
-  const ret = await parseCoverage(__dirname + '/fixtures/cobertura-project-single-file.xml')
+  const ret = await parseCoverage(import.meta.dirname + '/fixtures/cobertura-project-single-file.xml')
   expect(ret).toMatchSnapshot()
 })
 
 test('parse cobertura file with empty packages', async () => {
-  const ret = await parseCoverage(__dirname + '/fixtures/cobertura-empty-packages.xml')
+  const ret = await parseCoverage(import.meta.dirname + '/fixtures/cobertura-empty-packages.xml')
   expect(ret).toMatchSnapshot()
 })
 
 test('parse cobertura file with empty classes', async () => {
-  const ret = await parseCoverage(__dirname + '/fixtures/cobertura-empty-classes.xml')
+  const ret = await parseCoverage(import.meta.dirname + '/fixtures/cobertura-empty-classes.xml')
   expect(ret).toMatchSnapshot()
 })
 
 test('parse cobertura file with empty lines', async () => {
-  const ret = await parseCoverage(__dirname + '/fixtures/cobertura-empty-lines.xml')
+  const ret = await parseCoverage(import.meta.dirname + '/fixtures/cobertura-empty-lines.xml')
   expect(ret).toMatchSnapshot()
 })
 
 test('parse cobertura file with empty methods', async () => {
-  const ret = await parseCoverage(__dirname + '/fixtures/cobertura-empty-methods.xml')
+  const ret = await parseCoverage(import.meta.dirname + '/fixtures/cobertura-empty-methods.xml')
   expect(ret).toMatchSnapshot()
 })
 
 test('parse many sources cobertura file', async () => {
   const ret = await parseCoverage(
-    __dirname + '/fixtures/cobertura-many-sources.xml'
+    import.meta.dirname + '/fixtures/cobertura-many-sources.xml'
   )
   expect(ret).toMatchSnapshot()
 })
