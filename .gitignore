@@ -100,4 +100,5 @@ lib/**/*
 
 .build-dev.npm
 code-coverage-results.md
-dist/artifacts
+dist/artifacts__tests__/temp-*.md
+__tests__/temp-*.txt
