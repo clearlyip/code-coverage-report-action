@@ -27,10 +27,10 @@
   "dependencies": {
     "@actions/artifact": "^6.2.1",
     "@actions/core": "^3.0.0",
-    "@actions/github": "^9.0.0",
-    "adm-zip": "^0.5.16",
-    "fast-xml-parser": "^5.5.9",
-    "handlebars": "^4.7.8"
+    "@actions/github": "^9.1.0",
+    "adm-zip": "^0.5.17",
+    "fast-xml-parser": "^5.5.12",
+    "handlebars": "^4.7.9"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.5",
