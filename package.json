@@ -38,7 +38,7 @@
     "@tsconfig/node24": "^24.0.4",
     "@types/adm-zip": "^0.5.8",
     "@types/node": "^25.6.0",
-    "@typescript-eslint/parser": "^8.58.2",
+    "@typescript-eslint/parser": "^8.59.1",
     "@vercel/ncc": "^0.38.4",
     "eslint": "^9.39.4",
     "eslint-config-prettier": "^10.1.8",
@@ -48,9 +48,9 @@
     "globals": "^17.5.0",
     "jest": "^30.3.0",
     "js-yaml": "^4.1.1",
-    "prettier": "3.8.2",
+    "prettier": "3.8.3",
     "ts-jest": "^29.4.9",
-    "typescript": "^6.0.2",
+    "typescript": "^6.0.3",
     "ts-node": "^10.9.2"
   }
 }
