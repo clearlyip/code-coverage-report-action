@@ -68,6 +68,7 @@ on:
 permissions:
   pull-requests: write
   contents: read
+  actions: read
 
 jobs:
   coverage:
@@ -200,3 +201,20 @@ Yes. The action only cares about the XML coverage file. Any tool that produces C
 ### How do I customize the report format?
 
 Use the `with_base_coverage_template` and `without_base_coverage_template` inputs to provide your own Handlebars templates. See the [default templates](templates/) for reference.
+
+### I'm getting "Resource not accessible by integration" when downloading the baseline artifact
+
+This error means the GitHub token doesn't have permission to list workflow runs. There are two ways to fix it:
+
+**Option 1 — per-workflow permissions (recommended):** Add `actions: read` to your workflow's `permissions` block:
+
+```yaml
+permissions:
+  pull-requests: write
+  contents: read
+  actions: read   # required to find and download baseline artifacts
+```
+
+**Option 2 — repository default permissions:** In your repository go to **Settings → Actions → General → Workflow permissions** and select **Read and write permissions**. This grants the `GITHUB_TOKEN` broader access by default across all workflows without needing explicit `permissions` blocks.
+
+Option 1 is preferred because it follows the principle of least privilege — only the workflows that need it get the permission.
