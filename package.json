@@ -28,8 +28,8 @@
     "@actions/artifact": "^6.2.1",
     "@actions/core": "^3.0.1",
     "@actions/github": "^9.1.1",
-    "adm-zip": "^0.5.18",
-    "fast-xml-parser": "^5.9.3",
+    "adm-zip": "^0.6.0",
+    "fast-xml-parser": "^5.10.1",
     "handlebars": "^4.7.9"
   },
   "devDependencies": {
